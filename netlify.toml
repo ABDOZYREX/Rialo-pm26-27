@@ -1,0 +1,183 @@
+# ==============================================================================
+#  netlify.toml — Rialo PM
+# ==============================================================================
+#  Netlify hosts the FRONTEND only:
+#    index.html, script.js, style.css, final-overrides.css,
+#    all *.png / *.webp / *.svg / *.mp3, and the *.artifact.json ABI files.
+#
+#  The Node backend (server.js) KEEPS RUNNING ON RENDER:
+#    https://rialo-pmm.onrender.com
+#
+#  Why the backend is not moved to Netlify Functions:
+#    - server.js stores state in a real SQLite file (node:sqlite -> market.db).
+#      Netlify Functions are serverless: the filesystem is throwaway, so every
+#      token, trade and NFT listing would be lost between requests.
+#    - startChainIndexer() polls the RPC every 12s in a background loop.
+#      A serverless function cannot keep a loop alive between invocations.
+#  script.js already expects this split: the RIALO_BACKEND_URL constant points
+#  every /api/* call at the Render host, and server.js already returns
+#  Access-Control-Allow-Origin: * so the cross-origin calls work.
+#
+#  ---> If your backend URL changes, update BOTH:
+#         1. the RIALO_BACKEND_URL constant in script.js
+#         2. the 3 proxy rules in section 2 below
+# ==============================================================================
+
+[build]
+  # The site IS the repo root — there is no bundler.
+  publish = "."
+
+  # Runs on Git-connected deploys only (skipped on drag & drop deploys).
+  # Strips backend-only files out of the deployed copy. This touches Netlify's
+  # temporary build clone only — never your local folder.
+  command = '''
+rm -f server.js build-rialo-nft-marketplace.js build-rialo-swap.js test-cancel-listing.mjs render.yaml REMIX-NFT-DEPLOY-AR.txt
+rm -rf contracts data
+echo "Rialo PM: static bundle ready"
+'''
+
+[build.environment]
+  NODE_VERSION = "22"
+  # No runtime dependencies exist, so skip installing solc (a devDependency)
+  # on every single deploy.
+  NPM_FLAGS = "--omit=dev"
+
+
+# ==============================================================================
+#  1. BLOCK BACKEND-ONLY FILES
+# ==============================================================================
+#  The build command above already deletes these on Git deploys. These rules are
+#  the safety net that also covers drag & drop deploys, where Netlify reads this
+#  file but does NOT run the build command.
+#  force = true is required because a real file exists at each of these paths.
+#  Redirect rules are matched top to bottom, so these must stay above the proxies.
+# ==============================================================================
+
+[[redirects]]
+  from = "/server.js"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/data/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/contracts/*"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/build-rialo-nft-marketplace.js"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/build-rialo-swap.js"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/test-cancel-listing.mjs"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/render.yaml"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/netlify.toml"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package.json"
+  to = "/404.html"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/package-lock.json"
+  to = "/404.html"
+  status = 404
+  force = true
+
+
+# ==============================================================================
+#  2. SAME-ORIGIN API PROXY  ->  Render backend
+# ==============================================================================
+
+# REQUIRED, do not delete. getTwitterAvatarUrls() in script.js calls
+# /api/twitter-avatar as a RELATIVE path on purpose: the X profile image has to
+# arrive same-origin, otherwise it taints the prize-ticket <canvas> and the
+# "download ticket" feature breaks. This rule keeps the browser request on the
+# Netlify domain while Netlify fetches it from Render server-side.
+[[redirects]]
+  from = "/api/twitter-avatar"
+  query = {username = ":username"}
+  to = "https://rialo-pmm.onrender.com/api/twitter-avatar?username=:username"
+  status = 200
+  force = true
+
+# Catch-all API proxy. script.js normally calls Render directly via
+# RIALO_BACKEND_URL, so this is a same-origin fallback: it means /api/tokens,
+# /api/portfolio, /api/nft-listings, /api/health etc. also work if you ever
+# switch getApiUrl() back to relative paths, or if CORS gets blocked.
+[[redirects]]
+  from = "/api/*"
+  to = "https://rialo-pmm.onrender.com/api/:splat"
+  status = 200
+  force = true
+
+# The AI assistant endpoint (server.js POST /ask).
+[[redirects]]
+  from = "/ask"
+  to = "https://rialo-pmm.onrender.com/ask"
+  status = 200
+  force = true
+
+
+# ==============================================================================
+#  3. HEADERS
+# ==============================================================================
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    X-Frame-Options = "SAMEORIGIN"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+
+# index.html / script.js / style.css are NOT content-hashed, so they must never
+# be cached hard — otherwise a deploy ships but returning users keep the old app.
+# Netlify's CDN still serves them fast and revalidates with an ETag.
+[[headers]]
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/script.js"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/style.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  for = "/final-overrides.css"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

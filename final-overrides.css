@@ -1,0 +1,1350 @@
+/* Loaded after every legacy style so the creator credit stays centered. */
+body.home-mode .made-by-section {
+    display: flex !important;
+    width: min(1120px, calc(100% - 34px)) !important;
+    margin: -58px auto 0 !important;
+    padding: 0 0 100px !important;
+    align-items: center !important;
+    justify-content: center !important;
+}
+
+body.home-mode .made-by-card,
+body:not(.home-mode):not(.nft-mode):not(.swap-mode):not(.market-mode):not(.prediction-live-mode) .made-by-card {
+    background: linear-gradient(180deg, #ffffff 0%, #fbf4f0 100%) !important;
+    border: 1.5px solid rgba(77, 163, 255, 0.55) !important;
+    box-shadow: 0 14px 30px rgba(32, 62, 98, 0.16), 0 0 20px rgba(77, 163, 255, 0.14) !important;
+}
+
+body.home-mode .made-by-text,
+body:not(.home-mode):not(.nft-mode):not(.swap-mode):not(.market-mode):not(.prediction-live-mode) .made-by-text {
+    color: #171717 !important;
+    font-family: "Space Grotesk", "Manrope", Arial, sans-serif !important;
+    font-weight: 950 !important;
+    letter-spacing: 0.045em !important;
+    text-shadow: none !important;
+}
+
+body.home-mode .made-by-text span,
+body:not(.home-mode):not(.nft-mode):not(.swap-mode):not(.market-mode):not(.prediction-live-mode) .made-by-text span {
+    color: #1678e8 !important;
+    text-shadow: 0 0 10px rgba(77, 163, 255, 0.16) !important;
+}
+
+/* Swap — warm Rialo surfaces with clean blue interaction states. */
+body.swap-mode .swap-stage { width:min(760px,calc(100% - 32px))!important; margin:36px auto 90px!important; padding:18px!important; background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(251,244,240,.95))!important; border:1px solid rgba(77,163,255,.32)!important; border-radius:30px!important; box-shadow:0 28px 70px rgba(35,64,101,.18),0 0 34px rgba(77,163,255,.10)!important; }
+body.swap-mode .swap-widget-shell { width:100%!important; max-width:720px!important; padding:0!important; background:transparent!important; border:0!important; box-shadow:none!important; }
+body.swap-mode .swap-balance-strip { display:grid!important; grid-template-columns:repeat(4,minmax(0,1fr))!important; gap:10px!important; margin-bottom:14px!important; }
+body.swap-mode .swap-balance-chip, body.swap-mode .swap-widget-card, body.swap-mode .swap-box, body.swap-mode .swap-meta-card, body.swap-mode .swap-seed-panel { background:rgba(255,255,255,.96)!important; border:1px solid rgba(77,163,255,.24)!important; color:#171717!important; box-shadow:0 12px 28px rgba(30,60,96,.09)!important; }
+body.swap-mode .swap-balance-chip { min-width:0!important; border-radius:18px!important; padding:14px!important; }
+body.swap-mode .swap-widget-card { border-radius:24px!important; padding:18px!important; }
+body.swap-mode .swap-box { border-radius:20px!important; }
+body.swap-mode .swap-balance-chip span, body.swap-mode .swap-box-label, body.swap-mode .swap-box-wallet, body.swap-mode .swap-box-foot, body.swap-mode .swap-meta-row span, body.swap-mode .swap-status, body.swap-mode .swap-field span { color:#667085!important; }
+body.swap-mode .swap-balance-chip strong, body.swap-mode .swap-box-input, body.swap-mode .swap-box-output, body.swap-mode .swap-meta-row strong, body.swap-mode .swap-token-pill strong { color:#151515!important; }
+body.swap-mode .swap-slippage-btn, body.swap-mode .swap-mini-btn, body.swap-mode .swap-side-btn { background:#edf6ff!important; border:1px solid rgba(77,163,255,.30)!important; color:#1769c2!important; }
+body.swap-mode .swap-slippage-btn.active, body.swap-mode .swap-submit-btn { background:linear-gradient(90deg,#45d8dc,#4da3ff)!important; border-color:transparent!important; color:#071523!important; box-shadow:0 12px 25px rgba(77,163,255,.25)!important; }
+body.swap-mode .swap-switch-btn { background:#0c1728!important; color:#52e8d1!important; border:2px solid #fff!important; box-shadow:0 10px 22px rgba(12,23,40,.22)!important; }
+
+/* Meme Market — matching Home cards and high-contrast typography. */
+body.market-mode .market-stage { width:min(1380px,calc(100% - 28px))!important; margin:18px auto 80px!important; padding:24px!important; border:1px solid rgba(77,163,255,.24)!important; border-radius:28px!important; background:linear-gradient(145deg,rgba(255,255,255,.97),rgba(251,244,240,.94))!important; box-shadow:0 28px 70px rgba(35,64,101,.14)!important; }
+body.market-mode .market-stage-header { padding:8px 0 20px!important; border-bottom:1px solid rgba(77,163,255,.18)!important; }
+body.market-mode .section-kicker, body.market-mode .market-panel-kicker, body.market-mode .market-detail-kicker { color:#1678e8!important; }
+body.market-mode .section-title, body.market-mode .market-side-launch>div>strong, body.market-mode .market-portfolio-head strong, body.market-mode .market-token-body strong, body.market-mode .market-detail-copy strong { color:#151515!important; text-shadow:none!important; }
+body.market-mode .market-stage-header p, body.market-mode .market-side-launch p, body.market-mode .market-token-body p, body.market-mode .market-detail-copy p, body.market-mode .market-launch-points li { color:#596273!important; }
+body.market-mode .market-board, body.market-mode .market-side-launch, body.market-mode .market-token-summary, body.market-mode .market-chart-card, body.market-mode .market-feed-card, body.market-mode .market-trade-panel, body.market-mode .market-create-sheet, body.market-mode .market-token-card { background:rgba(255,255,255,.96)!important; border:1px solid rgba(77,163,255,.24)!important; box-shadow:0 16px 34px rgba(35,64,101,.10)!important; }
+body.market-mode .market-board, body.market-mode .market-side-launch, body.market-mode .market-token-summary, body.market-mode .market-chart-card, body.market-mode .market-feed-card, body.market-mode .market-trade-panel { border-radius:22px!important; }
+body.market-mode .market-filter-btn { background:#fff!important; border:1px solid rgba(77,163,255,.32)!important; color:#172033!important; }
+body.market-mode .market-filter-btn.active, body.market-mode .market-create-hero-btn, body.market-mode .market-create-side-btn, body.market-mode .market-submit-create, body.market-mode .market-trade-btn { background:linear-gradient(90deg,#45d8dc,#4da3ff)!important; border-color:transparent!important; color:#071523!important; box-shadow:0 12px 25px rgba(77,163,255,.22)!important; }
+body.market-mode .market-launch-points li, body.market-mode .market-detail-stat, body.market-mode .market-detail-market-chip, body.market-mode .market-wallet-balance-box { background:#f7fbff!important; border:1px solid rgba(77,163,255,.20)!important; color:#172033!important; }
+
+@media (max-width:760px) {
+    body.swap-mode .swap-balance-strip { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+    body.market-mode .market-stage { width:min(100% - 16px,1380px)!important; padding:14px!important; }
+}
+
+/* Final contrast pass for the current Swap and Meme Market screens. */
+body.swap-mode #swap-view .swap-stage--simple {
+    background: linear-gradient(145deg,#ffffff,#fbf4f0) !important;
+    border: 2px solid rgba(77,163,255,.48) !important;
+    box-shadow: 0 24px 60px rgba(36,68,108,.18), 0 0 24px rgba(77,163,255,.12) !important;
+}
+
+body.swap-mode #swap-view .swap-widget-shell {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+body.swap-mode #swap-view .swap-widget-live strong {
+    color: #177b68 !important;
+    text-shadow: none !important;
+}
+
+body.swap-mode #swap-view .swap-live-dot {
+    box-shadow: 0 0 0 5px rgba(45,210,170,.14), 0 0 14px rgba(45,210,170,.42) !important;
+}
+
+body.market-mode #market-view .section-title {
+    color: #4DA3FF !important;
+    -webkit-text-fill-color: #4DA3FF !important;
+    text-shadow: none !important;
+}
+
+body.market-mode #market-view .market-trending-chip {
+    background: linear-gradient(90deg,#edf7ff,#ffffff) !important;
+    border: 1px solid rgba(77,163,255,.34) !important;
+    box-shadow: 0 8px 20px rgba(36,68,108,.10) !important;
+}
+
+body.market-mode #market-view .market-trending-chip span { color:#087c70!important; }
+body.market-mode #market-view .market-trending-chip strong { color:#151515!important; }
+body.market-mode #market-view .market-trending-chip small { color:#1769c2!important; }
+
+body.market-mode #market-view .market-feed-row {
+    background: linear-gradient(135deg,#f7fbff,#ffffff) !important;
+    border: 1px solid rgba(77,163,255,.22) !important;
+    box-shadow: 0 10px 22px rgba(36,68,108,.08) !important;
+}
+
+body.market-mode #market-view .market-feed-row strong { color:#151515!important; }
+body.market-mode #market-view .market-feed-row span { color:#596273!important; }
+
+body.market-mode #market-view .market-portfolio-card {
+    background: linear-gradient(145deg,#ffffff,#f4f9ff) !important;
+    border: 1px solid rgba(77,163,255,.30) !important;
+    color:#151515!important;
+    box-shadow: 0 16px 34px rgba(35,64,101,.12) !important;
+}
+
+body.market-mode #market-view .market-portfolio-head strong,
+body.market-mode #market-view .market-portfolio-stat strong,
+body.market-mode #market-view .market-portfolio-pnl strong,
+body.market-mode #market-view .market-portfolio-position strong,
+body.market-mode #market-view .market-portfolio-empty strong { color:#151515!important; }
+
+body.market-mode #market-view .market-portfolio-head small,
+body.market-mode #market-view .market-portfolio-stat span,
+body.market-mode #market-view .market-portfolio-pnl span,
+body.market-mode #market-view .market-portfolio-position span,
+body.market-mode #market-view .market-portfolio-empty span { color:#667085!important; }
+
+body.market-mode #market-view .market-portfolio-stat,
+body.market-mode #market-view .market-portfolio-pnl,
+body.market-mode #market-view .market-portfolio-position {
+    background:#f7fbff!important;
+    border:1px solid rgba(77,163,255,.20)!important;
+}
+
+/* Token detail, trade panel and Create Token modal readability. */
+body.market-mode #market-view .market-trade-panel,
+body.market-mode #market-view .market-create-sheet {
+    background:linear-gradient(145deg,#ffffff,#f8fbff)!important;
+    border:1px solid rgba(77,163,255,.34)!important;
+    color:#151515!important;
+    box-shadow:0 22px 55px rgba(35,64,101,.18)!important;
+}
+
+body.market-mode #market-view .market-trade-head strong,
+body.market-mode #market-view .market-trade-head span,
+body.market-mode #market-view .market-chart-head strong,
+body.market-mode #market-view .market-chart-head span,
+body.market-mode #market-view .market-wallet-balance-box strong,
+body.market-mode #market-view .market-trade-hint strong,
+body.market-mode #market-view .market-trade-preview strong,
+body.market-mode #market-view .market-create-head strong {
+    color:#151515!important;
+    text-shadow:none!important;
+}
+
+body.market-mode #market-view .market-wallet-balance-box span,
+body.market-mode #market-view .market-wallet-balance-note,
+body.market-mode #market-view .market-trade-hint span,
+body.market-mode #market-view .market-trade-status,
+body.market-mode #market-view .market-create-head span,
+body.market-mode #market-view .market-create-status {
+    color:#667085!important;
+    opacity:1!important;
+}
+
+body.market-mode #market-view .market-trade-amount,
+body.market-mode #market-view .market-create-field input,
+body.market-mode #market-view .market-create-field textarea {
+    background:#ffffff!important;
+    border:1px solid rgba(77,163,255,.28)!important;
+    color:#151515!important;
+    box-shadow:none!important;
+}
+
+body.market-mode #market-view .market-create-field>span {
+    color:#1678e8!important;
+    opacity:1!important;
+}
+
+body.market-mode #market-view .market-create-actions {
+    position:sticky!important;
+    bottom:-16px!important;
+    gap:12px!important;
+    padding:14px 0 4px!important;
+    background:linear-gradient(180deg,rgba(255,255,255,0),#ffffff 28%)!important;
+    border-top:1px solid rgba(77,163,255,.14)!important;
+}
+
+body.market-mode #market-view .market-create-actions .market-back-btn {
+    background:#edf6ff!important;
+    border:1px solid rgba(77,163,255,.34)!important;
+    color:#1769c2!important;
+}
+
+body.market-mode #market-view .market-file-picker {
+    background:#eef7ff!important;
+    border:1px solid rgba(77,163,255,.28)!important;
+    color:#172033!important;
+}
+
+body.market-mode #market-view .market-file-picker-name,
+body.market-mode #market-view .market-create-image-preview span {
+    color:#667085!important;
+    opacity:1!important;
+}
+
+body.market-mode #market-view .market-token-media,
+body.market-mode #market-view .market-detail-hero,
+body.market-mode #market-view .market-create-image-preview {
+    aspect-ratio:1/1!important;
+    overflow:hidden!important;
+    padding:0!important;
+    border-radius:22px!important;
+    border:1px solid rgba(77,163,255,.28)!important;
+    background:#eef5ff!important;
+}
+
+body.market-mode #market-view .market-token-cover,
+body.market-mode #market-view .market-detail-hero img,
+body.market-mode #market-view .market-create-image-preview img {
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    display:block!important;
+    object-fit:cover!important;
+    object-position:center!important;
+    border-radius:inherit!important;
+}
+
+body.market-mode #market-view .market-token-body,
+body.market-mode #market-view .market-token-stats {
+    color:#151515!important;
+}
+
+body.market-mode #market-view .market-token-stat span { color:#667085!important; }
+body.market-mode #market-view .market-token-stat strong { color:#151515!important; }
+
+/* Keep the token logo compact when a browser wallet narrows the page viewport. */
+body.market-mode #market-view .market-detail-hero {
+    width:100%!important;
+    height:clamp(180px,26vw,300px)!important;
+    min-height:180px!important;
+    max-height:300px!important;
+    aspect-ratio:auto!important;
+    display:grid!important;
+    place-items:center!important;
+    padding:18px!important;
+    box-sizing:border-box!important;
+}
+
+body.market-mode #market-view .market-detail-hero.is-hidden {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-detail-hero img {
+    width:100%!important;
+    height:100%!important;
+    max-width:100%!important;
+    max-height:264px!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    border-radius:16px!important;
+}
+
+/* Fill transparent PNG corners with a soft extension of the same artwork. */
+body.market-mode #market-view .market-detail-hero,
+body.market-mode #market-view .market-token-media {
+    position:relative!important;
+    isolation:isolate!important;
+    overflow:hidden!important;
+    background:#111827!important;
+}
+
+body.market-mode #market-view .market-detail-hero-backdrop,
+body.market-mode #market-view .market-token-artwork-backdrop {
+    position:absolute!important;
+    z-index:0!important;
+    inset:-10%!important;
+    width:120%!important;
+    height:120%!important;
+    max-width:none!important;
+    max-height:none!important;
+    display:block!important;
+    object-fit:cover!important;
+    object-position:center!important;
+    border-radius:0!important;
+    opacity:.9!important;
+    filter:blur(16px) saturate(1.18)!important;
+    transform:scale(1.08)!important;
+    pointer-events:none!important;
+}
+
+body.market-mode #market-view .market-detail-hero #market-detail-hero-image,
+body.market-mode #market-view .market-token-media .market-token-cover {
+    position:relative!important;
+    z-index:1!important;
+    border-radius:0!important;
+    opacity:1!important;
+    filter:none!important;
+    /* Crop the transparent rounded corners embedded in uploaded PNG/WEBP files. */
+    transform:scale(1.18)!important;
+    transform-origin:center!important;
+}
+
+body.market-mode #market-view .market-token-media::after {
+    z-index:2!important;
+}
+
+@media (max-width:1100px) {
+    body.market-mode #market-view .market-detail-hero {
+        height:220px!important;
+        min-height:0!important;
+        max-height:220px!important;
+        padding:14px!important;
+    }
+
+    body.market-mode #market-view .market-detail-hero img {
+        max-height:192px!important;
+    }
+}
+
+/* Clear trading semantics: buy is green and sell is red. */
+body.market-mode #market-view #market-buy-btn,
+body.market-mode #market-view #market-trade-mode-buy.active {
+    background:linear-gradient(135deg,#22c55e 0%,#15803d 100%)!important;
+    border:1px solid rgba(34,197,94,.42)!important;
+    color:#ffffff!important;
+    box-shadow:0 12px 26px rgba(22,163,74,.24)!important;
+}
+
+body.market-mode #market-view #market-sell-btn,
+body.market-mode #market-view #market-trade-mode-sell.active {
+    background:linear-gradient(135deg,#ef4444 0%,#b91c1c 100%)!important;
+    border:1px solid rgba(248,113,113,.42)!important;
+    color:#ffffff!important;
+    box-shadow:0 12px 26px rgba(220,38,38,.24)!important;
+}
+
+body.market-mode #market-view #market-buy-btn:hover,
+body.market-mode #market-view #market-trade-mode-buy.active:hover {
+    background:linear-gradient(135deg,#16a34a 0%,#166534 100%)!important;
+}
+
+body.market-mode #market-view #market-sell-btn:hover,
+body.market-mode #market-view #market-trade-mode-sell.active:hover {
+    background:linear-gradient(135deg,#dc2626 0%,#991b1b 100%)!important;
+}
+
+body.market-mode #market-view #market-buy-btn:disabled,
+body.market-mode #market-view #market-sell-btn:disabled {
+    opacity:.48!important;
+    box-shadow:none!important;
+}
+
+/* =========================================================
+   MEME MARKET — PROFESSIONAL TRADING TERMINAL
+========================================================= */
+body.market-mode #market-view #market-token-screen:not([hidden]) {
+    --terminal-bg:#070b12;
+    --terminal-panel:#0c121d;
+    --terminal-panel-2:#101826;
+    --terminal-line:#202c3d;
+    --terminal-muted:#8290a5;
+    --terminal-text:#f2f6fb;
+    --terminal-green:#22c55e;
+    --terminal-red:#ef4444;
+    display:block!important;
+}
+
+body.market-mode #market-view .market-token-screen-top {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    gap:16px!important;
+    margin:0 0 14px!important;
+}
+
+body.market-mode #market-view .market-back-btn {
+    min-height:40px!important;
+    padding:0 15px!important;
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    border:1px solid #d8e0ea!important;
+    border-radius:11px!important;
+    background:#fff!important;
+    color:#172033!important;
+    box-shadow:0 4px 12px rgba(22,34,51,.06)!important;
+    font-size:12px!important;
+    font-weight:850!important;
+}
+
+body.market-mode #market-view .market-back-btn:hover {
+    border-color:#9cb8dc!important;
+    background:#f7fbff!important;
+    transform:translateX(-2px)!important;
+}
+
+body.market-mode #market-view .market-terminal-status {
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    color:#536176!important;
+    font-size:11px!important;
+    font-weight:800!important;
+}
+
+body.market-mode #market-view .market-terminal-status span,
+body.market-mode #market-view .market-summary-label span {
+    width:7px!important;
+    height:7px!important;
+    border-radius:50%!important;
+    background:#22c55e!important;
+    box-shadow:0 0 0 4px rgba(34,197,94,.12)!important;
+}
+
+body.market-mode #market-view .market-token-screen-grid {
+    display:grid!important;
+    grid-template-columns:minmax(238px,280px) minmax(480px,1fr) minmax(330px,370px)!important;
+    gap:14px!important;
+    align-items:start!important;
+}
+
+body.market-mode #market-view .market-token-summary,
+body.market-mode #market-view .market-chart-card,
+body.market-mode #market-view .market-trade-panel {
+    min-width:0!important;
+    border:1px solid var(--terminal-line)!important;
+    border-radius:18px!important;
+    background:linear-gradient(180deg,var(--terminal-panel-2),var(--terminal-panel))!important;
+    color:var(--terminal-text)!important;
+    box-shadow:0 18px 44px rgba(10,19,31,.16),inset 0 1px rgba(255,255,255,.035)!important;
+    backdrop-filter:none!important;
+}
+
+body.market-mode #market-view .market-token-summary {
+    padding:18px!important;
+}
+
+body.market-mode #market-view .market-summary-label {
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+    margin-bottom:16px!important;
+    color:#8fa0b7!important;
+    font-size:10px!important;
+    font-weight:900!important;
+    letter-spacing:.12em!important;
+    text-transform:uppercase!important;
+}
+
+body.market-mode #market-view .market-detail-head {
+    display:flex!important;
+    align-items:center!important;
+    gap:12px!important;
+    margin-bottom:16px!important;
+}
+
+body.market-mode #market-view .market-detail-orb.has-image {
+    flex:0 0 62px!important;
+    width:62px!important;
+    height:62px!important;
+    border:1px solid #263349!important;
+    border-radius:16px!important;
+    background:#080d15!important;
+    box-shadow:none!important;
+}
+
+body.market-mode #market-view .market-detail-copy {
+    min-width:0!important;
+}
+
+body.market-mode #market-view .market-detail-kicker {
+    color:#60a5fa!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    letter-spacing:.08em!important;
+}
+
+body.market-mode #market-view .market-detail-copy strong {
+    display:block!important;
+    overflow:hidden!important;
+    color:var(--terminal-text)!important;
+    font-size:22px!important;
+    line-height:1.15!important;
+    font-weight:900!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+}
+
+body.market-mode #market-view .market-detail-copy p {
+    margin:5px 0 0!important;
+    overflow:hidden!important;
+    color:var(--terminal-muted)!important;
+    font-size:11px!important;
+    line-height:1.35!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+}
+
+body.market-mode #market-view .market-detail-hero {
+    height:190px!important;
+    min-height:190px!important;
+    max-height:190px!important;
+    margin:0 0 14px!important;
+    padding:14px!important;
+    border:1px solid #243249!important;
+    border-radius:16px!important;
+    background:radial-gradient(circle at 50% 55%,rgba(34,197,94,.12),transparent 36%),#080e17!important;
+}
+
+body.market-mode #market-view .market-detail-hero img {
+    max-height:162px!important;
+    object-fit:contain!important;
+    filter:drop-shadow(0 12px 22px rgba(0,0,0,.28))!important;
+}
+
+body.market-mode #market-view .market-detail-stats {
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+}
+
+body.market-mode #market-view .market-detail-stat,
+body.market-mode #market-view .market-detail-market-chip {
+    min-width:0!important;
+    padding:10px!important;
+    border:1px solid #202c3d!important;
+    border-radius:12px!important;
+    background:#0a1019!important;
+    box-shadow:none!important;
+}
+
+body.market-mode #market-view .market-detail-stat span,
+body.market-mode #market-view .market-detail-market-chip span {
+    display:block!important;
+    margin-bottom:5px!important;
+    color:#718097!important;
+    font-size:9px!important;
+    font-weight:800!important;
+    text-transform:uppercase!important;
+    letter-spacing:.04em!important;
+}
+
+body.market-mode #market-view .market-detail-stat strong,
+body.market-mode #market-view .market-detail-market-chip strong {
+    display:block!important;
+    overflow:hidden!important;
+    color:#eaf1f8!important;
+    font-size:11px!important;
+    font-weight:850!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+}
+
+body.market-mode #market-view .market-detail-stat:first-child strong {
+    color:#35d477!important;
+}
+
+body.market-mode #market-view .market-detail-market-meta {
+    display:grid!important;
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    margin-top:8px!important;
+}
+
+body.market-mode #market-view .market-detail-link-row {
+    display:flex!important;
+    flex-wrap:wrap!important;
+    gap:7px!important;
+    margin-top:12px!important;
+}
+
+body.market-mode #market-view .market-detail-link {
+    color:#8dbbff!important;
+    font-size:10px!important;
+    font-weight:850!important;
+    text-decoration:none!important;
+}
+
+body.market-mode #market-view .market-detail-link:hover {
+    color:#c2dcff!important;
+}
+
+body.market-mode #market-view .market-chart-card {
+    padding:18px!important;
+}
+
+body.market-mode #market-view .market-chart-head {
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:16px!important;
+    margin-bottom:14px!important;
+}
+
+body.market-mode #market-view .market-chart-title-stack > strong {
+    color:#8fa0b7!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    letter-spacing:.09em!important;
+    text-transform:uppercase!important;
+}
+
+body.market-mode #market-view .market-chart-price-stack {
+    display:flex!important;
+    align-items:baseline!important;
+    gap:9px!important;
+    margin-top:5px!important;
+}
+
+body.market-mode #market-view #market-chart-price-now {
+    color:#f7fafc!important;
+    font-size:21px!important;
+    font-weight:900!important;
+}
+
+body.market-mode #market-view #market-chart-price-change {
+    color:#8fa0b7!important;
+    font-size:11px!important;
+    font-weight:850!important;
+}
+
+body.market-mode #market-view #market-chart-price-change.positive { color:#35d477!important; }
+body.market-mode #market-view #market-chart-price-change.negative { color:#fb7185!important; }
+
+body.market-mode #market-view .market-live-indicator {
+    margin-top:7px!important;
+}
+
+body.market-mode #market-view .market-live-indicator small {
+    color:#74849a!important;
+}
+
+body.market-mode #market-view .market-chart-controls {
+    gap:6px!important;
+}
+
+body.market-mode #market-view .market-chart-timeframe-btn,
+body.market-mode #market-view .market-chart-zoom-btn,
+body.market-mode #market-view .market-chart-zoom-readout {
+    min-height:32px!important;
+    padding:0 11px!important;
+    border:1px solid #26344a!important;
+    border-radius:9px!important;
+    background:#0a101a!important;
+    color:#a7b4c6!important;
+    font-size:10px!important;
+    font-weight:850!important;
+    box-shadow:none!important;
+}
+
+body.market-mode #market-view .market-chart-timeframe-btn.active {
+    border-color:rgba(59,130,246,.55)!important;
+    background:#173057!important;
+    color:#cbe1ff!important;
+}
+
+body.market-mode #market-view #market-chart-label {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-chart-visual {
+    height:520px!important;
+    border:1px solid #1d2939!important;
+    border-radius:14px!important;
+    background:#060a11!important;
+    box-shadow:inset 0 0 0 1px rgba(255,255,255,.01)!important;
+}
+
+body.market-mode #market-view .market-trade-panel {
+    position:sticky!important;
+    top:92px!important;
+    padding:18px!important;
+}
+
+body.market-mode #market-view .market-trade-head {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    margin-bottom:14px!important;
+}
+
+body.market-mode #market-view .market-trade-head > div small {
+    display:block!important;
+    margin-bottom:3px!important;
+    color:#708096!important;
+    font-size:9px!important;
+    font-weight:900!important;
+    letter-spacing:.12em!important;
+}
+
+body.market-mode #market-view .market-trade-head strong {
+    color:var(--terminal-text)!important;
+    font-size:20px!important;
+    font-weight:900!important;
+}
+
+body.market-mode #market-view #market-trade-symbol {
+    padding:6px 9px!important;
+    border:1px solid #27354a!important;
+    border-radius:9px!important;
+    background:#0a1019!important;
+    color:#9fb0c5!important;
+    font-size:10px!important;
+    font-weight:900!important;
+}
+
+body.market-mode #market-view .market-wallet-balances {
+    gap:8px!important;
+    margin-bottom:8px!important;
+}
+
+body.market-mode #market-view .market-wallet-balance-box {
+    padding:11px!important;
+    border:1px solid #202d40!important;
+    border-radius:12px!important;
+    background:#0a1019!important;
+    color:var(--terminal-text)!important;
+}
+
+body.market-mode #market-view .market-wallet-balance-box span {
+    color:#728198!important;
+    font-size:9px!important;
+    text-transform:uppercase!important;
+    letter-spacing:.04em!important;
+}
+
+body.market-mode #market-view .market-wallet-balance-box strong {
+    color:#edf3f9!important;
+    font-size:13px!important;
+}
+
+body.market-mode #market-view .market-wallet-balance-note {
+    margin:0 0 14px!important;
+    color:#68788f!important;
+    font-size:9px!important;
+    line-height:1.45!important;
+}
+
+body.market-mode #market-view .market-trade-mode-toggle {
+    display:grid!important;
+    grid-template-columns:1fr 1fr!important;
+    gap:4px!important;
+    margin:0 0 14px!important;
+    padding:4px!important;
+    border:1px solid #202d40!important;
+    border-radius:12px!important;
+    background:#080d15!important;
+}
+
+body.market-mode #market-view .market-trade-mode-btn {
+    min-height:38px!important;
+    border:0!important;
+    border-radius:9px!important;
+    background:transparent!important;
+    color:#7f8da1!important;
+    box-shadow:none!important;
+    font-size:12px!important;
+    font-weight:900!important;
+}
+
+body.market-mode #market-view #market-trade-mode-buy.active {
+    background:rgba(34,197,94,.14)!important;
+    color:#4ade80!important;
+    box-shadow:inset 0 0 0 1px rgba(34,197,94,.25)!important;
+}
+
+body.market-mode #market-view #market-trade-mode-sell.active {
+    background:rgba(239,68,68,.14)!important;
+    color:#fb7185!important;
+    box-shadow:inset 0 0 0 1px rgba(239,68,68,.26)!important;
+}
+
+body.market-mode #market-view .market-trade-hint {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-order-entry {
+    margin-bottom:12px!important;
+}
+
+body.market-mode #market-view .market-order-entry-head {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:space-between!important;
+    margin-bottom:7px!important;
+    color:#a1aec0!important;
+    font-size:10px!important;
+    font-weight:800!important;
+}
+
+body.market-mode #market-view .market-order-entry-head small {
+    color:#66758a!important;
+    font-size:9px!important;
+}
+
+body.market-mode #market-view .market-order-input-shell {
+    min-height:56px!important;
+    display:flex!important;
+    align-items:center!important;
+    gap:10px!important;
+    padding:0 13px!important;
+    border:1px solid #2a3a51!important;
+    border-radius:13px!important;
+    background:#080d15!important;
+    transition:border-color .18s ease,box-shadow .18s ease!important;
+}
+
+body.market-mode #market-view .market-order-input-shell:focus-within {
+    border-color:#3b82f6!important;
+    box-shadow:0 0 0 3px rgba(59,130,246,.12)!important;
+}
+
+body.market-mode #market-view .market-trade-amount {
+    flex:1!important;
+    min-width:0!important;
+    height:54px!important;
+    margin:0!important;
+    padding:0!important;
+    border:0!important;
+    background:transparent!important;
+    color:#f5f8fc!important;
+    box-shadow:none!important;
+    font-size:20px!important;
+    font-weight:850!important;
+}
+
+body.market-mode #market-view .market-trade-amount::placeholder {
+    color:#4d5b6e!important;
+}
+
+body.market-mode #market-view #market-trade-input-unit {
+    flex:0 0 auto!important;
+    padding:6px 9px!important;
+    border-radius:8px!important;
+    background:#152033!important;
+    color:#d9e6f5!important;
+    font-size:10px!important;
+    font-weight:900!important;
+}
+
+body.market-mode #market-view .market-trade-slippage {
+    margin-bottom:11px!important;
+}
+
+body.market-mode #market-view .market-trade-slippage > span {
+    color:#8391a5!important;
+    font-size:10px!important;
+}
+
+body.market-mode #market-view .market-slippage-pills {
+    gap:5px!important;
+}
+
+body.market-mode #market-view .market-slippage-btn {
+    min-height:27px!important;
+    padding:0 9px!important;
+    border:1px solid #253349!important;
+    background:#0a1019!important;
+    color:#8492a6!important;
+}
+
+body.market-mode #market-view .market-slippage-btn.active {
+    border-color:#3b82f6!important;
+    background:#173057!important;
+    color:#bfdbfe!important;
+}
+
+body.market-mode #market-view .market-quick-amounts {
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:6px!important;
+    margin:0 0 12px!important;
+}
+
+body.market-mode #market-view .market-quick-amount-btn {
+    min-height:32px!important;
+    padding:0 6px!important;
+    border:1px solid #243248!important;
+    border-radius:9px!important;
+    background:#0a1019!important;
+    color:#a3b0c2!important;
+    font-size:9px!important;
+    box-shadow:none!important;
+}
+
+body.market-mode #market-view .market-trade-panel[data-trade-mode="buy"] .market-quick-amount-btn.sell,
+body.market-mode #market-view .market-trade-panel[data-trade-mode="sell"] .market-quick-amount-btn:not(.sell) {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-trade-panel[data-trade-mode="sell"] .market-quick-amounts {
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+}
+
+body.market-mode #market-view .market-order-preview {
+    margin:0 0 12px!important;
+    padding:12px!important;
+    gap:9px!important;
+    border:1px solid #202d40!important;
+    border-radius:13px!important;
+    background:#080d15!important;
+}
+
+body.market-mode #market-view .market-order-preview-row {
+    opacity:1!important;
+}
+
+body.market-mode #market-view .market-trade-panel[data-trade-mode="buy"] .market-order-preview-row.sell,
+body.market-mode #market-view .market-trade-panel[data-trade-mode="sell"] #market-buy-preview-row {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-order-preview-copy span,
+body.market-mode #market-view .market-order-metric span {
+    color:#708096!important;
+    font-size:9px!important;
+}
+
+body.market-mode #market-view .market-order-preview-copy strong,
+body.market-mode #market-view .market-order-metric strong {
+    color:#dfe8f2!important;
+    font-size:10px!important;
+}
+
+body.market-mode #market-view .market-order-preview-row small {
+    color:#8da0b8!important;
+    font-size:9px!important;
+}
+
+body.market-mode #market-view .market-order-metrics {
+    gap:6px!important;
+    padding-top:9px!important;
+    border-color:#1c2736!important;
+}
+
+body.market-mode #market-view .market-order-metric {
+    padding:8px!important;
+    border:0!important;
+    border-radius:9px!important;
+    background:#0d1521!important;
+}
+
+body.market-mode #market-view .market-trade-btnrow {
+    display:block!important;
+}
+
+body.market-mode #market-view .market-trade-btn {
+    width:100%!important;
+    min-height:48px!important;
+    border-radius:12px!important;
+    color:#fff!important;
+    font-size:13px!important;
+    font-weight:900!important;
+    letter-spacing:.01em!important;
+}
+
+body.market-mode #market-view .market-trade-panel[data-trade-mode="buy"] #market-sell-btn,
+body.market-mode #market-view .market-trade-panel[data-trade-mode="sell"] #market-buy-btn {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-trade-security {
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    gap:6px!important;
+    margin:10px 0 0!important;
+    color:#637287!important;
+    font-size:8px!important;
+    font-weight:750!important;
+}
+
+body.market-mode #market-view .market-trade-security span {
+    color:#34d399!important;
+    font-size:7px!important;
+}
+
+body.market-mode #market-view .market-last-tx-card,
+body.market-mode #market-view .market-trade-status {
+    margin-top:10px!important;
+    padding:10px!important;
+    border:1px solid #1d2939!important;
+    border-radius:10px!important;
+    background:#090f18!important;
+    color:#6f7f94!important;
+    font-size:9px!important;
+    line-height:1.4!important;
+}
+
+body.market-mode #market-view .market-last-tx-card > span {
+    color:#6f7f94!important;
+    font-size:8px!important;
+}
+
+body.market-mode #market-view .market-feed-card {
+    border:1px solid #dce3ec!important;
+    border-radius:16px!important;
+    background:#fff!important;
+    box-shadow:0 10px 28px rgba(22,34,51,.06)!important;
+}
+
+@media (max-width:1240px) {
+    body.market-mode #market-view .market-token-screen-grid {
+        grid-template-columns:minmax(0,1fr) minmax(330px,370px)!important;
+    }
+
+    body.market-mode #market-view .market-token-summary {
+        grid-column:1/-1!important;
+        display:grid!important;
+        grid-template-columns:minmax(210px,250px) minmax(240px,1fr)!important;
+        gap:12px 18px!important;
+    }
+
+    body.market-mode #market-view .market-summary-label,
+    body.market-mode #market-view .market-detail-head {
+        grid-column:1/-1!important;
+    }
+
+    body.market-mode #market-view .market-detail-hero {
+        grid-column:1!important;
+        grid-row:3/6!important;
+        height:210px!important;
+        min-height:210px!important;
+        max-height:210px!important;
+        margin:0!important;
+    }
+
+    body.market-mode #market-view .market-detail-stats,
+    body.market-mode #market-view .market-detail-market-meta,
+    body.market-mode #market-view .market-detail-link-row {
+        grid-column:2!important;
+    }
+
+    body.market-mode #market-view .market-detail-market-meta {
+        margin-top:0!important;
+    }
+}
+
+@media (max-width:840px) {
+    body.market-mode #market-view .market-token-screen-grid {
+        grid-template-columns:1fr!important;
+    }
+
+    body.market-mode #market-view .market-token-summary {
+        grid-column:auto!important;
+        display:block!important;
+    }
+
+    body.market-mode #market-view .market-detail-hero,
+    body.market-mode #market-view .market-detail-stats,
+    body.market-mode #market-view .market-detail-market-meta,
+    body.market-mode #market-view .market-detail-link-row {
+        grid-column:auto!important;
+        grid-row:auto!important;
+    }
+
+    body.market-mode #market-view .market-detail-hero {
+        margin-bottom:12px!important;
+    }
+
+    body.market-mode #market-view .market-trade-panel {
+        position:static!important;
+    }
+}
+
+@media (max-width:560px) {
+    body.market-mode #market-view .market-terminal-status { display:none!important; }
+    body.market-mode #market-view .market-chart-card,
+    body.market-mode #market-view .market-token-summary,
+    body.market-mode #market-view .market-trade-panel { padding:14px!important; border-radius:14px!important; }
+    body.market-mode #market-view .market-chart-head { flex-direction:column!important; }
+    body.market-mode #market-view .market-chart-controls { width:100%!important; justify-content:flex-start!important; }
+    body.market-mode #market-view .market-chart-visual { height:390px!important; }
+    body.market-mode #market-view .market-order-metrics { grid-template-columns:1fr!important; }
+}
+
+/* Focus cleanup: the input shell owns the border, never the native input. */
+body.market-mode #market-view .market-order-input-shell .market-trade-amount,
+body.market-mode #market-view .market-order-input-shell .market-trade-amount:hover,
+body.market-mode #market-view .market-order-input-shell .market-trade-amount:focus,
+body.market-mode #market-view .market-order-input-shell .market-trade-amount:focus-visible,
+body.market-mode #market-view .market-order-input-shell .market-trade-amount:active {
+    appearance:none!important;
+    -webkit-appearance:none!important;
+    outline:0!important;
+    outline-offset:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:none!important;
+    background-color:transparent!important;
+    background-image:none!important;
+    box-shadow:none!important;
+    filter:none!important;
+}
+
+body.market-mode #market-view .market-order-input-shell::before,
+body.market-mode #market-view .market-order-input-shell::after,
+body.market-mode #market-view .market-trade-amount::before,
+body.market-mode #market-view .market-trade-amount::after {
+    content:none!important;
+    display:none!important;
+}
+
+/* Adaptive logo stage: both very dark and very light artwork stays visible. */
+body.market-mode #market-view .market-detail-hero,
+body.market-mode #market-view .market-detail-orb.has-image {
+    background-color:#9aa8b9!important;
+    background-image:
+        radial-gradient(circle at 50% 44%,rgba(255,255,255,.88) 0%,rgba(226,232,240,.76) 36%,rgba(100,116,139,.72) 100%),
+        linear-gradient(45deg,rgba(255,255,255,.18) 25%,transparent 25%,transparent 75%,rgba(255,255,255,.18) 75%),
+        linear-gradient(45deg,rgba(15,23,42,.10) 25%,transparent 25%,transparent 75%,rgba(15,23,42,.10) 75%)!important;
+    background-position:center,0 0,8px 8px!important;
+    background-size:auto,16px 16px,16px 16px!important;
+}
+
+/* Uniform square artwork: every token image occupies the same frame. */
+body.market-mode #market-view .market-detail-hero {
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    aspect-ratio:1 / 1!important;
+    padding:0!important;
+}
+
+body.market-mode #market-view .market-detail-hero img {
+    width:100%!important;
+    height:100%!important;
+    max-width:none!important;
+    max-height:none!important;
+    object-fit:cover!important;
+    object-position:center!important;
+    border-radius:inherit!important;
+}
+
+body.market-mode #market-view .market-token-media {
+    width:100%!important;
+    height:auto!important;
+    aspect-ratio:1 / 1!important;
+}
+
+body.market-mode #market-view .market-token-cover {
+    width:100%!important;
+    height:100%!important;
+    object-fit:cover!important;
+    object-position:center!important;
+}
+
+@media (max-width:1240px) {
+    body.market-mode #market-view .market-token-summary .market-detail-hero {
+        width:min(250px,100%)!important;
+        height:auto!important;
+        min-height:0!important;
+        max-height:none!important;
+        aspect-ratio:1 / 1!important;
+    }
+}
+
+@media (max-width:840px) {
+    body.market-mode #market-view .market-token-summary .market-detail-hero {
+        width:100%!important;
+    }
+}
+
+body.market-mode #market-view .market-detail-hero img,
+body.market-mode #market-view .market-detail-orb.has-image img {
+    isolation:isolate!important;
+    filter:
+        drop-shadow(0 1px 1px rgba(255,255,255,.92))
+        drop-shadow(0 5px 12px rgba(0,0,0,.34))!important;
+}
+
+/* No cursor-following glow over order inputs or charts. */
+body.market-mode .mouse-glow,
+body.market-mode #mouse-glow,
+body.market-mode #rialo-cursor-glow,
+body.market-mode #rialo-cursor-glow.active {
+    display:none!important;
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+}
+
+/* Prediction Live: one clean amount field, without a nested input box. */
+body.prediction-live-mode .prediction-live-bet-input {
+    min-height:38px!important;
+    padding:0 12px!important;
+    gap:10px!important;
+    border:1px solid rgba(77,163,255,.24)!important;
+    border-radius:11px!important;
+    background:rgba(255,255,255,.94)!important;
+    box-shadow:0 4px 12px rgba(24,39,62,.04)!important;
+}
+
+body.prediction-live-mode .prediction-live-bet-input:focus-within {
+    border-color:rgba(77,163,255,.62)!important;
+    box-shadow:0 0 0 3px rgba(77,163,255,.10)!important;
+}
+
+body.prediction-live-mode .prediction-live-bet-input input,
+body.prediction-live-mode .prediction-live-bet-input input:hover,
+body.prediction-live-mode .prediction-live-bet-input input:focus,
+body.prediction-live-mode .prediction-live-bet-input input:focus-visible,
+body.prediction-live-mode .prediction-live-bet-input input:active {
+    width:100%!important;
+    height:36px!important;
+    min-height:0!important;
+    margin:0!important;
+    padding:0!important;
+    appearance:textfield!important;
+    -moz-appearance:textfield!important;
+    outline:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:none!important;
+    background-color:transparent!important;
+    background-image:none!important;
+    box-shadow:none!important;
+    color:#172033!important;
+    font-size:13px!important;
+    line-height:36px!important;
+    font-weight:800!important;
+}
+
+body.prediction-live-mode .prediction-live-bet-input input::-webkit-inner-spin-button,
+body.prediction-live-mode .prediction-live-bet-input input::-webkit-outer-spin-button {
+    margin:0!important;
+    -webkit-appearance:none!important;
+}
+
+body.prediction-live-mode .prediction-live-bet-input input::placeholder {
+    color:#7b8798!important;
+    opacity:1!important;
+    font-size:12px!important;
+    font-weight:750!important;
+}
+
+body.prediction-live-mode .prediction-live-bet-currency {
+    flex:0 0 auto!important;
+    color:#2687ef!important;
+    font-size:11px!important;
+    font-weight:900!important;
+}
+
+/* Bracket stays unavailable until the team ranking is confirmed. */
+#bracket-tab-btn.locked,
+#bracket-tab-btn[aria-disabled="true"] {
+    position:relative!important;
+    padding-left:30px!important;
+    cursor:not-allowed!important;
+    opacity:.52!important;
+    color:#6f7b8b!important;
+    background:#eef2f6!important;
+    border-color:#d8dee7!important;
+    box-shadow:none!important;
+    transform:none!important;
+}
+
+#bracket-tab-btn.locked::before,
+#bracket-tab-btn[aria-disabled="true"]::before {
+    content:"🔒"!important;
+    position:absolute!important;
+    left:12px!important;
+    top:50%!important;
+    transform:translateY(-50%)!important;
+    font-size:10px!important;
+    filter:grayscale(1)!important;
+}
+
+.confirm-ranking-btn.bracket-access-attention {
+    animation:bracketConfirmAttention .9s ease!important;
+}
+
+@keyframes bracketConfirmAttention {
+    0%,100% { transform:translateX(0); box-shadow:0 0 0 rgba(77,163,255,0); }
+    20%,60% { transform:translateX(-4px); }
+    40%,80% { transform:translateX(4px); }
+    50% { box-shadow:0 0 0 6px rgba(77,163,255,.16); }
+}
+
+/* Make the token's actual name unmistakable on every market card. */
+body.market-mode #market-view .market-token-title-line {
+    display:flex!important;
+    align-items:flex-start!important;
+    justify-content:space-between!important;
+    gap:12px!important;
+    margin:0 0 8px!important;
+}
+
+body.market-mode #market-view .market-token-name-wrap {
+    min-width:0!important;
+}
+
+body.market-mode #market-view .market-token-name-label {
+    display:block!important;
+    margin-bottom:4px!important;
+    color:#748197!important;
+    font-size:9px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    letter-spacing:.12em!important;
+    text-transform:uppercase!important;
+}
+
+body.market-mode #market-view .market-token-name {
+    display:block!important;
+    overflow:hidden!important;
+    color:#111827!important;
+    font-size:22px!important;
+    line-height:1.1!important;
+    font-weight:950!important;
+    letter-spacing:-.02em!important;
+    text-overflow:ellipsis!important;
+    white-space:nowrap!important;
+    text-shadow:none!important;
+}
+
+body.market-mode #market-view .market-token-symbol-label {
+    flex:0 0 auto!important;
+    padding:6px 9px!important;
+    border:1px solid rgba(77,163,255,.24)!important;
+    border-radius:9px!important;
+    background:#eef6ff!important;
+    color:#1675d1!important;
+    font-size:10px!important;
+    line-height:1!important;
+    font-weight:900!important;
+}
+
+/* Give the Swap card breathing room below the navigation divider. */
+body.swap-mode #swap-view .swap-stage.swap-stage--simple {
+    margin:48px auto 90px!important;
+}
+
+@media (max-height:760px) {
+    body.swap-mode #swap-view .swap-stage.swap-stage--simple {
+        margin-top:28px!important;
+    }
+}
+
+@media (max-width:680px) {
+    body.swap-mode #swap-view .swap-stage.swap-stage--simple {
+        margin:20px auto 64px!important;
+    }
+}

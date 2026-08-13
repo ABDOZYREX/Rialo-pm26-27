@@ -1,0 +1,3553 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rialo PM</title>
+
+    <link rel="icon" type="image/png" href="bracket-trophy.png.png?v=1">
+    <link rel="shortcut icon" type="image/png" href="bracket-trophy.png.png?v=1">
+    <link rel="apple-touch-icon" href="bracket-trophy.png.png?v=1">
+
+    <link rel="stylesheet" href="style.css">
+
+    <style>
+        .how-extra-flow {
+            width: min(760px, 100%);
+            margin: 18px auto 0;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 16px;
+        }
+
+        .how-extra-flow .how-step {
+            min-height: 235px;
+            border: 1px solid rgba(77, 163, 255, 0.48);
+            background:
+                radial-gradient(circle at 85% 92%, rgba(0, 255, 132, 0.16), transparent 34%),
+                radial-gradient(circle at 20% 0%, rgba(77, 163, 255, 0.12), transparent 34%),
+                linear-gradient(145deg, #1b1b19 0%, #050505 76%);
+            box-shadow:
+                0 20px 45px rgba(0, 0, 0, 0.26),
+                inset 0 1px 0 rgba(255, 255, 255, 0.06);
+        }
+
+        .how-extra-flow .how-step p {
+            line-height: 1.65;
+        }
+
+        .how-extra-flow .how-step strong {
+            color: #4DA3FF;
+            font-weight: 950;
+        }
+
+        .top-page-switcher {
+            width: fit-content;
+            max-width: calc(100% - 40px);
+            margin: 14px auto 18px;
+            padding: 8px 10px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            position: relative;
+            z-index: 999;
+            border-radius: 999px;
+            background: rgba(74, 67, 56, 0.90);
+            border: 1px solid rgba(255, 248, 231, 0.08);
+            box-shadow:
+                0 18px 36px rgba(0, 0, 0, 0.22),
+                inset 0 1px 0 rgba(255, 248, 231, 0.08);
+            backdrop-filter: blur(18px);
+        }
+
+        .top-page-btn {
+            height: 36px;
+            padding: 0 16px;
+            position: relative;
+            overflow: hidden;
+            border-radius: 999px;
+            border: 1px solid transparent;
+            background: transparent;
+            color: rgba(241, 235, 221, 0.82);
+            font-size: 11px;
+            font-weight: 950;
+            cursor: pointer;
+            white-space: nowrap;
+            transition:
+                transform 0.22s ease,
+                box-shadow 0.22s ease,
+                border-color 0.22s ease,
+                background 0.22s ease;
+        }
+
+        .top-page-btn::before {
+            content: "";
+            position: absolute;
+            top: -90%;
+            left: -45%;
+            width: 42%;
+            height: 280%;
+            transform: rotate(18deg);
+            background:
+                linear-gradient(
+                    115deg,
+                    transparent 0%,
+                    rgba(255, 255, 255, 0.18) 45%,
+                    rgba(255, 255, 255, 0.42) 52%,
+                    transparent 72%
+                );
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .top-page-btn:hover {
+            transform: translateY(-2px) scale(1.02);
+            border-color: rgba(77, 163, 255, 0.42);
+            box-shadow:
+                0 10px 22px rgba(0, 0, 0, 0.20),
+                0 0 22px rgba(77, 163, 255, 0.12);
+        }
+
+        .top-page-btn:hover::before,
+        .top-page-btn.clicked::before {
+            animation: pageButtonShine 0.82s ease both;
+        }
+
+        .top-page-btn.active {
+            color: #f7f2e7;
+            background:
+                radial-gradient(circle at 22% 0%, rgba(77, 163, 255, 0.20), transparent 38%),
+                linear-gradient(180deg, #171717 0%, #060606 100%);
+            border-color: rgba(77, 163, 255, 0.22);
+            box-shadow:
+                0 8px 18px rgba(0, 0, 0, 0.24),
+                0 0 20px rgba(77, 163, 255, 0.10),
+                inset 0 1px 0 rgba(255, 255, 255, 0.08);
+        }
+
+        .home-page-btn {
+            opacity: 0.86;
+        }
+
+        @keyframes pageButtonShine {
+            0% {
+                left: -50%;
+                opacity: 0;
+            }
+
+            30% {
+                opacity: 1;
+            }
+
+            100% {
+                left: 130%;
+                opacity: 0;
+            }
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        .view-section {
+            display: none;
+        }
+
+        .view-section.active {
+            display: block;
+        }
+
+        body.swap-mode .swap-view,
+        body.nft-mode .nft-view,
+        body.market-mode .market-view {
+            display: block !important;
+        }
+
+        body.swap-mode .top-info-bar,
+        body.swap-mode .steps-wrapper,
+        body.swap-mode .tabs-bar,
+        body.swap-mode .groups-view,
+        body.swap-mode .bracket-view,
+        body.swap-mode .prediction-live-view,
+        body.swap-mode .nft-view,
+        body.swap-mode .market-view,
+        body.swap-mode .how-it-works-section,
+        body.swap-mode .prediction-history-section,
+        body.swap-mode .made-by-section,
+        body.nft-mode .top-info-bar,
+        body.nft-mode .steps-wrapper,
+        body.nft-mode .tabs-bar,
+        body.nft-mode .groups-view,
+        body.nft-mode .bracket-view,
+        body.nft-mode .prediction-live-view,
+        body.nft-mode .market-view,
+        body.nft-mode .how-it-works-section,
+        body.nft-mode .prediction-history-section,
+        body.nft-mode .made-by-section,
+        body.market-mode .top-info-bar,
+        body.market-mode .steps-wrapper,
+        body.market-mode .tabs-bar,
+        body.market-mode .groups-view,
+        body.market-mode .bracket-view,
+        body.market-mode .prediction-live-view,
+        body.market-mode .nft-view,
+        body.market-mode .how-it-works-section,
+        body.market-mode .prediction-history-section,
+        body.market-mode .made-by-section {
+            display: none !important;
+        }
+
+        body.prediction-live-mode .top-info-bar,
+        body.prediction-live-mode .steps-wrapper,
+        body.prediction-live-mode .tabs-bar,
+        body.prediction-live-mode .groups-view,
+        body.prediction-live-mode .bracket-view,
+        body.prediction-live-mode .nft-view,
+        body.prediction-live-mode .swap-view,
+        body.prediction-live-mode .market-view,
+        body.prediction-live-mode .how-it-works-section,
+        body.prediction-live-mode .prediction-history-section,
+        body.prediction-live-mode .made-by-section {
+            display: none !important;
+        }
+
+        body.prediction-live-mode .prediction-live-view {
+            display: block !important;
+        }
+
+        .nft-stage,
+        .market-stage {
+            width: min(1480px, calc(100% - 28px));
+            margin: 0 auto 90px;
+            padding: 22px;
+            border-radius: 28px;
+            background:
+                radial-gradient(circle at 50% -10%, rgba(77, 163, 255, 0.18), transparent 42%),
+                linear-gradient(180deg, rgba(245, 239, 224, 0.82), rgba(225, 215, 196, 0.64));
+            border: 1px solid rgba(138, 116, 75, 0.28);
+            box-shadow:
+                0 28px 70px rgba(0, 0, 0, 0.18),
+                inset 0 1px 0 rgba(255, 255, 255, 0.45);
+            position: relative;
+            z-index: 4;
+        }
+
+        .nft-stage-header,
+        .market-stage-header {
+            margin-bottom: 18px;
+        }
+
+        .nft-stage-header p,
+        .market-stage-header p {
+            max-width: 650px;
+            margin-top: 10px;
+            color: #3a352f;
+            font-size: 13px;
+            font-weight: 850;
+            line-height: 1.5;
+        }
+
+        .prediction-live-view {
+            display: none;
+            width: min(100%, 1540px);
+            margin: 26px auto 70px;
+            padding: 0;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            color: #f7ebc8;
+        }
+
+        .prediction-live-shell {
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            width: 100%;
+        }
+
+        .prediction-live-stack {
+            display: grid;
+            justify-items: center;
+            gap: 12px;
+            width: min(100%, 1180px);
+            margin: 0 auto;
+        }
+
+        .prediction-live-cadre {
+            width: fit-content;
+            min-height: 0;
+            padding: 6px 10px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(244, 244, 244, 0.95));
+            border: 1px solid rgba(255, 255, 255, 0.88);
+            box-shadow:
+                0 12px 24px rgba(0, 0, 0, 0.18),
+                0 0 24px rgba(255, 255, 255, 0.26),
+                0 0 42px rgba(255, 255, 255, 0.14),
+                inset 0 1px 0 rgba(255, 255, 255, 0.92);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .prediction-live-cadre::before {
+            content: "";
+            position: absolute;
+            inset: -18%;
+            border-radius: inherit;
+            background:
+                radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.56) 24%, transparent 62%),
+                radial-gradient(circle at 50% 70%, rgba(255, 255, 255, 0.34) 0%, transparent 60%);
+            filter: blur(12px);
+            opacity: 0.58;
+            pointer-events: none;
+        }
+
+        .prediction-live-cadre .prediction-live-image {
+            display: block;
+            width: clamp(94px, 7vw, 126px);
+            height: auto;
+            object-fit: contain;
+            border-radius: 0;
+            position: relative;
+            z-index: 1;
+            filter: drop-shadow(0 0 8px rgba(255, 255, 255, 0.28));
+        }
+
+        .prediction-live-cadre.prediction-live-cadre-bundesliga {
+            width: calc(clamp(94px, 7vw, 126px) + 22px);
+            height: 60px;
+            min-width: 0;
+            min-height: 0;
+            aspect-ratio: auto;
+            padding: 6px 10px;
+            border-radius: 14px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 246, 246, 0.97));
+            border: 1px solid rgba(255, 255, 255, 0.90);
+            box-shadow:
+                0 12px 24px rgba(0, 0, 0, 0.18),
+                0 0 24px rgba(255, 255, 255, 0.26),
+                inset 0 1px 0 rgba(255, 255, 255, 0.92);
+        }
+
+        .prediction-live-cadre.prediction-live-cadre-bundesliga::before {
+            background:
+                radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.56) 24%, transparent 62%);
+            opacity: 0.58;
+            filter: blur(12px);
+        }
+
+        .prediction-live-cadre.prediction-live-cadre-bundesliga .prediction-live-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            transform: scale(1.72);
+            transform-origin: center;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.12));
+        }
+
+        .prediction-live-cadre.prediction-live-cadre-seriea {
+            width: calc(clamp(94px, 7vw, 126px) + 22px);
+            height: 60px;
+            min-width: 0;
+            min-height: 0;
+            aspect-ratio: auto;
+            padding: 6px 10px;
+            border-radius: 14px;
+            background:
+                linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(246, 246, 246, 0.97));
+            border: 1px solid rgba(255, 255, 255, 0.90);
+            box-shadow:
+                0 12px 24px rgba(0, 0, 0, 0.18),
+                0 0 24px rgba(255, 255, 255, 0.26),
+                inset 0 1px 0 rgba(255, 255, 255, 0.92);
+        }
+
+        .prediction-live-cadre.prediction-live-cadre-seriea::before {
+            background:
+                radial-gradient(circle at 50% 35%, rgba(255, 255, 255, 0.96) 0%, rgba(255, 255, 255, 0.56) 24%, transparent 62%);
+            opacity: 0.58;
+            filter: blur(12px);
+        }
+
+        .prediction-live-cadre.prediction-live-cadre-seriea .prediction-live-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            filter: drop-shadow(0 2px 5px rgba(0, 0, 0, 0.12));
+        }
+
+        .prediction-live-match-board {
+            width: min(100%, 820px);
+            padding: 14px;
+            border-radius: 16px;
+            background:
+                linear-gradient(180deg, rgba(14, 17, 24, 0.98), rgba(9, 11, 15, 0.98));
+            border: 1px solid rgba(118, 132, 156, 0.16);
+            box-shadow:
+                0 18px 36px rgba(0, 0, 0, 0.26),
+                0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+        }
+
+        .prediction-live-match-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .prediction-live-match-head span {
+            color: rgba(170, 180, 192, 0.86);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+        }
+
+        .prediction-live-match-list {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr);
+            gap: 12px;
+        }
+
+        .prediction-live-match-card {
+            padding: 11px 12px 12px;
+            border-radius: 14px;
+            min-height: 0;
+            background:
+                linear-gradient(180deg, rgba(23, 27, 35, 0.98), rgba(15, 18, 24, 0.98));
+            border: 1px solid rgba(112, 124, 142, 0.14);
+            box-shadow:
+                inset 0 1px 0 rgba(255, 255, 255, 0.02),
+                0 8px 18px rgba(0, 0, 0, 0.14);
+        }
+
+        .prediction-live-match-teams {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+        }
+
+        .prediction-live-team {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            min-width: 0;
+            width: 100%;
+        }
+
+        .prediction-live-team.right {
+            flex-direction: row-reverse;
+            text-align: right;
+        }
+
+        .prediction-live-team-logo {
+            width: 44px;
+            height: 44px;
+            flex: 0 0 44px;
+            border-radius: 0;
+            display: grid;
+            place-items: center;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            overflow: visible;
+        }
+
+        .prediction-live-team-logo img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            object-position: center;
+            display: block;
+            padding: 0;
+            box-sizing: border-box;
+            filter:
+                saturate(1.16)
+                contrast(1.10)
+                brightness(1.08)
+                drop-shadow(0 2px 5px rgba(0, 0, 0, 0.32));
+        }
+
+        .prediction-live-team-logo-text {
+            color: #eef3fb;
+            font-size: 9px;
+            font-weight: 900;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+        }
+
+        .prediction-live-team-logo-fallback {
+            display: none;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            color: #f5f0e6;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0;
+            text-transform: uppercase;
+            background:
+                radial-gradient(circle at 50% 18%, rgba(183, 232, 219, 0.12), transparent 48%),
+                linear-gradient(180deg, rgba(20, 24, 30, 0.98), rgba(5, 7, 11, 0.98));
+        }
+
+        .prediction-live-team-logo.logo-failed img {
+            display: none;
+        }
+
+        .prediction-live-team-logo.logo-failed .prediction-live-team-logo-fallback {
+            display: flex;
+        }
+
+        .prediction-live-team-name {
+            color: #e8edf5;
+            font-size: 10px;
+            font-weight: 800;
+            line-height: 1.15;
+            letter-spacing: 0.008em;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .prediction-live-vs {
+            align-self: center;
+            color: rgba(172, 182, 196, 0.82);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            white-space: nowrap;
+        }
+
+        .prediction-live-match-meta {
+            display: grid;
+            gap: 7px;
+            margin-top: 9px;
+            padding-top: 9px;
+            border-top: 1px solid rgba(118, 132, 156, 0.12);
+        }
+
+        .prediction-live-match-time {
+            color: rgba(219, 226, 236, 0.78);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.025em;
+            margin-bottom: 6px;
+        }
+
+        .prediction-live-match-odds {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 7px;
+            color: #dbe8ff;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .prediction-live-odd-btn {
+            appearance: none;
+            border: 1px solid rgba(112, 124, 142, 0.20);
+            background: linear-gradient(180deg, rgba(39, 44, 54, 0.98), rgba(27, 31, 39, 0.98));
+            color: #e8eef7;
+            font-size: 10px;
+            font-weight: 800;
+            padding: 8px 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .prediction-live-odd-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(145, 157, 172, 0.34);
+            box-shadow: 0 7px 14px rgba(0, 0, 0, 0.14);
+        }
+
+        .prediction-live-odd-btn.active {
+            background: linear-gradient(180deg, rgba(78, 90, 108, 0.96), rgba(43, 49, 59, 0.98));
+            border-color: rgba(178, 190, 206, 0.42);
+            color: #ffffff;
+        }
+
+        .prediction-live-odd-btn:focus-visible {
+            outline: 2px solid rgba(152, 190, 255, 0.75);
+            outline-offset: 2px;
+        }
+
+        .prediction-live-bet-row {
+            display: grid;
+            gap: 7px;
+        }
+
+        .prediction-live-bet-label {
+            color: rgba(213, 220, 232, 0.76);
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+        }
+
+        .prediction-live-bet-input {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 11px;
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(28, 32, 39, 0.98), rgba(18, 21, 26, 0.98));
+            border: 1px solid rgba(112, 124, 142, 0.16);
+        }
+
+        .prediction-live-bet-input input {
+            flex: 1;
+            min-width: 0;
+            border: 0;
+            outline: 0;
+            background: transparent;
+            color: #ffffff;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .prediction-live-bet-input input::placeholder {
+            color: rgba(211, 226, 255, 0.40);
+        }
+
+        .prediction-live-bet-currency {
+            color: #b8c3d2;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 0.10em;
+            text-transform: uppercase;
+        }
+
+        .prediction-live-confirm-btn {
+            width: 100%;
+            height: 32px;
+            border: 1px solid rgba(112, 124, 142, 0.18);
+            border-radius: 10px;
+            background: linear-gradient(180deg, rgba(38, 44, 53, 0.96), rgba(19, 22, 28, 0.98));
+            color: rgba(219, 232, 255, 0.72);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            cursor: not-allowed;
+            transition: transform 0.18s ease, background 0.18s ease, border-color 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .prediction-live-confirm-btn.enabled {
+            cursor: pointer;
+            color: #ffffff;
+            border-color: rgba(176, 188, 203, 0.34);
+            background: linear-gradient(180deg, rgba(68, 78, 92, 0.96), rgba(30, 34, 40, 0.98));
+            box-shadow: 0 8px 14px rgba(0, 0, 0, 0.14);
+        }
+
+        .prediction-live-confirm-btn.enabled:hover {
+            transform: translateY(-1px);
+        }
+
+        .prediction-live-confirm-btn.confirmed {
+            cursor: not-allowed;
+            color: #06231d;
+            border-color: rgba(178, 235, 220, 0.68);
+            background: linear-gradient(180deg, #c3f3e7 0%, #aee5d8 48%, #9ed8ca 100%);
+            box-shadow:
+                0 10px 22px rgba(158, 216, 202, 0.20),
+                inset 0 1px 0 rgba(255, 255, 255, 0.52);
+        }
+
+        .prediction-live-confirm-btn:focus-visible {
+            outline: 2px solid rgba(152, 190, 255, 0.75);
+            outline-offset: 2px;
+        }
+
+        .prediction-live-match-note {
+            margin-top: 10px;
+            color: rgba(235, 242, 255, 0.62);
+            font-size: 11px;
+            line-height: 1.45;
+        }
+
+        .prediction-live-history-panel {
+            width: min(920px, calc(100% - 32px));
+            margin: 18px auto 96px;
+            padding: 18px;
+            border-radius: 24px;
+            background:
+                radial-gradient(circle at 18% 0%, rgba(156, 206, 186, 0.10), transparent 34%),
+                linear-gradient(180deg, rgba(18, 22, 20, 0.78), rgba(8, 10, 10, 0.92));
+            border: 1px solid rgba(245, 240, 230, 0.11);
+            box-shadow:
+                0 24px 56px rgba(0, 0, 0, 0.30),
+                inset 0 1px 0 rgba(245, 240, 230, 0.06);
+            backdrop-filter: blur(18px);
+        }
+
+        .prediction-live-history-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 14px;
+            margin-bottom: 14px;
+            color: rgba(245, 240, 230, 0.88);
+            font-size: 12px;
+            font-weight: 900;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+        }
+
+        .prediction-live-history-title span:last-child {
+            color: rgba(170, 220, 199, 0.78);
+            font-size: 10px;
+            letter-spacing: 0.10em;
+        }
+
+        .prediction-live-history-list {
+            display: grid;
+            gap: 9px;
+        }
+
+        .prediction-live-history-empty,
+        .prediction-live-history-item {
+            border-radius: 15px;
+            border: 1px solid rgba(245, 240, 230, 0.09);
+            background: rgba(14, 17, 18, 0.76);
+            color: rgba(245, 240, 230, 0.62);
+            font-size: 11px;
+            font-weight: 700;
+        }
+
+        .prediction-live-history-empty {
+            padding: 14px;
+            text-align: center;
+        }
+
+        .prediction-live-history-item {
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) auto;
+            gap: 10px;
+            align-items: center;
+            padding: 12px 14px;
+        }
+
+        .prediction-live-history-main {
+            display: grid;
+            gap: 4px;
+            min-width: 0;
+        }
+
+        .prediction-live-history-match {
+            color: rgba(245, 240, 230, 0.88);
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .prediction-live-history-time {
+            color: rgba(161, 161, 170, 0.86);
+            font-size: 10px;
+        }
+
+        .prediction-live-history-side {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .prediction-live-history-odd,
+        .prediction-live-history-amount {
+            border-radius: 999px;
+            padding: 8px 12px;
+            font-size: 11px;
+            font-weight: 900;
+            white-space: nowrap;
+        }
+
+        .prediction-live-history-odd {
+            background: rgba(31, 35, 45, 0.92);
+            border: 1px solid rgba(245, 240, 230, 0.12);
+            color: rgba(245, 240, 230, 0.82);
+        }
+
+        .prediction-live-history-amount {
+            background: rgba(29, 38, 44, 0.90);
+            border: 1px solid rgba(170, 220, 199, 0.20);
+            color: rgba(202, 244, 225, 0.92);
+        }
+
+        .nft-collection-grid {
+            display: grid;
+            grid-template-columns: repeat(5, minmax(0, 1fr));
+            gap: 14px;
+            perspective: 1200px;
+        }
+
+        .nft-player-card {
+            padding: 9px;
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(0, 255, 132, 0.12), transparent 34%),
+                linear-gradient(180deg, #191919 0%, #070707 100%);
+            border: 1px solid rgba(77, 163, 255, 0.50);
+            box-shadow:
+                0 18px 36px rgba(0, 0, 0, 0.34),
+                0 0 20px rgba(77, 163, 255, 0.10);
+            transform-style: preserve-3d;
+            transition:
+                transform 0.22s ease,
+                box-shadow 0.22s ease,
+                border-color 0.22s ease;
+        }
+
+        .nft-player-card:hover {
+            border-color: rgba(0, 255, 132, 0.72);
+            box-shadow:
+                0 30px 60px rgba(0, 0, 0, 0.48),
+                0 0 34px rgba(0, 255, 132, 0.18);
+        }
+
+        .nft-player-image {
+            aspect-ratio: 432 / 648;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #050505;
+            border: 1px solid rgba(77, 163, 255, 0.18);
+        }
+
+        .nft-player-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .nft-player-info {
+            padding: 9px 3px 3px;
+        }
+
+        .nft-player-info strong {
+            display: block;
+            color: #efe2bd;
+            font-size: 14px;
+            font-weight: 950;
+            line-height: 1.05;
+            margin-bottom: 4px;
+        }
+
+        .nft-player-info span {
+            display: block;
+            color: #4DA3FF;
+            font-size: 10px;
+            font-weight: 900;
+        }
+
+        .nft-mint-btn {
+            width: 100%;
+            height: 34px;
+            margin-top: 10px;
+            border-radius: 999px;
+            border: 1px solid rgba(77, 163, 255, 0.78);
+            background: linear-gradient(180deg, #efe2bd, #4DA3FF);
+            color: #050505;
+            font-size: 10px;
+            font-weight: 950;
+            cursor: pointer;
+        }
+
+        .nft-mint-btn:disabled {
+            opacity: 0.72;
+            cursor: not-allowed;
+            filter: saturate(0.82);
+        }
+
+        .ticket-success-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background:
+                radial-gradient(circle at 50% 45%, rgba(77, 163, 255, 0.18), transparent 34%),
+                radial-gradient(circle at 20% 20%, rgba(120, 70, 255, 0.20), transparent 34%),
+                radial-gradient(circle at 80% 80%, rgba(0, 255, 132, 0.14), transparent 30%),
+                rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(14px);
+        }
+
+        .ticket-success-overlay.hidden {
+            display: none !important;
+        }
+
+        .market-stage-header-rich {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 16px;
+        }
+
+        .market-create-hero-btn,
+        .market-create-side-btn,
+        .market-open-token-btn,
+        .market-submit-create,
+        .market-trade-btn,
+        .market-back-btn {
+            height: 40px;
+            padding: 0 16px;
+            border: 1px solid rgba(77, 163, 255, 0.72);
+            border-radius: 14px;
+            background: linear-gradient(180deg, #151515 0%, #050505 100%);
+            color: #efe2bd;
+            font-size: 11px;
+            font-weight: 950;
+            cursor: pointer;
+            box-shadow:
+                0 10px 20px rgba(0, 0, 0, 0.20),
+                0 0 14px rgba(77, 163, 255, 0.12);
+            transition: transform 0.22s ease, box-shadow 0.22s ease, border-color 0.22s ease;
+        }
+
+        .market-create-hero-btn:hover,
+        .market-create-side-btn:hover,
+        .market-open-token-btn:hover,
+        .market-submit-create:hover,
+        .market-trade-btn:hover,
+        .market-back-btn:hover {
+            transform: translateY(-2px);
+            border-color: rgba(77, 163, 255, 0.82);
+            box-shadow:
+                0 14px 28px rgba(0, 0, 0, 0.28),
+                0 0 18px rgba(77, 163, 255, 0.20);
+        }
+
+        .market-trending-strip {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: max-content;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            margin-bottom: 16px;
+        }
+
+        .market-trending-chip {
+            min-height: 34px;
+            padding: 0 12px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #171717 0%, #070707 100%);
+            border: 1px solid rgba(77, 163, 255, 0.26);
+            box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18);
+        }
+
+        .market-trending-chip span {
+            color: #00ff84;
+            font-size: 9px;
+            font-weight: 950;
+            letter-spacing: 0.8px;
+        }
+
+        .market-trending-chip strong {
+            color: #efe2bd;
+            font-size: 11px;
+            font-weight: 950;
+        }
+
+        .market-trending-chip small {
+            color: #4DA3FF;
+            font-size: 10px;
+            font-weight: 850;
+        }
+
+        .market-shell {
+            display: grid;
+            grid-template-columns: 1.45fr 0.55fr;
+            gap: 16px;
+        }
+
+        .market-board,
+        .market-side-launch,
+        .market-token-summary,
+        .market-chart-card,
+        .market-feed-card,
+        .market-trade-panel,
+        .market-create-sheet {
+            border-radius: 22px;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(0, 255, 132, 0.08), transparent 34%),
+                linear-gradient(180deg, #171717 0%, #080808 100%);
+            border: 1px solid rgba(77, 163, 255, 0.24);
+            box-shadow:
+                0 18px 36px rgba(0, 0, 0, 0.26),
+                inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+
+        .market-board,
+        .market-side-launch {
+            padding: 18px;
+        }
+
+        .market-toolbar {
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 14px;
+        }
+
+        .market-filter-btn {
+            height: 34px;
+            padding: 0 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(77, 163, 255, 0.28);
+            background: rgba(15, 15, 15, 0.96);
+            color: #efe2bd;
+            font-size: 11px;
+            font-weight: 900;
+            cursor: pointer;
+        }
+
+        .market-filter-btn.active {
+            background: linear-gradient(180deg, #efe2bd 0%, #4DA3FF 100%);
+            color: #080808;
+            border-color: rgba(77, 163, 255, 0.72);
+        }
+
+        .market-token-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 14px;
+        }
+
+        .market-token-card {
+            overflow: hidden;
+            border-radius: 20px;
+            background:
+                radial-gradient(circle at 50% 0%, rgba(0, 255, 132, 0.08), transparent 34%),
+                linear-gradient(180deg, #191919 0%, #070707 100%);
+            border: 1px solid rgba(77, 163, 255, 0.26);
+            box-shadow: 0 14px 30px rgba(0, 0, 0, 0.26);
+        }
+
+        .market-token-media {
+            position: relative;
+            aspect-ratio: 1 / 0.78;
+            padding: 18px;
+            display: flex;
+            align-items: flex-end;
+            overflow: hidden;
+            background:
+                radial-gradient(circle at 20% 18%, rgba(77, 163, 255, 0.18), transparent 24%),
+                radial-gradient(circle at 82% 88%, rgba(0, 255, 132, 0.18), transparent 24%),
+                linear-gradient(140deg, #111111 0%, #050505 100%);
+        }
+
+        .market-token-media::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(5, 5, 5, 0.10) 0%, rgba(5, 5, 5, 0.24) 56%, rgba(5, 5, 5, 0.48) 100%);
+            pointer-events: none;
+        }
+
+        .market-token-cover {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0.72;
+        }
+
+        .market-token-orb,
+        .market-detail-orb {
+            width: 72px;
+            height: 72px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            background:
+                radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.22), transparent 30%),
+                linear-gradient(180deg, #2b2b2b 0%, #0d0d0d 100%);
+            border: 1px solid rgba(77, 163, 255, 0.24);
+            color: #efe2bd;
+            font-size: 18px;
+            font-weight: 950;
+            box-shadow:
+                0 10px 24px rgba(0, 0, 0, 0.28),
+                0 0 16px rgba(77, 163, 255, 0.12);
+        }
+
+        .market-detail-orb.is-hidden {
+            display: none !important;
+        }
+
+        .market-token-orb,
+        .market-token-badge {
+            z-index: 2;
+        }
+
+        .market-token-badge {
+            position: absolute;
+            top: 12px;
+            left: 12px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(5, 5, 5, 0.86);
+            border: 1px solid rgba(77, 163, 255, 0.16);
+            color: #efe2bd;
+            font-size: 10px;
+            font-weight: 950;
+        }
+
+        .market-token-body {
+            padding: 12px;
+        }
+
+        .market-token-body strong {
+            display: block;
+            color: #efe2bd;
+            font-size: 15px;
+            font-weight: 950;
+            margin-bottom: 4px;
+        }
+
+        .market-token-body p {
+            color: rgba(77, 163, 255, 0.68);
+            font-size: 11px;
+            font-weight: 800;
+            line-height: 1.5;
+            min-height: 48px;
+            margin-bottom: 10px;
+        }
+
+        .market-token-stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .market-token-stat {
+            padding: 7px 8px;
+            border-radius: 12px;
+            background: rgba(77, 163, 255, 0.06);
+            border: 1px solid rgba(77, 163, 255, 0.08);
+        }
+
+        .market-token-stat span {
+            display: block;
+            color: rgba(77, 163, 255, 0.56);
+            font-size: 9px;
+            font-weight: 850;
+            margin-bottom: 3px;
+        }
+
+        .market-token-stat strong {
+            display: block;
+            color: #efe2bd;
+            font-size: 11px;
+            font-weight: 950;
+            margin: 0;
+        }
+
+        .market-side-launch {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            min-height: 100%;
+        }
+
+        .market-side-launch strong {
+            display: block;
+            color: #efe2bd;
+            font-size: 22px;
+            font-weight: 950;
+            margin-bottom: 8px;
+        }
+
+        .market-side-launch p {
+            color: rgba(77, 163, 255, 0.72);
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.6;
+            margin-bottom: 16px;
+        }
+
+        .market-panel-kicker {
+            display: inline-flex;
+            margin-bottom: 8px;
+            color: #4DA3FF;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1.2px;
+            text-transform: uppercase;
+        }
+
+        .market-launch-points {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            list-style: none;
+            margin-bottom: 18px;
+        }
+
+        .market-launch-points li {
+            color: #efe2bd;
+            font-size: 11px;
+            font-weight: 850;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(77, 163, 255, 0.06);
+            border: 1px solid rgba(77, 163, 255, 0.08);
+        }
+
+        .market-token-screen-top {
+            margin-bottom: 14px;
+        }
+
+        .market-token-screen-grid {
+            display: grid;
+            grid-template-columns: 0.9fr 1.45fr 0.5fr;
+            gap: 18px;
+        }
+
+        .market-token-summary,
+        .market-chart-card,
+        .market-feed-card,
+        .market-trade-panel {
+            padding: 18px;
+        }
+
+        .market-detail-head {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 14px;
+        }
+
+        .market-detail-kicker {
+            display: inline-flex;
+            margin-bottom: 6px;
+            color: #4DA3FF;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .market-detail-copy strong {
+            display: block;
+            color: #efe2bd;
+            font-size: 26px;
+            font-weight: 950;
+            margin-bottom: 8px;
+        }
+
+        .market-detail-copy p {
+            color: rgba(77, 163, 255, 0.72);
+            font-size: 12px;
+            font-weight: 800;
+            line-height: 1.6;
+        }
+
+        .market-detail-stats {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 10px;
+        }
+
+        .market-detail-stat {
+            padding: 12px;
+            border-radius: 14px;
+            background: rgba(77, 163, 255, 0.06);
+            border: 1px solid rgba(77, 163, 255, 0.08);
+        }
+
+        .market-detail-stat span {
+            display: block;
+            color: rgba(77, 163, 255, 0.56);
+            font-size: 10px;
+            font-weight: 850;
+            margin-bottom: 5px;
+        }
+
+        .market-detail-stat strong {
+            display: block;
+            color: #efe2bd;
+            font-size: 14px;
+            font-weight: 950;
+        }
+
+        .market-chart-head,
+        .market-feed-head,
+        .market-trade-head,
+        .market-create-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .market-chart-head strong,
+        .market-feed-head strong,
+        .market-trade-head strong,
+        .market-create-head strong {
+            color: #efe2bd;
+            font-size: 16px;
+            font-weight: 950;
+        }
+
+        .market-chart-head span,
+        .market-feed-head span,
+        .market-trade-head span,
+        .market-create-head span {
+            color: #4DA3FF;
+            font-size: 10px;
+            font-weight: 850;
+        }
+
+        .market-chart-visual {
+            height: 430px;
+            padding: 16px 10px 10px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+            border-radius: 18px;
+            background:
+                linear-gradient(180deg, rgba(77, 163, 255, 0.04), rgba(77, 163, 255, 0.02)),
+                linear-gradient(180deg, #101010 0%, #050505 100%);
+            border: 1px solid rgba(77, 163, 255, 0.08);
+        }
+
+        .market-chart-bar {
+            flex: 1;
+            min-width: 10px;
+            border-radius: 999px 999px 4px 4px;
+            background: linear-gradient(180deg, #efe2bd 0%, #4DA3FF 100%);
+            box-shadow: 0 0 10px rgba(77, 163, 255, 0.18);
+        }
+
+        .market-chart-bar.alt {
+            background: linear-gradient(180deg, #00ff84 0%, #13864e 100%);
+            box-shadow: 0 0 12px rgba(0, 255, 132, 0.18);
+        }
+
+        .market-feed-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .market-feed-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            background: rgba(77, 163, 255, 0.06);
+            border: 1px solid rgba(77, 163, 255, 0.08);
+        }
+
+        .market-feed-row strong {
+            color: #efe2bd;
+            font-size: 11px;
+            font-weight: 950;
+        }
+
+        .market-feed-row span {
+            color: #4DA3FF;
+            font-size: 10px;
+            font-weight: 850;
+        }
+
+        .market-trade-amount {
+            width: 100%;
+            height: 42px;
+            margin-bottom: 10px;
+            padding: 0 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(77, 163, 255, 0.24);
+            background: linear-gradient(180deg, #121212 0%, #080808 100%);
+            color: #efe2bd;
+            font-size: 13px;
+            font-weight: 850;
+            outline: none;
+        }
+
+        .market-trade-amount:focus {
+            border-color: rgba(77, 163, 255, 0.72);
+            box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.10);
+        }
+
+        .market-trade-btnrow {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .market-trade-btn.sell {
+            background: linear-gradient(180deg, #2a1212 0%, #120707 100%);
+            border-color: rgba(255, 107, 107, 0.42);
+            color: #ffd0d0;
+        }
+
+        .market-trade-status {
+            margin-top: 10px;
+            color: rgba(77, 163, 255, 0.68);
+            font-size: 10px;
+            font-weight: 850;
+            line-height: 1.5;
+        }
+
+        .market-create-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 999999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: blur(10px);
+        }
+
+        .market-create-sheet {
+            width: min(720px, 100%);
+            padding: 20px;
+        }
+
+        .market-create-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .market-create-field {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .market-create-field.full {
+            grid-column: 1 / -1;
+        }
+
+        .market-create-field span {
+            color: #cfc2a3;
+            font-size: 10px;
+            font-weight: 900;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .market-create-field input,
+        .market-create-field textarea {
+            width: 100%;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid rgba(77, 163, 255, 0.24);
+            background: linear-gradient(180deg, #121212 0%, #080808 100%);
+            color: #efe2bd;
+            font-size: 12px;
+            font-weight: 850;
+            outline: none;
+        }
+
+        .market-create-field textarea {
+            min-height: 110px;
+            resize: vertical;
+        }
+
+        .market-create-field input:focus,
+        .market-create-field textarea:focus {
+            border-color: rgba(77, 163, 255, 0.72);
+            box-shadow: 0 0 0 3px rgba(77, 163, 255, 0.10);
+        }
+
+        .market-create-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .market-create-status {
+            color: rgba(77, 163, 255, 0.68);
+            font-size: 10px;
+            font-weight: 850;
+            line-height: 1.5;
+        }
+
+        .market-file-picker {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            min-height: 54px;
+            padding: 10px 12px;
+            border-radius: 16px;
+            border: 1px solid rgba(77, 163, 255, 0.18);
+            background: linear-gradient(180deg, #111827 0%, #0b1220 100%);
+        }
+
+        .market-file-picker .market-file-input {
+            position: absolute !important;
+            width: 1px !important;
+            height: 1px !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
+        .market-file-picker-btn {
+            min-width: 128px;
+            height: 36px;
+            padding: 0 14px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 12px;
+            border: 1px solid rgba(94, 234, 212, 0.26);
+            background: linear-gradient(135deg, #5eead4 0%, #60a5fa 100%);
+            color: #0b1220;
+            font-size: 11px;
+            font-weight: 950;
+            cursor: pointer;
+            box-shadow: 0 10px 18px rgba(96, 165, 250, 0.12);
+            transition: transform 0.22s ease, box-shadow 0.22s ease;
+        }
+
+        .market-file-picker-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 24px rgba(96, 165, 250, 0.16);
+        }
+
+        .market-file-picker-name {
+            min-width: 0;
+            color: rgba(77, 163, 255, 0.82);
+            font-size: 11px;
+            font-weight: 850;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        @media (max-width: 1320px) {
+            .nft-collection-grid {
+                grid-template-columns: repeat(4, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 1180px) {
+            .market-shell,
+            .market-token-screen-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .market-token-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 980px) {
+            .nft-collection-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+
+            .prediction-live-match-list {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 720px) {
+            .how-extra-flow {
+                grid-template-columns: 1fr;
+                width: 100%;
+            }
+
+            .how-extra-flow .how-step {
+                min-height: auto;
+            }
+
+            .top-page-switcher {
+                margin-top: 0;
+                flex-direction: column;
+                border-radius: 22px;
+            }
+
+            .top-page-btn,
+            .market-create-hero-btn,
+            .market-create-side-btn,
+            .market-open-token-btn,
+            .market-submit-create,
+            .market-trade-btn,
+            .market-back-btn {
+                width: 100%;
+            }
+
+            .market-stage-header-rich,
+            .market-create-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .market-create-grid,
+            .market-token-grid,
+            .market-detail-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 560px) {
+            .nft-collection-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+    <link rel="stylesheet" href="final-overrides.css?v=20260813-5">
+</head>
+<body class="home-mode">
+
+    <div class="wallet-lock-overlay" id="wallet-lock-overlay">
+        <div class="wallet-lock-card">
+            <div class="lock-icon">
+                <svg viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="4" y="10" width="16" height="10" rx="2"></rect>
+                    <path d="M8 10V7a4 4 0 0 1 8 0v3"></path>
+                    <path d="M12 14v3"></path>
+                </svg>
+            </div>
+
+            <div class="lock-title">Connect Wallet</div>
+
+            <div class="lock-text">
+                Connect your wallet to unlock Rialo PM.
+            </div>
+
+            <button class="lock-connect-btn" id="lock-connect-btn">
+                <svg class="lock-wallet-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+                    <path d="M3 7.5C3 6.39543 3.89543 5.5 5 5.5H18.5C19.3284 5.5 20 6.17157 20 7V8.5H16.5C14.8431 8.5 13.5 9.84315 13.5 11.5C13.5 13.1569 14.8431 14.5 16.5 14.5H20V16.5C20 17.6046 19.1046 18.5 18 18.5H5C3.89543 18.5 3 17.6046 3 16.5V7.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M16.5 9H21V14H16.5C15.1193 14 14 12.8807 14 11.5C14 10.1193 15.1193 9 16.5 9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <circle cx="17.5" cy="11.5" r="0.9" fill="currentColor"/>
+                </svg>
+                <span>Connect Wallet</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="mouse-glow" id="mouse-glow"></div>
+
+    <div class="bg-scene" aria-hidden="true">
+        <div class="bg-blur-layer"></div>
+        <div class="aura aura-center"></div>
+        <div class="aura aura-left"></div>
+        <div class="aura aura-right"></div>
+
+        <div class="soft-particles">
+            <span class="particle p1"></span>
+            <span class="particle p2"></span>
+            <span class="particle p3"></span>
+            <span class="particle p4"></span>
+            <span class="particle p5"></span>
+            <span class="particle p6"></span>
+            <span class="particle p7"></span>
+            <span class="particle p8"></span>
+            <span class="particle p9"></span>
+            <span class="particle p10"></span>
+        </div>
+    </div>
+
+    <header class="site-navbar">
+        <div class="logo-brand-wrap">
+            <img src="rialo-logo.png" class="brand-logo" alt="Rialo Logo">
+
+            <div class="brand-text"><img src="rialo-title.png" class="brand-title-img" alt="RIALO PM"><span class="brand-name brand-name-fallback">RIALO PM</span></div>
+        </div>
+
+        <nav class="top-page-switcher" aria-label="Page switcher">
+            <button class="top-page-btn home-page-btn active" id="home-page-btn" type="button">
+                Home
+            </button>
+
+            <button class="top-page-btn prediction-live-page-btn" id="prediction-live-page-btn" type="button">
+                Prediction Live
+            </button>
+
+            <button class="top-page-btn prediction-page-btn" id="prediction-page-btn" type="button">
+                Predictions
+            </button>
+
+            <button class="top-page-btn nft-page-btn" id="nft-page-btn" type="button">
+                NFT Collection
+            </button>
+
+            <button class="top-page-btn swap-page-btn" id="swap-page-btn" type="button">
+                Swap
+            </button>
+
+            <button class="top-page-btn market-page-btn" id="market-page-btn" type="button">
+                Meme Market
+            </button>
+        </nav>
+
+        <div class="wallet-area">
+            <button id="connect-wallet">
+                <svg class="wallet-svg" viewBox="0 0 24 24" aria-hidden="true" fill="none">
+                    <path d="M3 7.5C3 6.39543 3.89543 5.5 5 5.5H18.5C19.3284 5.5 20 6.17157 20 7V8.5H16.5C14.8431 8.5 13.5 9.84315 13.5 11.5C13.5 13.1569 14.8431 14.5 16.5 14.5H20V16.5C20 17.6046 19.1046 18.5 18 18.5H5C3.89543 18.5 3 17.6046 3 16.5V7.5Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <path d="M16.5 9H21V14H16.5C15.1193 14 14 12.8807 14 11.5C14 10.1193 15.1193 9 16.5 9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/>
+                    <circle cx="17.5" cy="11.5" r="0.9" fill="currentColor"/>
+                </svg>
+                <span>Connect Wallet</span>
+            </button>
+
+            <div class="wallet-status" id="wallet-status">Wallet not connected</div>
+
+            <div class="twitter-username-box hidden" id="twitter-username-box">
+                <div class="twitter-username-label">
+                    <span>X Username</span>
+                    <small>Required</small>
+                </div>
+
+                <div class="twitter-input-wrap">
+                    <span class="twitter-at">@</span>
+                    <input
+                        type="text"
+                        id="twitter-username-input"
+                        placeholder="yourusername"
+                        autocomplete="off"
+                        maxlength="32"
+                    >
+                </div>
+
+                <button class="twitter-confirm-btn" id="twitter-confirm-btn" type="button">
+                    Confirm
+                </button>
+
+                <div class="twitter-save-status" id="twitter-save-status">
+                    Enter your X username, then confirm.
+                </div>
+            </div>
+        </div>
+        <button class="mobile-menu-toggle" id="mobile-menu-toggle" type="button" aria-label="Open navigation menu" aria-expanded="false">
+            <span></span>
+            <span></span>
+            <span></span>
+        </button>
+    </header>
+
+    <section class="view-section prediction-live-view" id="prediction-live-view">
+        <div class="prediction-live-shell">
+            <div class="prediction-live-stack">
+                <div class="prediction-live-cadre">
+                    <img class="prediction-live-image" src="prediction-live-side.png" alt="LaLiga">
+                </div>
+                <div class="prediction-live-match-board">
+                    <div class="prediction-live-match-head">
+                        <span>Aug 2026</span>
+                    </div>
+                    <div class="prediction-live-match-list">
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 20, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://i.logos-download.com/5616/1244-s640-efe43e08c24354e1ccca30f1456d5300.png/Atl%C3%A9tico_Madrid_Logo_2024-s640.png?dl=" alt="Atlético Madrid logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">ATM</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Atlético Madrid</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://i.logos-download.com/5584/1236-s640-387579369816ca0832a60abf2357e58d.png/M%C3%A1laga_CF_Logo_2003-s640.png?dl=" alt="Málaga CF logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">MLG</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Málaga CF</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.28">1.28</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="5.35">5.35</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="11.00">11.00</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 28, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://i.logos-download.com/5632/1248-s640-908ac3c68e999702160b5cddf1bf2071.png/FC_Barcelona_Logo_2002-s640.png?dl=" alt="FC Barcelona logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">BAR</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Barcelona</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/9/98/Club_Athletic_Bilbao_logo.svg" alt="Athletic Bilbao logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">ATH</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Athletic Bilbao</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.40">1.40</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.94">4.94</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="7.20">7.20</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 27, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://i.logos-download.com/5636/1249-s1280-7795b95bf5c730e159f87e8fb2262f60.png/Real_Madrid_CF_Logo_2001-s1280.png" alt="Real Madrid logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">RMA</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Real Madrid</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://i.logos-download.com/5580/1235-s1280-8654676cd408db4994e51f0c1e5996c5.png/Real_Sociedad_Logo_1997-s1280.png" alt="Real Sociedad logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">RSO</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Real Sociedad</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.41">1.41</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.80">4.80</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="7.30">7.30</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="view-section prediction-live-view" id="prediction-live-premier-view">
+        <div class="prediction-live-shell">
+            <div class="prediction-live-stack">
+                <div class="prediction-live-cadre">
+                    <img class="prediction-live-image" src="prediction-live-side-bottom.png.webp" alt="Premier League">
+                </div>
+                <div class="prediction-live-match-board">
+                    <div class="prediction-live-match-head">
+                        <span>Premier League</span>
+                    </div>
+                    <div class="prediction-live-match-list">
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 23, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg" data-fallback-src="https://logotyp.us/file/newcastle-united.svg" alt="Newcastle United logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">NU</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Newcastle United</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg" data-fallback-src="https://logotyp.us/file/liverpool-fc.svg" alt="Liverpool logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">LIV</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Liverpool</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="3.04">3.04</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="3.82">3.82</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="2.165">2.165</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 25, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/e/eb/Fulham_FC_%28shield%29.svg" data-fallback-src="https://logotyp.us/file/fulham.svg" alt="Fulham logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">FUL</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Fulham</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg" data-fallback-src="https://logotyp.us/file/chelsea.svg" alt="Chelsea logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">CHE</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Chelsea</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="3.10">3.10</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="3.66">3.66</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="2.185">2.185</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 23, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg" data-fallback-src="https://logotyp.us/file/manchester-city.svg" alt="Manchester City logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">MC</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Manchester City</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/e/e5/AFC_Bournemouth_%282013%29.svg" data-fallback-src="https://logotyp.us/file/afc-bournemouth.svg" alt="Bournemouth logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">BOU</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Bournemouth</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.43">1.43</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="5.05">5.05</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="6.30">6.30</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 22, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/5/54/Hull_City_A.F.C._logo.svg" data-fallback-src="https://logotyp.us/file/hull-city.svg" alt="Hull City logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">HUL</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Hull City</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/7/7a/Manchester_United_FC_crest.svg" data-fallback-src="https://logotyp.us/file/manchester-united.svg" alt="Manchester United logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">MU</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Manchester United</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="7.30">7.30</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.50">4.50</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.50">4.50</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 22, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg" data-fallback-src="https://logotyp.us/file/arsenal.svg" alt="Arsenal logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">ARS</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Arsenal</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="team-coventry.svg?v=2" data-fallback-src="team-coventry.svg?v=2" alt="Coventry City logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">COV</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Coventry City</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.15">1.15</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="7.60">7.60</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="18.00">18.00</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="view-section prediction-live-view" id="prediction-live-bundesliga-view">
+        <div class="prediction-live-shell">
+            <div class="prediction-live-stack">
+                <div class="prediction-live-cadre prediction-live-cadre-bundesliga">
+                    <img class="prediction-live-image" src="prediction-live-side-bundesliga-v2.png?v=3" alt="Bundesliga">
+                </div>
+                <div class="prediction-live-match-board">
+                    <div class="prediction-live-match-head">
+                        <span>Bundesliga</span>
+                    </div>
+                    <div class="prediction-live-match-list">
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 23, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/6/67/Borussia_Dortmund_logo.svg" data-fallback-src="https://logotyp.us/file/borussia-dortmund.svg" alt="Borussia Dortmund logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">BVB</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Borussia Dortmund</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg" data-fallback-src="https://logotyp.us/file/bayern-munich.svg" alt="Bayern Munich logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">FCB</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Bayern Munich</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.58">4.58</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.24">4.24</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.67">1.67</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="view-section prediction-live-view" id="prediction-live-seriea-view">
+        <div class="prediction-live-shell">
+            <div class="prediction-live-stack">
+                <div class="prediction-live-cadre prediction-live-cadre-seriea">
+                    <img class="prediction-live-image" src="prediction-live-side-serie-a-v2.png?v=3" alt="Serie A">
+                </div>
+                <div class="prediction-live-match-board">
+                    <div class="prediction-live-match-head">
+                        <span>Serie A</span>
+                    </div>
+                    <div class="prediction-live-match-list">
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 23, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/0/05/FC_Internazionale_Milano_2021.svg" data-fallback-src="https://logotyp.us/file/inter-milan.svg" alt="Internazionale Milano logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">INT</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Internazionale Milano</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="team-monza.svg?v=2" data-fallback-src="team-monza.svg?v=2" alt="Monza 1912 logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">MON</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Monza 1912</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.22">1.22</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="6.40">6.40</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="12.50">12.50</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 24, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/0/0b/Frosinone_Calcio_logo.svg" data-fallback-src="https://logotyp.us/file/frosinone-calcio.svg" alt="Frosinone Calcio logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">FRO</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Frosinone Calcio</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="team-juventus.svg?v=2" data-fallback-src="team-juventus.svg?v=2" alt="Juventus logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">JUV</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Juventus</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="6.90">6.90</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.38">4.38</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.47">1.47</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+
+                        <article class="prediction-live-match-card">
+                            <div class="prediction-live-match-time">August 24, 2026</div>
+                            <div class="prediction-live-match-teams">
+                                <div class="prediction-live-team">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/en/2/2e/Torino_FC_Logo.svg" data-fallback-src="https://logotyp.us/file/torino-fc.svg" alt="Torino logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">TOR</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Torino</div>
+                                </div>
+                                <div class="prediction-live-vs">VS</div>
+                                <div class="prediction-live-team right">
+                                    <div class="prediction-live-team-logo">
+                                        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d0/Logo_of_AC_Milan.svg" data-fallback-src="https://logotyp.us/file/ac-milan.svg" alt="Milan logo" loading="lazy">
+                                        <span class="prediction-live-team-logo-fallback" aria-hidden="true">MIL</span>
+                                    </div>
+                                    <div class="prediction-live-team-name">Milan</div>
+                                </div>
+                            </div>
+                            <div class="prediction-live-match-meta">
+                                <div class="prediction-live-match-odds">
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="4.44">4.44</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="3.72">3.72</button>
+                                    <button class="prediction-live-odd-btn" type="button" data-odd="1.785">1.785</button>
+                                </div>
+                                <div class="prediction-live-bet-row">
+                                    <div class="prediction-live-bet-label">Bet amount</div>
+                                    <div class="prediction-live-bet-input">
+                                        <input type="number" min="0" step="any" placeholder="Enter amount">
+                                        <span class="prediction-live-bet-currency">RLO</span>
+                                    </div>
+                                    <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="view-section prediction-live-view" id="prediction-live-history-live-section">
+        <div class="prediction-live-history-panel">
+            <div class="prediction-live-history-title">
+                <span>Prediction Live History</span>
+                <span id="prediction-live-history-count">0 entries</span>
+            </div>
+            <div class="prediction-live-history-list" id="prediction-live-history-list">
+                <div class="prediction-live-history-empty">No prediction live entries yet.</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="top-info-bar">
+        <div class="info-chip prize-chip">
+            <div class="info-top">
+                <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <path d="M8 21h8"></path>
+                    <path d="M12 17v4"></path>
+                    <path d="M7 4h10v4a5 5 0 0 1-10 0V4Z"></path>
+                    <path d="M5 5H3v2a4 4 0 0 0 4 4"></path>
+                    <path d="M19 5h2v2a4 4 0 0 1-4 4"></path>
+                </svg>
+                <span class="info-label">Prize Pool</span>
+            </div>
+            <span class="info-value">40K RLO</span>
+        </div>
+
+        <div class="info-chip">
+            <div class="info-top">
+                <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M2 12h20"></path>
+                    <path d="M12 2a15.3 15.3 0 0 1 0 20"></path>
+                    <path d="M12 2a15.3 15.3 0 0 0 0 20"></path>
+                </svg>
+                <span class="info-label">Network</span>
+            </div>
+            <span class="info-value">Rialo Chain</span>
+        </div>
+
+        <div class="info-chip">
+            <div class="info-top">
+                <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="m9 12 2 2 4-4"></path>
+                </svg>
+                <span class="info-label">Teams</span>
+            </div>
+            <span class="info-value" id="groups-count">0/12</span>
+        </div>
+
+        <div class="info-chip">
+            <div class="info-top">
+                <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="m9 12 2 2 4-4"></path>
+                </svg>
+                <span class="info-label">Bracket</span>
+            </div>
+            <span class="info-value" id="bracket-count">0/16</span>
+        </div>
+
+        <div class="info-chip progress-chip">
+            <div class="info-top">
+                <svg class="stat-icon" viewBox="0 0 24 24" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M12 6v6l4 2"></path>
+                </svg>
+                <span class="info-label">Progress</span>
+            </div>
+            <span class="info-value" id="progress-count">0/16</span>
+        </div>
+    </section>
+
+    <section class="steps-wrapper">
+        <div class="steps-bar">
+            <span>Rank Teams</span>
+            <span class="step-arrow">&rarr;</span>
+            <span>Build Bracket</span>
+            <span class="step-arrow">&rarr;</span>
+            <span>Submit on Rialo</span>
+        </div>
+
+        <button class="how-btn" id="how-btn">How it works</button>
+    </section>
+
+    <nav class="tabs-bar">
+        <button class="tab-btn active" id="groups-tab-btn" data-view="groups">Groups</button>
+        <button class="tab-btn" id="bracket-tab-btn" data-view="bracket">Bracket</button>
+    </nav>
+
+    <section class="view-section nft-view" id="nft-view">
+        <div class="nft-stage">
+            <div class="nft-stage-header">
+                <span class="section-kicker">Rialo NFT Drop</span>
+                <h2 class="section-title">Rialo NFT Collection</h2>
+                <p>
+                    Mint exclusive captain player cards with RLO. Full collection includes all 48 World Cup nations.
+                </p>
+            </div>
+
+            <div class="nft-view-switcher">
+                <button class="nft-view-btn active" id="nft-tab-collection" type="button">Collection</button>
+                <button class="nft-view-btn" id="nft-tab-market" type="button">Nft market</button>
+                <button class="nft-view-btn" id="nft-tab-items" type="button">Items</button>
+            </div>
+
+            <section class="nft-panel active" id="nft-panel-collection">
+                <div class="nft-collection-grid" id="nft-collection-grid"></div>
+            </section>
+
+            <section class="nft-panel" id="nft-panel-market">
+                <div class="nft-items-head">
+                    <div>
+                        <span class="section-kicker">Listed NFTs</span>
+                        <strong>Nft market</strong>
+                    </div>
+                    <small id="nft-market-note">Highest listed price appears first.</small>
+                </div>
+
+                <div class="nft-items-grid" id="nft-market-grid"></div>
+            </section>
+
+            <section class="nft-panel" id="nft-panel-items">
+                <div class="nft-items-head">
+                    <div>
+                        <span class="section-kicker">Your Items</span>
+                        <strong>Owned NFTs</strong>
+                    </div>
+                    <small id="nft-items-note">Connect wallet to load your NFT items.</small>
+                </div>
+
+                <div class="nft-items-grid" id="nft-items-grid"></div>
+            </section>
+
+            <div class="nft-listing-modal" id="nft-listing-modal" hidden>
+                <div class="nft-listing-sheet">
+                    <div class="nft-listing-head">
+                        <strong>Sell NFT</strong>
+                        <span id="nft-listing-subtitle">List your captain card for resale inside Rialo PM.</span>
+                    </div>
+
+                    <label class="nft-listing-field">
+                        <span>Listing Price (RLO)</span>
+                        <input type="text" id="nft-listing-price" inputmode="decimal" placeholder="12.5">
+                    </label>
+
+                    <label class="nft-listing-field">
+                        <span>Amount</span>
+                        <input type="text" id="nft-listing-amount" inputmode="numeric" placeholder="1">
+                    </label>
+
+                    <div class="nft-listing-status" id="nft-listing-status">
+                        Set the RLO price you want for this NFT, then list it in the collection.
+                    </div>
+
+                    <div class="nft-listing-actions">
+                        <button class="nft-listing-submit" id="nft-listing-submit" type="button">List NFT</button>
+                        <button class="nft-listing-cancel" id="nft-listing-cancel" type="button">Cancel</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="nft-cancel-modal" id="nft-cancel-modal" hidden role="dialog" aria-modal="true" aria-labelledby="nft-cancel-title">
+                <div class="nft-cancel-sheet">
+                    <button class="nft-cancel-close" id="nft-cancel-close" type="button" aria-label="Close">×</button>
+                    <div class="nft-cancel-icon" aria-hidden="true">↶</div>
+                    <div class="nft-cancel-copy">
+                        <span class="nft-cancel-kicker">NFT MARKETPLACE</span>
+                        <strong id="nft-cancel-title">Cancel listing?</strong>
+                        <p id="nft-cancel-subtitle">Choose how many listed items you want to remove from the market.</p>
+                    </div>
+                    <label class="nft-cancel-field">
+                        <span>Amount to cancel</span>
+                        <div class="nft-cancel-input-wrap">
+                            <button id="nft-cancel-minus" type="button" aria-label="Decrease amount">−</button>
+                            <input id="nft-cancel-amount" type="text" inputmode="numeric" value="1" aria-describedby="nft-cancel-range">
+                            <button id="nft-cancel-plus" type="button" aria-label="Increase amount">+</button>
+                        </div>
+                        <small id="nft-cancel-range">Available: 1 listed item</small>
+                    </label>
+                    <div class="nft-cancel-error" id="nft-cancel-error" hidden></div>
+                    <div class="nft-cancel-actions">
+                        <button class="nft-cancel-back" id="nft-cancel-back" type="button">Keep Listing</button>
+                        <button class="nft-cancel-confirm" id="nft-cancel-confirm" type="button">Confirm Cancellation</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="view-section swap-view" id="swap-view">
+        <div class="swap-stage swap-stage--simple">
+            <div class="swap-widget-shell">
+                <div class="swap-balance-strip">
+                    <div class="swap-balance-chip">
+                        <span id="swap-wallet-stable-label">Wallet USDC</span>
+                        <strong id="swap-wallet-usdc">-</strong>
+                    </div>
+
+                    <div class="swap-balance-chip">
+                        <span>Wallet RLO</span>
+                        <strong id="swap-wallet-rlo">-</strong>
+                    </div>
+
+                    <div class="swap-balance-chip">
+                        <span>Pool USDC</span>
+                        <strong id="swap-pool-usdc">-</strong>
+                    </div>
+
+                    <div class="swap-balance-chip">
+                        <span>Pool RLO</span>
+                        <strong id="swap-pool-rlo">-</strong>
+                    </div>
+                </div>
+
+                <section class="swap-widget-card">
+                    <div class="swap-widget-head">
+                        <div class="swap-widget-live">
+                            <span class="swap-live-dot"></span>
+                            <strong id="swap-live-mode">Live on-chain swap</strong>
+                        </div>
+
+                        <div class="swap-slippage-inline" id="swap-slippage-group">
+                            <button class="swap-slippage-btn active" type="button" data-swap-slippage="0.5">0.5%</button>
+                            <button class="swap-slippage-btn" type="button" data-swap-slippage="1">1%</button>
+                            <button class="swap-slippage-btn" type="button" data-swap-slippage="3">3%</button>
+                        </div>
+                    </div>
+<div class="swap-box swap-box-top">
+                        <div class="swap-box-label-row">
+                            <span class="swap-box-label" id="swap-input-side-label">Sell</span>
+                            <span class="swap-box-wallet" id="swap-input-balance">Balance: -</span>
+                        </div>
+
+                        <div class="swap-box-main">
+                            <input id="swap-amount-input" class="swap-box-input" type="text" inputmode="decimal" placeholder="0">
+
+                            <div class="swap-token-picker">
+                                <button class="swap-token-pill swap-token-pill-button" id="swap-input-token-pill" type="button" aria-expanded="false" aria-haspopup="listbox">
+                                    <span class="swap-token-mark" id="swap-input-token-mark">U</span>
+                                    <div>
+                                        <strong id="swap-input-token-symbol">USDC</strong>
+                                        <small id="swap-input-token-name">USDC</small>
+                                    </div>
+                                    <span class="swap-token-chevron" aria-hidden="true">&#9662;</span>
+                                </button>
+                                <div class="swap-token-menu" id="swap-token-menu" role="listbox" hidden>
+                                    <button class="swap-token-option active" type="button" data-swap-stable="USDC" role="option" aria-selected="true">
+                                        <span class="swap-token-mark swap-token-mark-usdc">U</span>
+                                        <span>USDC</span>
+                                    </button>
+                                    <button class="swap-token-option" type="button" data-swap-stable="USDT" role="option" aria-selected="false">
+                                        <span class="swap-token-mark swap-token-mark-usdt">T</span>
+                                        <span>USDT</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="swap-box-quick-row">
+                            <small class="swap-box-foot" id="swap-input-footnote">$0.00</small>
+
+                            <div class="swap-quick-actions">
+                                <button class="swap-mini-btn" id="swap-quick-20" type="button" data-swap-quick="20">20%</button>
+                                <button class="swap-mini-btn" id="swap-quick-50" type="button" data-swap-quick="50">50%</button>
+                                <button class="swap-mini-btn" id="swap-quick-max" type="button" data-swap-quick="100">MAX</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="swap-switch-wrap">
+                        <button class="swap-switch-btn" id="swap-flip-btn" type="button" aria-label="Flip swap direction">
+                            <span>&#8645;</span>
+                        </button>
+                    </div>
+
+                    <div class="swap-box swap-box-bottom">
+                        <div class="swap-box-label-row">
+                            <span class="swap-box-label" id="swap-output-side-label">Buy</span>
+                            <span class="swap-box-wallet" id="swap-output-balance">Balance: -</span>
+                        </div>
+
+                        <div class="swap-box-main swap-box-main-output">
+                            <div class="swap-box-output" id="swap-output-amount">0</div>
+
+                            <div class="swap-token-pill" id="swap-output-token-pill">
+                                <span class="swap-token-mark" id="swap-output-token-mark">R</span>
+                                <div>
+                                    <strong id="swap-output-token-symbol">RLO</strong>
+                                    <small id="swap-output-token-name">Rialo Token</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="swap-box-quick-row">
+                            <small class="swap-box-foot" id="swap-output-footnote">$0.00</small>
+                            <small class="swap-box-foot" id="swap-rate">-</small>
+                        </div>
+                    </div>
+
+                    <div class="swap-meta-card">
+                        <div class="swap-meta-row">
+                            <span>Minimum received</span>
+                            <strong id="swap-min-received">-</strong>
+                        </div>
+
+                        <div class="swap-meta-row">
+                            <span>Price impact</span>
+                            <strong id="swap-price-impact">-</strong>
+                        </div>
+                    </div>
+
+                    <button class="swap-submit-btn" id="swap-submit-btn" type="button">Swap USDC to RLO</button>
+                    <div class="swap-status" id="swap-status">Connect your wallet, choose USDC or USDT, seed the pool once, then swap with RLO.</div>
+
+                    <div class="swap-tools-row">
+                        <button class="swap-side-btn" id="swap-faucet-btn" type="button">Get USDC</button>
+                        <button class="swap-side-btn" id="swap-approve-btn" type="button">Approve USDC</button>
+                        <button class="swap-side-btn" id="swap-seed-toggle-btn" type="button">Seed Pool</button>
+                    </div>
+
+                    <div class="swap-seed-panel" id="swap-seed-panel" hidden>
+                        <div class="swap-seed-head">
+                            <strong>Pool Tools</strong>
+                            <span>Seed or refill the pool used by this swap widget.</span>
+                        </div>
+
+                        <div class="swap-seed-grid">
+                            <label class="swap-field">
+                                <span>Seed USDC</span>
+                                <input id="swap-seed-usdc" type="text" inputmode="decimal" value="25">
+                            </label>
+
+                            <label class="swap-field">
+                                <span>Seed RLO</span>
+                                <input id="swap-seed-rlo" type="text" inputmode="decimal" value="50">
+                            </label>
+                        </div>
+
+                        <button class="swap-side-btn swap-seed-btn" id="swap-seed-btn" type="button">Seed Pool</button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </section>
+
+    <section class="view-section market-view" id="market-view">
+        <div class="market-stage">
+            <div class="market-stage-header market-stage-header-rich">
+                <div>
+                    <h2 class="section-title">Rialo Meme Market</h2>
+                    <p>
+                        Discover listed coins, launch your own meme token, and open a dedicated token page with chart and trade actions inside Rialo Meme Market.
+                    </p>
+                </div>
+
+                <button class="market-create-hero-btn" id="open-market-create-btn" type="button">
+                    Create Token
+                </button>
+            </div>
+
+            <div class="market-trending-strip" id="market-trending-strip"></div>
+
+            <div class="market-view-default" id="market-view-default">
+                <div class="market-shell">
+                    <div class="market-board">
+                        <div class="market-toolbar">
+                            <button class="market-filter-btn active" data-market-filter="latest" type="button">Latest</button>
+                            <button class="market-filter-btn" data-market-filter="volume" type="button">Top Volume</button>
+                            <button class="market-filter-btn" data-market-filter="mcap" type="button">Top MCap</button>
+                        </div>
+
+                        <div class="market-token-grid" id="market-token-grid"></div>
+                    </div>
+
+                    <div class="market-side-column">
+                        <aside class="market-side-launch">
+                            <div>
+                                <span class="market-panel-kicker">Launch on Rialo</span>
+                                <strong>Create Your Coin</strong>
+                                <p>
+                                    Launch a meme coin, get listed instantly in Rialo Meme Market, and open a dedicated token page with chart, stats, and trade actions.
+                                </p>
+
+                                <ul class="market-launch-points">
+                                    <li>Instant listing inside Rialo Meme Market</li>
+                                    <li>Dedicated token page after launch</li>
+                                    <li>Chart, buy, sell, and trade interface</li>
+                                </ul>
+                            </div>
+
+                            <button class="market-create-side-btn" id="open-market-create-btn-side" type="button">
+                                Create Token
+                            </button>
+                        </aside>
+
+                        <section class="market-portfolio-card" id="market-portfolio-card">
+                            <div class="market-portfolio-head">
+                                <div>
+                                    <span class="market-panel-kicker">Your Market</span>
+                                    <strong>Portfolio</strong>
+                                </div>
+                                <small id="market-portfolio-sync-note">Wallet view</small>
+                            </div>
+
+                            <div class="market-portfolio-summary">
+                                <div class="market-portfolio-stat">
+                                    <span>Total Value</span>
+                                    <strong id="market-portfolio-total-value">-</strong>
+                                </div>
+
+                                <div class="market-portfolio-stat">
+                                    <span>Wallet RLO</span>
+                                    <strong id="market-portfolio-wallet-rlo">-</strong>
+                                </div>
+
+                                <div class="market-portfolio-stat">
+                                    <span>Token Value</span>
+                                    <strong id="market-portfolio-token-value">-</strong>
+                                </div>
+
+                                <div class="market-portfolio-stat">
+                                    <span>Positions</span>
+                                    <strong id="market-portfolio-position-count">0</strong>
+                                </div>
+                            </div>
+
+                            <div class="market-portfolio-pnl" id="market-portfolio-pnl-row">
+                                <span>Unrealized PnL</span>
+                                <strong id="market-portfolio-pnl">-</strong>
+                            </div>
+
+                            <div class="market-portfolio-holdings" id="market-portfolio-holdings"></div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <div class="market-token-screen" id="market-token-screen" hidden>
+                <div class="market-token-screen-top">
+                    <button class="market-back-btn" id="market-detail-back-btn" type="button">
+                        <span aria-hidden="true">←</span> Back to Market
+                    </button>
+                    <div class="market-terminal-status"><span></span> Spot market · Live on-chain</div>
+                </div>
+
+                <div class="market-token-screen-grid">
+                    <section class="market-token-summary">
+                        <div class="market-summary-label"><span></span> Asset overview</div>
+                        <div class="market-detail-head">
+                            <div class="market-detail-orb is-hidden" id="market-detail-orb"></div>
+
+                            <div class="market-detail-copy">
+                                <span class="market-detail-kicker" id="market-detail-symbol">$MP</span>
+                                <strong id="market-detail-name">MoonPeel</strong>
+                                <p id="market-detail-description">
+                                    Community-first meme coin launched inside Rialo Meme Market.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div class="market-detail-hero is-hidden" id="market-detail-hero">
+                            <img class="market-detail-hero-backdrop" id="market-detail-hero-backdrop" src="" alt="" aria-hidden="true">
+                            <img id="market-detail-hero-image" src="" alt="Token meme image">
+                        </div>
+
+                        <div class="market-detail-stats">
+                            <div class="market-detail-stat">
+                                <span>Price</span>
+                                <strong id="market-detail-price">0.0182 RLO</strong>
+                            </div>
+
+                            <div class="market-detail-stat">
+                                <span>Market Cap</span>
+                                <strong id="market-detail-mcap">18.2K</strong>
+                            </div>
+
+                            <div class="market-detail-stat">
+                                <span>Volume</span>
+                                <strong id="market-detail-volume">4.8K</strong>
+                            </div>
+
+                            <div class="market-detail-stat">
+                                <span>Holders</span>
+                                <strong id="market-detail-holders">281</strong>
+                            </div>
+
+                            <div class="market-detail-stat">
+                                <span>Supply</span>
+                                <strong id="market-detail-supply">1000000</strong>
+                            </div>
+
+                            <div class="market-detail-stat">
+                                <span>Website</span>
+                                <strong id="market-detail-website">None</strong>
+                            </div>
+                        </div>
+
+                        <div class="market-detail-market-meta">
+                            <div class="market-detail-market-chip">
+                                <span>Pool RLO</span>
+                                <strong id="market-detail-liquidity">0 RLO</strong>
+                            </div>
+
+                            <div class="market-detail-market-chip">
+                                <span>Pool Token</span>
+                                <strong id="market-detail-pool-token">0 MP</strong>
+                            </div>
+
+                            <div class="market-detail-market-chip">
+                                <span>Fee</span>
+                                <strong id="market-detail-fee">0%</strong>
+                            </div>
+
+                            <div class="market-detail-market-chip">
+                                <span>Contract</span>
+                                <strong id="market-detail-contract">Pending</strong>
+                            </div>
+
+                            <div class="market-detail-market-chip">
+                                <span>Creator</span>
+                                <strong id="market-detail-creator">Wallet</strong>
+                            </div>
+                        </div>
+
+                        <div class="market-detail-link-row">
+                            <a class="market-detail-link" id="market-detail-contract-link" href="#" target="_blank" rel="noopener noreferrer">
+                                View Contract
+                            </a>
+                            <a class="market-detail-link" id="market-detail-launch-link" href="#" target="_blank" rel="noopener noreferrer">
+                                Launch Tx
+                            </a>
+                            <a class="market-detail-link" id="market-detail-creator-link" href="#" target="_blank" rel="noopener noreferrer">
+                                Creator Wallet
+                            </a>
+                        </div>
+                    </section>
+
+                    <section class="market-chart-card" id="market-chart-card">
+                        <div class="market-chart-head">
+                            <div class="market-chart-title-stack">
+                            <strong>Price Chart</strong>
+                                <div class="market-chart-price-stack">
+                                    <span id="market-chart-price-now">0.0182 RLO</span>
+                                    <small id="market-chart-price-change">0.00%</small>
+                                </div>
+                                <div class="market-live-indicator">
+                                    <span class="market-live-dot" aria-hidden="true"></span>
+                                    <small id="market-chart-live-status">Live market</small>
+                                </div>
+                            </div>
+
+                            <div class="market-chart-controls">
+                                <div class="market-chart-timeframes">
+                                    <button class="market-chart-timeframe-btn active" data-market-timeframe="1m" type="button">1m</button>
+                                    <button class="market-chart-timeframe-btn" data-market-timeframe="5m" type="button">5m</button>
+                                    <button class="market-chart-timeframe-btn" data-market-timeframe="15m" type="button">15m</button>
+                                    <button class="market-chart-timeframe-btn" data-market-timeframe="all" type="button">All</button>
+                                </div>
+                                <span id="market-chart-label">Price Action</span>
+                                <button class="market-chart-zoom-btn" id="market-chart-zoom-out" type="button" aria-label="Zoom out chart">-</button>
+                                <button class="market-chart-zoom-readout" id="market-chart-zoom-readout" type="button">100%</button>
+                                <button class="market-chart-zoom-btn" id="market-chart-zoom-in" type="button" aria-label="Zoom in chart">+</button>
+                            </div>
+                        </div>
+
+                        <div class="market-chart-visual" id="market-chart-visual"></div>
+                    </section>
+
+                    <aside class="market-trade-panel">
+                        <div class="market-trade-head">
+                            <div>
+                                <small>SPOT ORDER</small>
+                                <strong>Trade</strong>
+                            </div>
+                            <span id="market-trade-symbol">MP</span>
+                        </div>
+
+                        <div class="market-wallet-balances">
+                            <div class="market-wallet-balance-box">
+                                <span>Wallet RLO</span>
+                                <strong id="market-wallet-rlo-balance">-</strong>
+                            </div>
+
+                            <div class="market-wallet-balance-box">
+                                <span>Your Tokens</span>
+                                <strong id="market-wallet-token-balance">-</strong>
+                            </div>
+                        </div>
+
+                        <div class="market-wallet-balance-note" id="market-wallet-balance-note">
+                            Connect wallet to load your RLO balance inside the market.
+                        </div>
+
+                        <div class="market-trade-mode-toggle" role="tablist" aria-label="Trade mode">
+                            <button class="market-trade-mode-btn active" id="market-trade-mode-buy" type="button">Buy</button>
+                            <button class="market-trade-mode-btn" id="market-trade-mode-sell" type="button">Sell</button>
+                        </div>
+
+                        <div class="market-order-entry">
+                            <div class="market-order-entry-head">
+                                <span id="market-order-entry-label">You pay</span>
+                                <small>Market order</small>
+                            </div>
+                            <div class="market-order-input-shell">
+                                <input
+                                    class="market-trade-amount"
+                                    id="market-trade-amount"
+                                    type="text"
+                                    inputmode="decimal"
+                                    placeholder="0.00"
+                                >
+                                <strong id="market-trade-input-unit">RLO</strong>
+                            </div>
+                        </div>
+
+                        <div class="market-trade-slippage">
+                            <span>Slippage</span>
+                            <div class="market-slippage-pills">
+                                <button class="market-slippage-btn" data-market-slippage="50" type="button">0.5%</button>
+                                <button class="market-slippage-btn active" data-market-slippage="100" type="button">1%</button>
+                                <button class="market-slippage-btn" data-market-slippage="300" type="button">3%</button>
+                            </div>
+                        </div>
+
+                        <div class="market-quick-amounts">
+                            <button class="market-quick-amount-btn" type="button" data-market-quick="buy" data-value="0.01">Buy 0.01</button>
+                            <button class="market-quick-amount-btn" type="button" data-market-quick="buy" data-value="0.05">Buy 0.05</button>
+                            <button class="market-quick-amount-btn" type="button" data-market-quick="buy" data-value="0.1">Buy 0.1</button>
+                            <button class="market-quick-amount-btn" type="button" data-market-quick="buy-max">Max RLO</button>
+                            <button class="market-quick-amount-btn sell" type="button" data-market-quick="sell-safe" data-value="0.25">25% Safe</button>
+                            <button class="market-quick-amount-btn sell" type="button" data-market-quick="sell-safe" data-value="0.5">50% Safe</button>
+                            <button class="market-quick-amount-btn sell" type="button" data-market-quick="sell-safe" data-value="1">Max Safe</button>
+                        </div>
+
+                        <div class="market-order-preview" id="market-order-preview">
+                            <div class="market-order-preview-row active" id="market-buy-preview-row">
+                                <div class="market-order-preview-copy">
+                                    <span>Buy Preview</span>
+                                    <strong id="market-buy-preview-amount">Enter RLO amount</strong>
+                                </div>
+                                <small id="market-buy-preview-impact">Impact -</small>
+                            </div>
+
+                            <div class="market-order-preview-row sell" id="market-sell-preview-row">
+                                <div class="market-order-preview-copy">
+                                    <span>Sell Preview</span>
+                                    <strong id="market-sell-preview-amount">Enter token amount</strong>
+                                </div>
+                                <small id="market-sell-preview-impact">Impact -</small>
+                            </div>
+
+                            <div class="market-order-metrics">
+                                <div class="market-order-metric">
+                                    <span id="market-preview-min-label">Minimum received</span>
+                                    <strong id="market-preview-min-received">-</strong>
+                                </div>
+
+                                <div class="market-order-metric">
+                                    <span>Execution Price</span>
+                                    <strong id="market-preview-execution-price">-</strong>
+                                </div>
+
+                                <div class="market-order-metric">
+                                    <span>Slippage</span>
+                                    <strong id="market-preview-slippage">1.0%</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="market-trade-btnrow">
+                            <button class="market-trade-btn" id="market-buy-btn" type="button">Buy</button>
+                            <button class="market-trade-btn sell" id="market-sell-btn" type="button">Sell</button>
+                        </div>
+
+                        <div class="market-trade-security"><span aria-hidden="true">◆</span> Transaction confirmed securely in your wallet</div>
+
+                        <div class="market-last-tx-card" id="market-last-tx-card">
+                            <span>Last transaction</span>
+                            <a class="market-detail-link disabled" id="market-last-tx-link" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">Awaiting trade confirmation</a>
+                        </div>
+
+                        <div class="market-trade-status" id="market-trade-status">
+                            Live trades update the token price, market cap, volume, and chart inside Rialo Meme Market.
+                        </div>
+                    </aside>
+                </div>
+
+                <section class="market-feed-card" id="market-feed-card" style="margin-top: 14px;">
+                    <div class="market-feed-head">
+                        <strong>Recent Trades</strong>
+                        <span>Live Activity</span>
+                    </div>
+
+                    <div class="market-feed-list" id="market-trade-feed"></div>
+                </section>
+
+                <section class="market-feed-card" id="market-my-trades-card" style="margin-top: 14px;">
+                    <div class="market-feed-head">
+                        <strong>My Trades</strong>
+                        <span id="market-my-trades-note">Wallet view</span>
+                    </div>
+
+                    <div class="market-feed-list" id="market-my-trades-feed"></div>
+                </section>
+            </div>
+
+            <div class="market-create-modal" id="market-create-modal" hidden>
+                <div class="market-create-sheet">
+                    <div class="market-create-head">
+                        <strong>Create Token</strong>
+                        <span>Launch a new meme coin inside Rialo Meme Market</span>
+                    </div>
+
+                    <form id="market-create-form">
+                        <div class="market-create-grid">
+                            <label class="market-create-field">
+                                <span>Token Name</span>
+                                <input type="text" id="market-create-name" placeholder="MoonPeel">
+                            </label>
+
+                            <label class="market-create-field">
+                                <span>Symbol</span>
+                                <input type="text" id="market-create-symbol" maxlength="10" placeholder="PEEL">
+                            </label>
+
+                            <label class="market-create-field">
+                                <span>Market Opening Price (RLO)</span>
+                                <input type="text" id="market-create-price" inputmode="decimal" placeholder="0.0125">
+                            </label>
+
+                            <input type="hidden" id="market-create-seed-liquidity" value="0.001">
+
+                            <label class="market-create-field">
+                                <span>Supply</span>
+                                <input type="number" id="market-create-supply" min="1" step="1" placeholder="1000000">
+                            </label>
+
+                            <div class="market-create-field full market-file-field">
+                                <span>Meme Image</span>
+                                <div class="market-file-picker">
+                                    <input class="market-file-input" type="file" id="market-create-image" accept="image/png,image/jpeg,image/webp,image/gif">
+                                    <label class="market-file-picker-btn" for="market-create-image">Upload File</label>
+                                    <span class="market-file-picker-name" id="market-create-image-name">No file selected</span>
+                                </div>
+                            </div>
+
+                            <div class="market-create-image-preview" id="market-create-image-preview">
+                                <span>No file selected yet.</span>
+                            </div>
+
+                            <label class="market-create-field full">
+                                <span>Description</span>
+                                <textarea id="market-create-description" placeholder="A meme coin created inside Rialo Meme Market."></textarea>
+                            </label>
+
+                            <label class="market-create-field full">
+                                <span>Website (Optional)</span>
+                                <input type="text" id="market-create-website" placeholder="https://yourproject.site">
+                            </label>
+                        </div>
+
+                        <div class="market-create-actions">
+                            <button class="market-submit-create" type="submit">Launch Token</button>
+                            <button class="market-back-btn" id="close-market-create-btn" type="button">Cancel</button>
+                        </div>
+
+                        <div class="market-create-status" id="market-create-status">
+                            Launch a community token in Rialo Meme Market and list it on-chain with RLO liquidity.
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="view-section groups-view active" id="groups-view">
+        <div class="groups-stage">
+            <div class="club-ranking-toolbar">
+                <div>
+                    <span class="section-kicker">Team Ranking</span>
+                    <h2 class="section-title">Rank Teams for Bracket</h2>
+                    <div class="club-ranking-subtitle">Top 16 teams qualify to the bracket.</div>
+                </div>
+
+                <div class="club-ranking-actions">
+                    <button class="confirm-ranking-btn" id="confirm-ranking-btn" type="button">Confirmer</button>
+                    <button class="generate-btn" id="generate-bracket" disabled>Generate Brackets</button>
+                </div>
+            </div>
+
+            <div class="club-ranking-grid" id="groups-grid"></div>
+        </div>
+    </section>
+
+    <section class="view-section bracket-view" id="bracket-view">
+        <div class="bracket-top-title">
+            <span class="section-kicker">Knockout Bracket</span>
+            <h2 class="section-title">Path to the Rialo PM Trophy</h2>
+        </div>
+
+        <main class="main-bracket bracket-ready" id="main-bracket">
+            <div class="bracket-lock-message" id="bracket-lock-message">
+                Complete all 12 groups, then click Generate Bracket.
+            </div>
+
+            <svg id="connector-layer"></svg>
+
+            <section class="bracket-side left-side">
+                <div class="region-label region-top">LEFT SIDE</div>
+                <div class="round" id="L1"></div>
+                <div class="round" id="L2"></div>
+                <div class="round" id="L3"></div>
+                <div class="round" id="L4"></div>
+                <div class="round hidden-round" id="L5"></div>
+            </section>
+
+            <section class="center-stage">
+                <div class="bracket-winner-box" id="bracket-winner-box">
+                    <span>WINNER</span>
+                    <div class="bracket-winner-options" id="bracket-winner-options" hidden>
+                        <button type="button" id="bracket-winner-left"><span>TBD</span></button>
+                        <em>VS</em>
+                        <button type="button" id="bracket-winner-right"><span>TBD</span></button>
+                    </div>
+                    <strong id="bracket-winner-name"></strong>
+                </div>
+                <img class="bracket-center-trophy" src="bracket-trophy.png.png" alt="Rialo bracket trophy">
+                <div class="final-card" id="final-card">
+                    <button class="final-modal-close" id="final-modal-close" type="button" aria-label="Close">×</button>
+                    <div class="trophy-title">RIALO PM</div>
+
+                    <div class="trophy-wrap">
+                        <img class="trophy-img" src="bracket-trophy.png.png" alt="Rialo Trophy">
+                    </div>
+
+                    <div class="championship-label">CHAMPIONS LEAGUE FINAL</div>
+
+                    <div class="final-matchup">
+                        <div class="final-team" id="final-left">TBD</div>
+                        <span class="vs">VS</span>
+                        <div class="final-team" id="final-right">TBD</div>
+                    </div>
+
+                    <div class="entry-odds-card" id="entry-odds-card">
+                        <div class="entry-odds-head">
+                            <span>RLO Entry & Odds</span>
+                            <strong id="risk-level">Low</strong>
+                        </div>
+
+                        <div class="entry-row">
+                            <span>Entry Amount</span>
+
+                            <div class="entry-input-wrap">
+                                <input
+                                    type="number"
+                                    id="entry-amount-input"
+                                    value="0.000001"
+                                    min="0.000000000000000001"
+                                    step="any"
+                                >
+                                <span class="entry-currency">RLO</span>
+                            </div>
+                        </div>
+
+                        <div class="odds-grid">
+                            <div class="odds-box">
+                                <span>Odds</span>
+                                <strong id="current-odds">1.00x</strong>
+                            </div>
+
+                            <div class="odds-box highlight">
+                                <span>Potential Return</span>
+                                <strong id="potential-return">10 RLO</strong>
+                            </div>
+                        </div>
+
+                        <div class="entry-help" id="odds-help">
+                            Select your champion to calculate odds.
+                        </div>
+                    </div>
+
+                    <button id="submit-picks" disabled>Submit on RLO</button>
+
+                    <div class="submit-status" id="submit-status" hidden></div>
+                </div>
+            </section>
+
+            <section class="bracket-side right-side">
+                <div class="region-label region-top">RIGHT SIDE</div>
+                <div class="round hidden-round" id="R5"></div>
+                <div class="round" id="R4"></div>
+                <div class="round" id="R3"></div>
+                <div class="round" id="R2"></div>
+                <div class="round" id="R1"></div>
+            </section>
+        </main>
+    </section>
+    <section class="home-guide-section" id="home-guide-section" aria-label="Rialo PM start">
+        <div class="home-grid-bg" aria-hidden="true"></div>
+        <div class="home-hero-shell">
+            <div class="home-product-preview" aria-label="Rialo PM product preview">
+                <div class="home-preview-glow" aria-hidden="true"></div>
+                <div class="home-preview-frame">
+                    <div class="home-guide-strip" id="home-guide-strip">
+                        <div class="home-guide-card">
+                            <span>01</span>
+                            <strong>Prediction Live</strong>
+                            <p>Place your bets on weekly featured matches; if your prediction is correct, your rewards are sent directly to your wallet immediately after the match ends.</p>
+                        </div>
+                        <div class="home-guide-card">
+                            <span>02</span>
+                            <strong>Swap</strong>
+                            <p>Swap USDT or USDC for RLO instantly to get the tokens you need to start predicting smoothly, plus upcoming rewards for top users who complete the highest volume of token swaps on the platform.</p>
+                        </div>
+                        <div class="home-guide-card">
+                            <span>03</span>
+                            <strong>Prediction</strong>
+                            <p>Rank the top 16 teams, generate the knockout bracket, pick the winners of each round, and submit your final prediction.</p>
+                        </div>
+                        <div class="home-guide-card">
+                            <span>04</span>
+                            <strong>NFT Collection</strong>
+                            <p>Every team has a star player with an autographed NFT card, and its price dynamically changes based on the team's tournament run, goals scored, and assists provided.</p>
+                        </div>
+                        <div class="home-guide-card">
+                            <span>05</span>
+                            <strong>NFT Market</strong>
+                            <p>The NFT Market is a community-driven marketplace where you can buy and sell community NFTs, list any NFT you own at your desired price, and purchase items listed by other users.</p>
+                        </div>
+                        <div class="home-guide-card">
+                            <span>06</span>
+                            <strong>Rialo Meme Market</strong>
+                            <p>Create and launch a meme token with its name, symbol, image, supply, price, and RLO liquidity. Follow its live chart and market statistics, then buy or sell it with RLO.</p>
+                        </div>
+                        <div class="home-guide-card">
+                            <span>07</span>
+                            <strong>Rialo Chat</strong>
+                            <p>Open Rialo Chat from any page to get instant help with RLO, predictions, swaps, NFT minting and trading, and Meme Market actions without leaving Rialo PM.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="how-it-works-section" id="how-it-works-section">
+        <div class="how-bg-orb how-orb-1"></div>
+        <div class="how-bg-orb how-orb-2"></div>
+
+        <div class="how-premium-card">
+<div class="how-header">
+                <h2>How Rialo PM Works</h2>
+            </div>
+
+            <div class="how-flow">
+                <div class="how-step">
+                    <div class="how-step-icon">01</div>
+                    <h3>First Round</h3>
+                    <p>Begin with the 36-team single league standings. Predict the top-performing teams, sort their positions, and lock in your choices.</p>
+                </div>
+
+                <div class="how-step">
+                    <div class="how-step-icon">02</div>
+                    <h3>Generate Bracket</h3>
+                    <p>Once selections are locked, the system automatically builds the knockout bracket, mapping out the playoffs and the path to the round of 16.</p>
+                </div>
+
+                <div class="how-step">
+                    <div class="how-step-icon">03</div>
+                    <h3>Pick Winners</h3>
+                    <p>Advance through the rounds by clicking your match winners all the way to the final. Your bracket updates instantly with every pick.</p>
+                </div>
+
+                <div class="how-step how-step-gold">
+                    <div class="how-step-icon">04</div>
+                    <h3>RLO Entry & Submit</h3>
+                    <p>Input your RLO stake, review your potential returns, and finalize your entry once all league standings and tournament picks are set.</p>
+                </div>
+            </div>
+
+            <div class="how-extra-flow">
+                <div class="how-step how-step-extra">
+                    <div class="how-step-icon">05</div>
+                    <h3>Prize Pool Access</h3>
+                    <p>Entering your Champions League winner prediction automatically qualifies you for the <strong>40,000 RLO Prize Pool</strong>, distributed right after the grand final on <strong>5 June 2027</strong>.</p>
+                </div>
+
+                <div class="how-step how-step-extra">
+                    <div class="how-step-icon">06</div>
+                    <h3>Smart Winning System</h3>
+                    <p>
+                        The winning system does not require your predictions to be 100% correct.
+                        Rewards are based on how close your bracket predictions are to the real results.
+                        For example, if you correctly predict one team in the quarter-finals,
+                        you will receive a certain share. If you correctly predict three teams,
+                        your reward share increases, and so on. The closer your predictions are,
+                        the higher your potential reward.
+                    </p>
+                </div>
+            </div>
+            <div class="how-bottom-note">
+                Higher-risk champion picks can increase your odds. Favorites are safer but give lower returns.
+            </div>
+        </div>
+    </section>
+
+    <section class="prediction-history-section" id="prediction-history-section">
+        <figure class="prediction-leagues-banner">
+            <img class="prediction-leagues-img" src="leagues-coming-soon.png" alt="Rialo PM coming soon leagues" loading="lazy" onerror="this.closest('figure').remove()">
+        </figure>
+        <div class="history-card">
+            <div class="history-header">
+                <div>
+                    <span class="history-kicker">Player History</span>
+                    <h2>My Prediction History</h2>
+                </div>
+
+                <div class="history-wallet-note" id="history-wallet-note">
+                    Connect wallet to see your history
+                </div>
+            </div>
+
+            <div class="history-list" id="history-list">
+                <div class="history-empty">
+                    No predictions submitted yet.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="made-by-section">
+        <div class="made-by-card">
+            <div class="creator-avatars">
+                <img src="creator-abdo.png" alt="ABDO" class="creator-avatar">
+                <img src="creator-liteino.png" alt="LiTEino" class="creator-avatar">
+            </div>
+
+            <div class="made-by-text">Made by <span>ABDO</span> &amp; <span>LiTEino</span></div>
+        </div>
+    </section>
+
+    <div class="ticket-success-overlay hidden" id="ticket-success-overlay">
+        <div class="ticket-success-bg" id="ticket-success-bg"></div>
+
+        <div class="ticket-success-card">
+            <button class="ticket-close-btn" id="ticket-close-btn" type="button">&times;</button>
+
+            <div class="ticket-glow-effect"></div>
+
+            <div class="ticket-image-wrap">
+                <img src="prize-ticket.png" alt="Rialo Prize Pool Ticket" class="ticket-base-img">
+
+                <div class="ticket-user-avatar-wrap">
+                    <img id="ticket-user-avatar" src="" alt="User avatar" class="ticket-user-avatar">
+                </div>
+
+                <div class="ticket-user-name" id="ticket-user-name">
+                    @player
+                </div>
+
+                <div class="ticket-wallet-mini" id="ticket-wallet-mini">
+                    Wallet confirmed
+                </div>
+            </div>
+
+            <div class="ticket-success-info">
+                <h3>Entry Confirmed</h3>
+                <p>
+                    Your prediction has been submitted successfully.
+                </p>
+
+                <div class="ticket-actions">
+                    <a href="#" target="_blank" rel="noopener noreferrer" id="ticket-tx-link" class="ticket-tx-link">
+                        View Transaction
+                    </a>
+
+                    <button type="button" id="ticket-download-btn" class="ticket-action-btn">
+                        Download
+                    </button>
+
+                    <button type="button" id="ticket-share-x-btn" class="ticket-action-btn share-x">
+                        Post on Twitter
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="floating-social-dock" aria-label="Rialo social links">
+        <a
+            href="https://x.com/RialoHQ"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="floating-social-link icon-3d-link icon-x-link"
+            aria-label="Rialo on X"
+            title="Rialo on X"
+        >
+            <span class="icon-glow-ring"></span>
+            <img src="icon-x-3d.png" alt="X" class="social-3d-icon">
+        </a>
+
+        <a
+            href="https://www.rialo.io/"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="floating-social-link icon-3d-link icon-web-link"
+            aria-label="Rialo Website"
+            title="Rialo Website"
+        >
+            <span class="icon-glow-ring"></span>
+            <img src="icon-web-3d.png" alt="Rialo Website" class="social-3d-icon site-social-logo">
+        </a>
+
+        <a
+            href="https://t.me/rialoprotocol"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="floating-social-link icon-3d-link icon-telegram-link"
+            aria-label="Rialo Telegram"
+            title="Rialo Telegram"
+        >
+            <span class="icon-glow-ring"></span>
+            <img src="icon-telegram-3d.png" alt="Telegram" class="social-3d-icon">
+        </a>
+    </div>
+
+    <div class="ai-assistant-shell" id="ai-assistant-shell" aria-live="polite">
+        <button class="ai-assistant-fab" id="ai-assistant-fab" type="button" aria-label="Open AI assistant" aria-expanded="false">
+            <span class="ai-fab-pulse"></span>
+            <span class="ai-fab-icon" aria-hidden="true">
+                <img class="ai-fab-custom-image hidden" id="ai-fab-custom-image" src="ai.png" alt="" />
+                <svg class="ai-fab-logo" viewBox="0 0 64 64" fill="none">
+                    <path d="M31.8 18.5C24.9 18.5 19.3 24.1 19.3 31C19.3 37.9 24.9 43.5 31.8 43.5C38.7 43.5 44.3 37.9 44.3 31C44.3 24.1 38.7 18.5 31.8 18.5Z" stroke="#F8FAFC" stroke-width="3.2"/>
+                    <path d="M26.1 37.1L38 24.9" stroke="#F8FAFC" stroke-width="3.2" stroke-linecap="round"/>
+                    <path d="M25.7 31.5C25.7 28.7 28 26.4 30.8 26.4H33.7C36.5 26.4 38.8 28.7 38.8 31.5V34.3C38.8 37.1 36.5 39.4 33.7 39.4H31.2L27.7 42.5V39.4H30.8C28 39.4 25.7 37.1 25.7 34.3V31.5Z" fill="#F8FAFC"/>
+                    <circle cx="30.4" cy="32.8" r="1.2" fill="#0A0D12"/>
+                    <circle cx="34.1" cy="32.8" r="1.2" fill="#0A0D12"/>
+                    <path d="M45.9 17.2L46.8 19.3L48.9 20.2L46.8 21.1L45.9 23.2L45 21.1L42.9 20.2L45 19.3L45.9 17.2Z" fill="#F8FAFC"/>
+                </svg>
+            </span>
+        </button>
+
+        <section class="ai-assistant-panel hidden" id="ai-assistant-panel" aria-label="Rialo Chat Assistant">
+            <div class="ai-assistant-head">
+                <div>
+                    <span class="ai-assistant-kicker">Rialo Chat</span>
+                    <strong>Ask Anything</strong>
+                </div>
+
+                <button class="ai-assistant-close" id="ai-assistant-close" type="button" aria-label="Close AI assistant">&times;</button>
+            </div>
+
+            <div class="ai-assistant-meta" id="ai-assistant-meta">
+                Live helper for market, NFTs, wallet, and predictions.
+            </div>
+
+            <div class="ai-assistant-messages" id="ai-assistant-messages">
+                <div class="ai-message ai-message-assistant">
+                    <strong>Rialo Chat</strong>
+                    <p>Hi. I can help with trading, NFTs, wallet steps, and how the product works.</p>
+                </div>
+            </div>
+
+            <div class="ai-assistant-suggestions" id="ai-assistant-suggestions">
+                <button type="button" class="ai-suggestion-chip">How do I buy a listed NFT?</button>
+                <button type="button" class="ai-suggestion-chip">Explain slippage</button>
+                <button type="button" class="ai-suggestion-chip">How do I create a token?</button>
+            </div>
+
+            <form class="ai-assistant-form" id="ai-assistant-form">
+                <textarea
+                    id="ai-assistant-input"
+                    rows="2"
+                    maxlength="1200"
+                    placeholder="Ask Rialo Chat..."
+                ></textarea>
+                <button type="submit" class="ai-assistant-send">Send</button>
+            </form>
+        </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
+    <script src="script.js?v=20260813-5"></script>
+    <script>
+        const predictionTeamBadgeColors = {
+            NU: ["#101820", "#41b6e6"],
+            LIV: ["#c8102e", "#00b2a9"],
+            FUL: ["#f5f0e6", "#111111"],
+            CHE: ["#034694", "#dba111"],
+            MC: ["#6cabdd", "#1c2c5b"],
+            BOU: ["#da291c", "#000000"],
+            HUL: ["#f6a800", "#111111"],
+            MU: ["#da291c", "#fbe122"],
+            ARS: ["#db0007", "#efcf00"],
+            COV: ["#77b5fe", "#0b2d5c"],
+            BVB: ["#fde100", "#111111"],
+            FCB: ["#dc052d", "#0066b2"],
+            INT: ["#0068a8", "#111111"],
+            MON: ["#e30613", "#ffffff"],
+            FRO: ["#005baa", "#ffdf00"],
+            JUV: ["#ffffff", "#111111"],
+            TOR: ["#7c1f2c", "#ffffff"],
+            MIL: ["#fb090b", "#111111"]
+        };
+
+        function createPredictionTeamBadge(code) {
+            const colors = predictionTeamBadgeColors[code] || ["#111827", "#f5f0e6"];
+            const textColor = colors[0] === "#ffffff" || colors[0] === "#f5f0e6" ? "#111111" : "#f5f0e6";
+            const svg = `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+                    <defs>
+                        <linearGradient id="g" x1="0" x2="0" y1="0" y2="1">
+                            <stop offset="0" stop-color="${colors[0]}"/>
+                            <stop offset="1" stop-color="${colors[1]}"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="96" height="96" rx="22" fill="#05070b"/>
+                    <path d="M21 14h54v34c0 19-12 30-27 38-15-8-27-19-27-38V14z" fill="url(#g)" stroke="rgba(245,240,230,.72)" stroke-width="3"/>
+                    <text x="48" y="56" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="24" font-weight="900" fill="${textColor}">${code}</text>
+                </svg>
+            `;
+            return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
+        }
+
+        document.querySelectorAll(".prediction-live-team-logo img").forEach((logo) => {
+            const logoBox = logo.closest(".prediction-live-team-logo");
+            const code = logoBox?.querySelector(".prediction-live-team-logo-fallback")?.textContent?.trim() || "";
+            logo.addEventListener("error", () => {
+                const fallbackSrc = logo.dataset.fallbackSrc;
+                if (fallbackSrc && logo.src !== fallbackSrc && logo.dataset.fallbackTried !== "true") {
+                    logo.dataset.fallbackTried = "true";
+                    logo.src = fallbackSrc;
+                    return;
+                }
+                if (code && logo.dataset.localBadgeTried !== "true") {
+                    logo.dataset.localBadgeTried = "true";
+                    logo.src = createPredictionTeamBadge(code);
+                    return;
+                }
+                logoBox?.classList.add("logo-failed");
+            });
+            logo.addEventListener("load", () => {
+                logoBox?.classList.remove("logo-failed");
+            });
+            if (logo.complete && logo.naturalWidth === 0) {
+                logo.dispatchEvent(new Event("error"));
+            }
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

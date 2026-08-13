@@ -1,0 +1,30 @@
+طريقة نشر عقد Rialo Player NFT على شبكة Sepolia
+
+1. افتح Remix ثم افتح مجلد contracts في اليسار.
+2. أنشئ ملفاً باسم RialoPlayerNFT.sol.
+3. انسخ إليه محتوى الملف الموجود في المشروع:
+   contracts/RialoPlayerNFT.sol
+4. افتح Solidity Compiler واختر إصدار 0.8.24 أو إصداراً أحدث متوافقاً.
+5. اضغط Compile RialoPlayerNFT.sol.
+6. افتح Deploy & Run Transactions.
+7. اختر Browser Extension / MetaMask وتأكد من ظهور Sepolia (11155111).
+8. اختر العقد RialoPlayerNFT.
+9. أدخل قيم الـ constructor بهذا الشكل:
+
+   initialBaseUri:
+   https://your-domain.example/metadata/
+
+   initialDefaultMintPrice:
+   1000000000000000
+
+   الرقم 1000000000000000 يساوي 0.001 ETH على Sepolia، وهو السعر الذي يستعمله
+   المشروع حالياً لإتمام عملية Mint من MetaMask.
+
+10. اضغط Deploy ووافق من MetaMask.
+11. بعد نجاح العملية، انسخ عنوان العقد من قسم Deployed Contracts.
+12. أرسل عنوان العقد الجديد الذي يبدأ بـ 0x إلى Codex لربطه بالمشروع واختبار Mint وItems وNFT Market.
+
+مهم:
+- لا تنشر 1_Storage.sol أو 2_Owner.sol أو 3_Ballot.sol.
+- العقد المطلوب اسمه RialoPlayerNFT.
+- لا ترسل العبارة السرية أو المفتاح الخاص لأي شخص.

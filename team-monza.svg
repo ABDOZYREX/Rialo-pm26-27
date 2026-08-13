@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-label="Monza badge">
+  <defs>
+    <linearGradient id="monRed" x1="17" y1="8" x2="78" y2="88" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#ff5c64"/>
+      <stop offset=".5" stop-color="#e30613"/>
+      <stop offset="1" stop-color="#84020b"/>
+    </linearGradient>
+    <filter id="monShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="5" flood-color="#000" flood-opacity=".45"/>
+    </filter>
+  </defs>
+  <rect width="96" height="96" rx="22" fill="#05070c"/>
+  <path d="M48 9 76 21v22c0 19.4-11.7 34-28 43-16.3-9-28-23.6-28-43V21L48 9Z" fill="url(#monRed)" stroke="#f7f7f7" stroke-width="3" filter="url(#monShadow)"/>
+  <path d="M31 27h34l-7 42H38l-7-42Z" fill="#ffffff" opacity=".96"/>
+  <path d="M41 32h14l-3 26h-8l-3-26Z" fill="#e30613"/>
+  <path d="M34 23 40 14l8 8 8-8 6 9-14 7-14-7Z" fill="#fff" stroke="#e30613" stroke-width="2" stroke-linejoin="round"/>
+  <text x="48" y="80" font-family="Arial Black, Impact, sans-serif" font-size="13" text-anchor="middle" fill="#fff">MONZA</text>
+</svg>
