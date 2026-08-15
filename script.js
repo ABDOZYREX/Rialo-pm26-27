@@ -3859,16 +3859,12 @@ function setupRialoMarketUi() {
         refs.detailHero.classList.toggle("is-hidden", !hasImage);
         refs.detailHeroImage.src = hasImage ? token.imageUrl : "";
         refs.detailHeroImage.alt = hasImage ? `${token.name} meme image` : "Token meme image";
-        // Render the detail artwork as one centered background layer. This is
-        // immune to legacy img sizing rules and always preserves the full image.
-        refs.detailHero.style.setProperty(
-            "background-image",
-            hasImage ? `url(${JSON.stringify(String(token.imageUrl))})` : "none",
-            "important"
-        );
-        refs.detailHero.style.setProperty("background-size", "contain", "important");
-        refs.detailHero.style.setProperty("background-position", "center", "important");
-        refs.detailHero.style.setProperty("background-repeat", "no-repeat", "important");
+        // The real img element controls the frame height using its natural
+        // aspect ratio, so portrait, square and landscape uploads stay exact.
+        refs.detailHero.style.removeProperty("background-image");
+        refs.detailHero.style.removeProperty("background-size");
+        refs.detailHero.style.removeProperty("background-position");
+        refs.detailHero.style.removeProperty("background-repeat");
         const detailHeroBackdrop = document.getElementById("market-detail-hero-backdrop");
         if (detailHeroBackdrop) {
             detailHeroBackdrop.src = hasImage ? token.imageUrl : "";
@@ -7821,7 +7817,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
 
 
 

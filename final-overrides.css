@@ -1504,7 +1504,39 @@ body.market-mode #market-view .market-token-media {
 
 /* Trade uses the single background layer set by JavaScript. */
 body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
-    visibility:hidden!important;
-    opacity:0!important;
-    pointer-events:none!important;
+    visibility:visible!important;
+    opacity:1!important;
+    pointer-events:auto!important;
+}
+
+/* Preserve the exact aspect ratio supplied by the user. The frame follows the
+   image instead of forcing every upload into a square. */
+body.market-mode #market-view .market-token-media,
+body.market-mode #market-view .market-detail-hero {
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    aspect-ratio:auto!important;
+    padding:0!important;
+    display:block!important;
+    overflow:hidden!important;
+    background:#c7d0db!important;
+    background-image:none!important;
+}
+
+body.market-mode #market-view .market-token-media .market-token-cover,
+body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
+    position:relative!important;
+    width:100%!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    padding:0!important;
+    display:block!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    transform:none!important;
+    filter:none!important;
+    border-radius:inherit!important;
 }
