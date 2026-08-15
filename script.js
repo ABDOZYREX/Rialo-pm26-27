@@ -239,6 +239,9 @@ const ERC20_MINIMAL_ABI = [
 
 const NFT_CONTRACT_ADDRESS = "0xAb76b45C6eCDCC31cCe38FbC5a71BD8C442c5AF4";
 const NFT_REAL_MINT_PRICE_RLO = RIALO_REAL_NATIVE_TX_VALUE;
+// The seller's RLO price remains a marketplace display value. Every real
+// MetaMask NFT marketplace transaction uses this small fixed Sepolia value.
+const NFT_MARKETPLACE_WALLET_PAYMENT = "0.0001";
 const RIALO_NFT_MARKETPLACE_STORAGE_KEY = `rialo-nft-marketplace-address-v4-${RIALO_TESTNET.chainId}-${NFT_CONTRACT_ADDRESS.toLowerCase()}`;
 
 const NFT_CONTRACT_ABI = [
@@ -342,6 +345,7 @@ const rialoNftCardOverrides = [
     ["Vinícius Júnior", 30, "nft-2026-01.png"],
     ["Kylian Mbappé", 30, "nft-2026-02.png"],
     ["Lamine Yamal", 30, "nft-2026-03.png"],
+    ["Raphinha", 26, "Raphinha.png"],
     ["Ousmane Dembélé", 25, "nft-2026-04.png"],
     ["Erling Haaland", 25, "nft-2026-05.png"],
     ["Michael Olise", 22, "nft-2026-06.png"],
@@ -371,6 +375,7 @@ const rialoNftCardOverrides = [
 ];
 
 function getOptimizedNftImage(pathname) {
+    if (/^Raphinha\.png$/i.test(String(pathname || ""))) return "Raphinha.png";
     return String(pathname || "").replace(/\.png$/i, ".webp");
 }
 
@@ -378,6 +383,7 @@ const rialoNftClubByPlayer = {
     "Vinícius Júnior": "Real Madrid",
     "Kylian Mbappé": "Real Madrid",
     "Lamine Yamal": "FC Barcelona",
+    "Raphinha": "FC Barcelona",
     "Kevin De Bruyne": "Napoli",
     "Julián Álvarez": "Atlético Madrid",
     "Ayoub Bouaddi": "Lille",
@@ -2249,6 +2255,11 @@ function setupRialoMarketUi() {
         imageInput: document.getElementById("market-create-image"),
         imageName: document.getElementById("market-create-image-name"),
         imagePreview: document.getElementById("market-create-image-preview"),
+        imageEditorControls: document.getElementById("market-image-editor-controls"),
+        imageZoom: document.getElementById("market-image-zoom"),
+        imageZoomOut: document.getElementById("market-image-zoom-out"),
+        imageZoomIn: document.getElementById("market-image-zoom-in"),
+        imageReset: document.getElementById("market-image-reset"),
         description: document.getElementById("market-create-description"),
         website: document.getElementById("market-create-website"),
         detailOrb: document.getElementById("market-detail-orb"),
@@ -2348,6 +2359,15 @@ function setupRialoMarketUi() {
         chainRloBalance: null,
         factoryArtifactPromise: null,
         pendingCreateImage: "",
+        createImageSource: "",
+        createImageElement: null,
+        createImageZoom: 1,
+        createImageOffsetX: 0,
+        createImageOffsetY: 0,
+        createImageDragging: false,
+        createImagePointerX: 0,
+        createImagePointerY: 0,
+        createImageRenderTimer: null,
         activeTokenCandles: [],
         chartZoom: 1,
         chartTimeframe: "1m",
@@ -2699,17 +2719,78 @@ function setupRialoMarketUi() {
         if (!imageUrl) {
             setCreateImageName();
             refs.imagePreview.innerHTML = `<span>No file selected yet.</span>`;
+            if (refs.imageEditorControls) refs.imageEditorControls.hidden = true;
             return;
         }
 
         setCreateImageName(label || "Selected meme image");
         refs.imagePreview.innerHTML = `
-            <img src="${escapeHTML(imageUrl)}" alt="Meme token preview">
+            <img src="${escapeHTML(imageUrl)}" alt="Meme token preview" draggable="false">
+            <span class="market-image-crop-guide" aria-hidden="true"></span>
         `;
+        if (refs.imageEditorControls) refs.imageEditorControls.hidden = false;
+    }
+
+    function getCreateImageGeometry() {
+        const image = state.createImageElement;
+        if (!image) return null;
+        const sourceWidth = image.naturalWidth || image.width;
+        const sourceHeight = image.naturalHeight || image.height;
+        if (!sourceWidth || !sourceHeight) return null;
+        const coverScale = Math.max(800 / sourceWidth, 800 / sourceHeight);
+        const scale = coverScale * state.createImageZoom;
+        const drawnWidth = sourceWidth * scale;
+        const drawnHeight = sourceHeight * scale;
+        const maxX = Math.max(0, (drawnWidth - 800) / 2);
+        const maxY = Math.max(0, (drawnHeight - 800) / 2);
+        state.createImageOffsetX = Math.max(-maxX, Math.min(maxX, state.createImageOffsetX));
+        state.createImageOffsetY = Math.max(-maxY, Math.min(maxY, state.createImageOffsetY));
+        return { image, drawnWidth, drawnHeight };
+    }
+
+    function renderCreateImageCrop() {
+        const geometry = getCreateImageGeometry();
+        if (!geometry) return;
+        const canvas = document.createElement("canvas");
+        canvas.width = 800;
+        canvas.height = 800;
+        const context = canvas.getContext("2d");
+        if (!context) return;
+        context.fillStyle = "#d7e0ea";
+        context.fillRect(0, 0, 800, 800);
+        context.imageSmoothingEnabled = true;
+        context.imageSmoothingQuality = "high";
+        context.drawImage(geometry.image, (800 - geometry.drawnWidth) / 2 + state.createImageOffsetX, (800 - geometry.drawnHeight) / 2 + state.createImageOffsetY, geometry.drawnWidth, geometry.drawnHeight);
+        state.pendingCreateImage = canvas.toDataURL("image/webp", 0.88);
+        const previewImage = refs.imagePreview?.querySelector("img");
+        if (previewImage) previewImage.src = state.pendingCreateImage;
+    }
+
+    function resetCreateImageCrop() {
+        state.createImageZoom = 1;
+        state.createImageOffsetX = 0;
+        state.createImageOffsetY = 0;
+        if (refs.imageZoom) refs.imageZoom.value = "100";
+        renderCreateImageCrop();
+    }
+
+    function scheduleCreateImageCrop() {
+        if (state.createImageRenderTimer) clearTimeout(state.createImageRenderTimer);
+        state.createImageRenderTimer = setTimeout(() => {
+            state.createImageRenderTimer = null;
+            renderCreateImageCrop();
+        }, 35);
     }
 
     function resetCreateImageState() {
+        if (state.createImageRenderTimer) clearTimeout(state.createImageRenderTimer);
+        state.createImageRenderTimer = null;
         state.pendingCreateImage = "";
+        state.createImageSource = "";
+        state.createImageElement = null;
+        state.createImageZoom = 1;
+        state.createImageOffsetX = 0;
+        state.createImageOffsetY = 0;
 
         if (refs.imageInput) {
             refs.imageInput.value = "";
@@ -4412,15 +4493,59 @@ function setupRialoMarketUi() {
 
             try {
                 const dataUrl = await compressCreateImage(file);
-                state.pendingCreateImage = dataUrl;
+                state.createImageSource = dataUrl;
+                state.createImageElement = await loadImageElement(dataUrl);
                 setCreateImagePreview(dataUrl, file.name);
-                refs.status.textContent = "Meme image ready. Continue launching your token.";
+                resetCreateImageCrop();
+                refs.status.textContent = "Image ready. Drag it and use the size control to choose the final square.";
             } catch (error) {
                 refs.status.textContent = error.message;
                 resetCreateImageState();
             }
         });
     }
+
+    if (refs.imageZoom) {
+        refs.imageZoom.addEventListener("input", () => {
+            state.createImageZoom = Math.max(1, Number(refs.imageZoom.value || 100) / 100);
+            scheduleCreateImageCrop();
+        });
+    }
+
+    const changeCreateImageZoom = amount => {
+        if (!refs.imageZoom || !state.createImageElement) return;
+        refs.imageZoom.value = String(Math.max(100, Math.min(300, Number(refs.imageZoom.value || 100) + amount)));
+        refs.imageZoom.dispatchEvent(new Event("input"));
+    };
+    refs.imageZoomOut?.addEventListener("click", () => changeCreateImageZoom(-10));
+    refs.imageZoomIn?.addEventListener("click", () => changeCreateImageZoom(10));
+    refs.imageReset?.addEventListener("click", resetCreateImageCrop);
+
+    refs.imagePreview?.addEventListener("pointerdown", event => {
+        if (!state.createImageElement) return;
+        state.createImageDragging = true;
+        state.createImagePointerX = event.clientX;
+        state.createImagePointerY = event.clientY;
+        refs.imagePreview.setPointerCapture(event.pointerId);
+        refs.imagePreview.classList.add("is-dragging");
+    });
+    refs.imagePreview?.addEventListener("pointermove", event => {
+        if (!state.createImageDragging || !state.createImageElement) return;
+        const rect = refs.imagePreview.getBoundingClientRect();
+        const displayToCanvas = rect.width ? 800 / rect.width : 1;
+        state.createImageOffsetX += (event.clientX - state.createImagePointerX) * displayToCanvas;
+        state.createImageOffsetY += (event.clientY - state.createImagePointerY) * displayToCanvas;
+        state.createImagePointerX = event.clientX;
+        state.createImagePointerY = event.clientY;
+        scheduleCreateImageCrop();
+    });
+    const finishCreateImageDrag = () => {
+        state.createImageDragging = false;
+        refs.imagePreview?.classList.remove("is-dragging");
+        if (state.createImageElement) renderCreateImageCrop();
+    };
+    refs.imagePreview?.addEventListener("pointerup", finishCreateImageDrag);
+    refs.imagePreview?.addEventListener("pointercancel", finishCreateImageDrag);
 
     refs.modal.addEventListener("click", event => {
         if (event.target === refs.modal) {
@@ -4686,7 +4811,7 @@ function openNftListingModal(code) {
     nftUiState.listingTokenId = tokenId;
     priceInput.value = existingListing ? String(existingListing.priceRlo) : String(card.priceRlo || 0);
     amountInput.value = existingListing ? String(existingListing.amount || 1) : String(Math.min(1, Math.max(ownedBalance, 1)));
-    subtitle.textContent = `List ${card.captain} (${card.country}) for resale inside Rialo PM.`;
+    subtitle.textContent = `List ${card.captain} for resale inside Rialo PM.`;
     status.textContent = existingListing
         ? `Your current listing is ${existingListing.priceRlo} RLO. Update it here or cancel it from the card.`
         : `Set your resale price in RLO, then list up to ${ownedBalance} NFT item(s) for everyone to see.`;
@@ -4823,7 +4948,9 @@ async function submitNftListing() {
         }
 
         status.textContent = "Confirm the NFT listing in your wallet...";
-        const pricePerUnitWei = ethers.parseEther(String(priceRlo));
+        // Keep the seller's chosen RLO price in the backend/UI, but register a
+        // fixed demo payment on-chain so MetaMask never requests that RLO value.
+        const pricePerUnitWei = ethers.parseEther(NFT_MARKETPLACE_WALLET_PAYMENT);
         const listTx = await marketplace.list(tokenId, amount, pricePerUnitWei);
         const receipt = await listTx.wait();
 
@@ -5127,7 +5254,7 @@ async function buyListedNft(code, sellerAddress = "", actionButton = null) {
         if (!marketplace) {
             throw new Error("The seller marketplace contract is unavailable.");
         }
-        const totalPriceWei = ethers.parseEther(String(listing.priceRlo));
+        const totalPriceWei = ethers.parseEther(NFT_MARKETPLACE_WALLET_PAYMENT);
         if (actionButton) actionButton.textContent = "Confirm in wallet...";
         const buyTx = await marketplace.buy(listing.sellerAddress, listing.tokenId, 1, {
             value: totalPriceWei
@@ -5187,7 +5314,7 @@ async function buyListedNft(code, sellerAddress = "", actionButton = null) {
 
         const raw = [error?.shortMessage, error?.reason, error?.message].filter(Boolean).join(" ");
         if (/incorrect payment/i.test(raw)) {
-            alert("The listed NFT price changed before your transaction was sent.");
+            alert(`This is an older listing. Its seller must cancel and list it again once so future wallet purchases use only ${NFT_MARKETPLACE_WALLET_PAYMENT} ETH.`);
             return;
         }
         if (/listing not active/i.test(raw)) {
@@ -7817,15 +7944,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
-
-
-
-
-
-
-
-
 
 
 

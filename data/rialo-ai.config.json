@@ -1,0 +1,5 @@
+{
+  "apiKey": "",
+  "model": "gpt-4.1-mini",
+  "apiUrl": "https://api.openai.com/v1/responses"
+}

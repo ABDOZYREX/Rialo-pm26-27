@@ -1509,6 +1509,69 @@ body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
     pointer-events:auto!important;
 }
 
+/* Interactive square image editor used by Create Token. */
+body.market-mode #market-view .market-create-image-preview:has(img) {
+    width:min(360px,100%)!important;
+    height:auto!important;
+    min-height:0!important;
+    max-height:none!important;
+    aspect-ratio:1/1!important;
+    cursor:grab!important;
+    touch-action:none!important;
+    user-select:none!important;
+    position:relative!important;
+}
+body.market-mode #market-view .market-create-image-preview.is-dragging { cursor:grabbing!important; }
+body.market-mode #market-view .market-create-image-preview .market-image-crop-guide {
+    position:absolute!important;
+    inset:10px!important;
+    border:1px dashed rgba(255,255,255,.9)!important;
+    border-radius:16px!important;
+    box-shadow:inset 0 0 0 1px rgba(7,21,35,.18)!important;
+    pointer-events:none!important;
+}
+body.market-mode #market-view .market-image-editor-controls {
+    width:min(520px,100%)!important;
+    padding:12px 14px!important;
+    border:1px solid rgba(77,163,255,.28)!important;
+    border-radius:16px!important;
+    background:#f5f9ff!important;
+}
+body.market-mode #market-view .market-image-editor-help {
+    margin-bottom:9px!important;
+    color:#526174!important;
+    font-size:12px!important;
+    font-weight:700!important;
+}
+body.market-mode #market-view .market-image-zoom-row {
+    display:flex!important;
+    align-items:center!important;
+    gap:9px!important;
+}
+body.market-mode #market-view .market-image-zoom-row label {
+    color:#1678e8!important;
+    font-size:11px!important;
+    font-weight:800!important;
+    white-space:nowrap!important;
+}
+body.market-mode #market-view .market-image-zoom-row input[type="range"] {
+    flex:1!important;
+    min-width:90px!important;
+    accent-color:#3198f5!important;
+}
+body.market-mode #market-view .market-image-zoom-row button {
+    min-width:36px!important;
+    height:34px!important;
+    padding:0 11px!important;
+    border:1px solid rgba(77,163,255,.35)!important;
+    border-radius:10px!important;
+    background:#fff!important;
+    color:#126cc7!important;
+    font-weight:900!important;
+    cursor:pointer!important;
+}
+body.market-mode #market-view .market-image-zoom-row .market-image-reset-btn { min-width:62px!important; }
+
 /* Preserve the exact aspect ratio supplied by the user. The frame follows the
    image instead of forcing every upload into a square. */
 body.market-mode #market-view .market-token-media,

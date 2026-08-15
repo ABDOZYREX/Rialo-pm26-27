@@ -1627,7 +1627,7 @@
             }
         }
     </style>
-    <link rel="stylesheet" href="final-overrides.css?v=20260815-9">
+    <link rel="stylesheet" href="final-overrides.css?v=20260815-11">
 </head>
 <body class="home-mode">
 
@@ -3006,6 +3006,17 @@
                                 <span>No file selected yet.</span>
                             </div>
 
+                            <div class="market-image-editor-controls" id="market-image-editor-controls" hidden>
+                                <div class="market-image-editor-help">Drag the image to choose what appears inside the square.</div>
+                                <div class="market-image-zoom-row">
+                                    <button type="button" id="market-image-zoom-out" aria-label="Zoom out">−</button>
+                                    <label for="market-image-zoom">Image size</label>
+                                    <input type="range" id="market-image-zoom" min="100" max="300" value="100" step="1">
+                                    <button type="button" id="market-image-zoom-in" aria-label="Zoom in">+</button>
+                                    <button type="button" class="market-image-reset-btn" id="market-image-reset">Reset</button>
+                                </div>
+                            </div>
+
                             <label class="market-create-field full">
                                 <span>Description</span>
                                 <textarea id="market-create-description" placeholder="A meme coin created inside Rialo Meme Market."></textarea>
@@ -3437,7 +3448,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-    <script src="script.js?v=20260815-6"></script>
+    <script src="script.js?v=20260815-10"></script>
     <script>
         const predictionTeamBadgeColors = {
             NU: ["#101820", "#41b6e6"],
