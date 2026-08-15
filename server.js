@@ -914,6 +914,68 @@ function notFound(res) {
   sendJson(res, 404, { error: "Not found" });
 }
 
+const ADMIN_DELETABLE_SYMBOLS = new Set(["SP", "RLO"]);
+
+function deleteTokensBySymbols(symbols) {
+  const requested = Array.isArray(symbols) ? symbols : [];
+  const normalizedRequested = requested
+    .map(symbol => String(symbol || "").trim().toUpperCase())
+    .filter(Boolean);
+
+  if (normalizedRequested.length === 0) {
+    return { error: "No token symbols provided." };
+  }
+
+  const invalidSymbols = normalizedRequested.filter(symbol => !ADMIN_DELETABLE_SYMBOLS.has(symbol));
+  if (invalidSymbols.length > 0) {
+    return { error: `Only ${Array.from(ADMIN_DELETABLE_SYMBOLS).join(", ")} may be deleted via this endpoint.`, invalidSymbols };
+  }
+
+  const db = getMarketDb();
+  const placeholders = normalizedRequested.map(() => "UPPER(symbol) = ?").join(" OR ");
+
+  const matchedTokens = db.prepare(`SELECT id, symbol FROM tokens WHERE ${placeholders}`).all(...normalizedRequested);
+  if (matchedTokens.length === 0) {
+    return { deletedTokens: 0, deletedTrades: 0, deletedBalances: 0, tokens: [] };
+  }
+
+  const tokenIds = matchedTokens.map(row => row.id);
+  const tokenIdPlaceholders = tokenIds.map(() => "?").join(", ");
+
+  let deletedTrades = 0;
+  let deletedBalances = 0;
+  let deletedTokens = 0;
+
+  try {
+    db.exec("BEGIN IMMEDIATE TRANSACTION");
+
+    const tradeCountRow = db.prepare(`SELECT COUNT(*) AS count FROM trades WHERE token_id IN (${tokenIdPlaceholders})`).get(...tokenIds);
+    deletedTrades = Number(tradeCountRow?.count || 0);
+
+    const balanceCountRow = db.prepare(`SELECT COUNT(*) AS count FROM wallet_token_balances WHERE token_id IN (${tokenIdPlaceholders})`).get(...tokenIds);
+    deletedBalances = Number(balanceCountRow?.count || 0);
+
+    const deleteResult = db.prepare(`DELETE FROM tokens WHERE ${placeholders}`).run(...normalizedRequested);
+    deletedTokens = Number(deleteResult?.changes || 0);
+
+    db.exec("COMMIT");
+  } catch (error) {
+    try {
+      db.exec("ROLLBACK");
+    } catch {
+      // ignore rollback failure
+    }
+    throw error;
+  }
+
+  return {
+    deletedTokens,
+    deletedTrades,
+    deletedBalances,
+    tokens: matchedTokens.map(row => ({ id: row.id, symbol: row.symbol }))
+  };
+}
+
 // The meme image of a launched token travels inside the JSON body as a base64
 // data URL, so the cap has to leave room for the 2 MB the upload form accepts
 // (~2.7 MB once base64-encoded) plus the rest of the payload.
@@ -2261,6 +2323,25 @@ const server = http.createServer(async (req, res) => {
       }
     });
     return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/admin/delete-tokens") {
+    try {
+      const body = await parseBody(req);
+      const symbols = Array.isArray(body.symbols) ? body.symbols : [];
+      const result = deleteTokensBySymbols(symbols);
+
+      if (result.error) {
+        sendJson(res, 400, result);
+        return;
+      }
+
+      sendJson(res, 200, { ok: true, ...result });
+      return;
+    } catch (error) {
+      sendJson(res, error.statusCode || 400, { error: error.message });
+      return;
+    }
   }
 
   if (req.method === "POST" && pathname === "/ask") {
