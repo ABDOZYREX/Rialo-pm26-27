@@ -1659,64 +1659,6 @@ body .prediction-live-history-selection img {
     white-space: nowrap !important;
 }
 
-@media (min-width: 1024px) and (max-width: 1500px) {
-    .site-navbar,
-    header.site-navbar {
-        grid-template-columns: minmax(0, 1fr) auto auto !important;
-        gap: 16px !important;
-        padding-inline: clamp(20px, 3vw, 42px) !important;
-    }
-
-    .site-navbar .top-page-switcher {
-        position: fixed !important;
-        top: 92px !important;
-        left: auto !important;
-        right: clamp(20px, 3vw, 42px) !important;
-        width: min(330px, calc(100vw - 40px)) !important;
-        height: auto !important;
-        display: none !important;
-        grid-template-columns: 1fr !important;
-        gap: 4px !important;
-        padding: 12px !important;
-        border: 1px solid var(--border) !important;
-        border-radius: 20px !important;
-        background: rgba(255, 255, 255, 0.97) !important;
-        box-shadow: 0 22px 48px rgba(20, 35, 55, 0.16) !important;
-        opacity: 0 !important;
-        pointer-events: none !important;
-        transform: translateY(-10px) !important;
-    }
-
-    body.nav-menu-open .site-navbar .top-page-switcher {
-        display: grid !important;
-        opacity: 1 !important;
-        pointer-events: auto !important;
-        transform: translateY(0) !important;
-    }
-
-    .site-navbar .top-page-btn {
-        width: 100% !important;
-        padding: 14px !important;
-        border-radius: 14px !important;
-        text-align: left !important;
-    }
-
-    .site-navbar .top-page-btn::after {
-        display: none !important;
-    }
-
-    .site-navbar .wallet-area {
-        grid-column: 2 !important;
-        display: inline-flex !important;
-    }
-
-    .mobile-menu-toggle {
-        display: grid !important;
-        grid-column: 3 !important;
-        justify-self: end !important;
-    }
-}
-
 @media (max-width: 620px) {
     .site-navbar .twitter-username-box {
         top: 82px !important;
