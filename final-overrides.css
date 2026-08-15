@@ -1725,3 +1725,40 @@ body .prediction-live-history-selection img {
         width: auto !important;
     }
 }
+
+/* A missing X username must never change the navbar's row height. Keep the
+   navigation fixed and reserve its space in the document while the prompt is
+   visible, so every page starts below the navbar instead of behind it. */
+body.x-username-required {
+    padding-top: 80px !important;
+}
+
+body.x-username-required .site-navbar,
+body.x-username-required header.site-navbar {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    height: 80px !important;
+    min-height: 80px !important;
+    align-content: center !important;
+    overflow: visible !important;
+}
+
+body.x-username-required .site-navbar .wallet-area {
+    height: 58px !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+}
+
+@media (max-width: 767px) {
+    body.x-username-required {
+        padding-top: 72px !important;
+    }
+
+    body.x-username-required .site-navbar,
+    body.x-username-required header.site-navbar {
+        height: 72px !important;
+        min-height: 72px !important;
+    }
+}

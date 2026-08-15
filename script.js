@@ -6616,6 +6616,7 @@ function setupWallet() {
         function hideAfterSaved() {
             setTimeout(() => {
                 twitterBox.classList.add("hidden");
+                document.body.classList.remove("x-username-required");
             }, 650);
         }
 
@@ -6648,11 +6649,13 @@ function setupWallet() {
         if (savedUsername) {
             twitterInput.value = cleanRialoTwitterUsername(savedUsername);
             twitterBox.classList.add("hidden");
+            document.body.classList.remove("x-username-required");
             return;
         }
 
         twitterInput.value = "";
         twitterBox.classList.remove("hidden");
+        document.body.classList.add("x-username-required");
 
         if (twitterConfirmBtn) {
             twitterConfirmBtn.style.display = "block";
@@ -6694,6 +6697,7 @@ function setupWallet() {
         if (twitterBox) {
             twitterBox.classList.add("hidden");
         }
+        document.body.classList.remove("x-username-required");
 
         if (twitterSaveStatus) {
             twitterSaveStatus.textContent = "Enter your X username, then confirm.";
@@ -8047,7 +8051,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
 
 
 
