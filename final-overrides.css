@@ -1485,3 +1485,26 @@ body.market-mode #market-view .market-detail-hero {
     background:#c7d0db!important;
     background-image:none!important;
 }
+
+/* Final universal artwork rule: never crop or stretch uploaded token images. */
+body.market-mode #market-view .market-token-media .market-token-cover {
+    width:100%!important;
+    height:100%!important;
+    padding:0!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    transform:none!important;
+    filter:none!important;
+}
+
+body.market-mode #market-view .market-token-media {
+    background:#c7d0db!important;
+    background-image:none!important;
+}
+
+/* Trade uses the single background layer set by JavaScript. */
+body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
+    visibility:hidden!important;
+    opacity:0!important;
+    pointer-events:none!important;
+}
