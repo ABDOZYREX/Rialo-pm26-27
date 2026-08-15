@@ -7,7 +7,8 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "cleanup:delete-tokens": "node scripts/delete-tokens.js"
   },
   "devDependencies": {
     "solc": "^0.8.35"
