@@ -1475,9 +1475,13 @@ body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
     object-fit:contain!important;
     object-position:center!important;
     transform:none!important;
+    opacity:1!important;
+    filter:none!important;
+    mix-blend-mode:normal!important;
     border-radius:18px!important;
 }
 
 body.market-mode #market-view .market-detail-hero {
-    background:linear-gradient(145deg,#dce3eb 0%,#aebac8 100%)!important;
+    background:#c7d0db!important;
+    background-image:none!important;
 }
