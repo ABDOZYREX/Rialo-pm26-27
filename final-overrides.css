@@ -1465,3 +1465,19 @@ body.market-mode #market-view .market-feed-row-trade.sell .market-feed-main stro
 .nft-player-card {
     contain-intrinsic-size:auto 620px;
 }
+
+/* Trade detail must show the complete uploaded artwork without cropping it. */
+body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
+    width:100%!important;
+    height:100%!important;
+    padding:8px!important;
+    box-sizing:border-box!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    transform:none!important;
+    border-radius:18px!important;
+}
+
+body.market-mode #market-view .market-detail-hero {
+    background:linear-gradient(145deg,#dce3eb 0%,#aebac8 100%)!important;
+}
