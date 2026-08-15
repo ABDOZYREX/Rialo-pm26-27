@@ -242,6 +242,7 @@ const NFT_REAL_MINT_PRICE_RLO = RIALO_REAL_NATIVE_TX_VALUE;
 // The seller's RLO price remains a marketplace display value. Every real
 // MetaMask NFT marketplace transaction uses this small fixed Sepolia value.
 const NFT_MARKETPLACE_WALLET_PAYMENT = "0.0001";
+const NFT_LISTING_PRICE_CACHE_KEY = "rialo-nft-listing-prices-v1";
 const RIALO_NFT_MARKETPLACE_STORAGE_KEY = `rialo-nft-marketplace-address-v4-${RIALO_TESTNET.chainId}-${NFT_CONTRACT_ADDRESS.toLowerCase()}`;
 
 const NFT_CONTRACT_ABI = [
@@ -513,6 +514,46 @@ function getCurrentWalletNftListedAmountByCode(code) {
 
 function buildNftListingKey(code, sellerAddress) {
     return `${String(code || "").toLowerCase()}:${String(sellerAddress || "").toLowerCase()}`;
+}
+
+function getNftListingPriceCache() {
+    try {
+        const saved = JSON.parse(localStorage.getItem(NFT_LISTING_PRICE_CACHE_KEY) || "{}");
+        return saved && typeof saved === "object" ? saved : {};
+    } catch {
+        return {};
+    }
+}
+
+function getCachedNftListingPrice(code, sellerAddress) {
+    const value = Number(getNftListingPriceCache()[buildNftListingKey(code, sellerAddress)]);
+    return Number.isFinite(value) && value > 0 ? value : 0;
+}
+
+function cacheNftListingPrice(code, sellerAddress, priceRlo) {
+    const price = Number(priceRlo);
+    const key = buildNftListingKey(code, sellerAddress);
+    if (!key || key === ":" || !Number.isFinite(price) || price <= 0) return;
+
+    try {
+        const cache = getNftListingPriceCache();
+        cache[key] = price;
+        localStorage.setItem(NFT_LISTING_PRICE_CACHE_KEY, JSON.stringify(cache));
+    } catch {
+        // The server record remains the source of truth when local storage is unavailable.
+    }
+}
+
+function clearCachedNftListingPrice(code, sellerAddress) {
+    const key = buildNftListingKey(code, sellerAddress);
+    try {
+        const cache = getNftListingPriceCache();
+        if (!(key in cache)) return;
+        delete cache[key];
+        localStorage.setItem(NFT_LISTING_PRICE_CACHE_KEY, JSON.stringify(cache));
+    } catch {
+        // Ignore storage failures.
+    }
 }
 
 // A cancelled listing must not be resurrected by the on-chain re-sync in
@@ -1219,9 +1260,12 @@ async function refreshNftUiState() {
             }
         });
 
-        const onChainWalletListings = rawOnChainWalletListings.filter(listing =>
-            !isNftListingRecentlyCancelled(listing.code, listing.sellerAddress)
-        );
+        const onChainWalletListings = rawOnChainWalletListings
+            .filter(listing => !isNftListingRecentlyCancelled(listing.code, listing.sellerAddress))
+            .map(listing => ({
+                ...listing,
+                priceRlo: getCachedNftListingPrice(listing.code, listing.sellerAddress) || listing.priceRlo
+            }));
 
         const mergedListings = [...serverListings];
         onChainWalletListings.forEach(onChainListing => {
@@ -4907,6 +4951,10 @@ async function submitNftListing() {
         return;
     }
 
+    // Preserve the price chosen by the seller before the wallet transaction.
+    // This prevents the fixed on-chain demo payment from replacing it in the UI.
+    cacheNftListingPrice(code, connectedWalletAddress, priceRlo);
+
     const ownedBalance = getNftOwnedBalanceByCode(code);
     if (ownedBalance <= 0) {
         status.textContent = "You need to own this NFT before you can list it.";
@@ -4979,6 +5027,7 @@ async function submitNftListing() {
         }
 
         setNftListings(data.listings || []);
+        cacheNftListingPrice(code, signerAddress, priceRlo);
         clearCancelledNftListingMark(code, signerAddress);
         status.textContent = `Listed successfully at ${priceRlo} RLO for ${amount} item(s).`;
         await refreshNftUiState();
@@ -5184,6 +5233,7 @@ async function cancelNftListing(code) {
             : Math.max(0, currentListedAmount - cancelAmount);
         if (remainingAmount <= 0) {
             markNftListingAsCancelled(code, sellerAddress);
+            clearCachedNftListingPrice(code, sellerAddress);
         }
 
         // refreshNftUiState() re-renders the collection itself.
@@ -7997,8 +8047,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
-
 
 
 
