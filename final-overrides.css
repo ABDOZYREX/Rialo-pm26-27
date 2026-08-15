@@ -1359,3 +1359,57 @@ body.swap-mode #swap-view .swap-stage.swap-stage--simple {
     text-align: center !important;
     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.28) !important;
 }
+
+/* Meme artwork: one clean image on a neutral stage that supports dark, light and transparent art. */
+body.market-mode #market-view .market-token-media,
+body.market-mode #market-view .market-detail-hero,
+body.market-mode #market-view .market-detail-orb.has-image {
+    background-color:#aab7c7!important;
+    background-image:
+        linear-gradient(135deg,rgba(255,255,255,.94) 0 49.8%,rgba(148,163,184,.82) 50.2% 100%),
+        radial-gradient(circle at 50% 50%,rgba(255,255,255,.25),rgba(15,23,42,.12))!important;
+    background-position:center!important;
+    background-size:100% 100%!important;
+}
+
+/* The blurred duplicate was making transparent logos look like two images. */
+body.market-mode #market-view .market-token-artwork-backdrop,
+body.market-mode #market-view .market-detail-hero-backdrop {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-token-media .market-token-cover,
+body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
+    position:relative!important;
+    z-index:1!important;
+    width:100%!important;
+    height:100%!important;
+    padding:14px!important;
+    box-sizing:border-box!important;
+    object-fit:contain!important;
+    object-position:center!important;
+    border-radius:inherit!important;
+    transform:none!important;
+    filter:drop-shadow(0 4px 10px rgba(15,23,42,.22))!important;
+}
+
+/* Keep only the large artwork in the Trade asset panel. */
+body.market-mode #market-view .market-detail-orb.has-image {
+    display:none!important;
+}
+
+body.market-mode #market-view .market-detail-copy p,
+body.market-mode #market-view .market-token-body p {
+    opacity:1!important;
+    font-weight:800!important;
+    text-shadow:none!important;
+    -webkit-text-fill-color:currentColor!important;
+}
+
+body.market-mode #market-view .market-token-body p {
+    color:#334155!important;
+}
+
+body.market-mode #market-view .market-detail-copy p {
+    color:#cbd5e1!important;
+}
