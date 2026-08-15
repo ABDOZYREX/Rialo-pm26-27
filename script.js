@@ -1230,7 +1230,11 @@ async function refreshNftUiState() {
                 String(listing.sellerAddress || "").toLowerCase() === String(onChainListing.sellerAddress || "").toLowerCase()
             );
             if (existingIndex >= 0) {
-                mergedListings[existingIndex] = { ...mergedListings[existingIndex], ...onChainListing };
+                // The contract intentionally stores a small fixed demo payment
+                // (0.0001 ETH) while the seller's RLO price lives in the
+                // marketplace record. Keep that seller-entered price when both
+                // sources describe the same listing.
+                mergedListings[existingIndex] = { ...onChainListing, ...mergedListings[existingIndex] };
             } else {
                 mergedListings.push(onChainListing);
             }
@@ -6946,6 +6950,44 @@ function getPredictionLiveMatchKey(card) {
         .trim();
 }
 
+function getPredictionLiveSelection(card, selectedOdd = "") {
+    const teams = Array.from(card.querySelectorAll(".prediction-live-team"));
+    const oddButtons = Array.from(card.querySelectorAll(".prediction-live-odd-btn"));
+    const selectedIndex = oddButtons.findIndex(button =>
+        String(button.dataset.odd || button.textContent.trim()) === String(selectedOdd || "")
+    );
+
+    if (selectedIndex === 1) {
+        return { type: "draw", label: "Draw", team: "", logo: "" };
+    }
+
+    const team = teams[selectedIndex === 2 ? 1 : 0];
+    const name = team?.querySelector(".prediction-live-team-name")?.textContent.trim() || "";
+    const logo = team?.querySelector(".prediction-live-team-logo img")?.getAttribute("src") || "";
+
+    return {
+        type: name ? "team" : "",
+        label: name,
+        team: name,
+        logo
+    };
+}
+
+function getPredictionLiveEntrySelection(entry) {
+    if (entry.selectionLabel) {
+        return {
+            type: entry.selectionType || (entry.selectionLabel === "Draw" ? "draw" : "team"),
+            label: entry.selectionLabel,
+            logo: entry.selectionLogo || ""
+        };
+    }
+
+    const card = Array.from(document.querySelectorAll(".prediction-live-match-card"))
+        .find(item => getPredictionLiveMatchKey(item) === String(entry.matchKey || entry.match || "").toLowerCase().replace(/\s+/g, " ").trim());
+
+    return card ? getPredictionLiveSelection(card, entry.odd) : { type: "", label: "", logo: "" };
+}
+
 function hasPredictionLiveEntryForWallet(card, walletAddress) {
     const wallet = String(walletAddress || "").toLowerCase();
     if (!wallet) return false;
@@ -7026,10 +7068,16 @@ function renderPredictionLiveHistory() {
         return;
     }
 
-    list.innerHTML = history.map(entry => `
+    list.innerHTML = history.map(entry => {
+        const selection = getPredictionLiveEntrySelection(entry);
+        const selectionHtml = selection.label
+            ? `<span class="prediction-live-history-selection">${selection.logo ? `<img src="${selection.logo}" alt="" aria-hidden="true">` : ""}<span>(${selection.label})</span></span>`
+            : "";
+
+        return `
         <div class="prediction-live-history-item">
             <div class="prediction-live-history-main">
-                <div class="prediction-live-history-match">${entry.match}</div>
+                <div class="prediction-live-history-match"><span>${entry.match}</span>${selectionHtml}</div>
                 <div class="prediction-live-history-time">${formatPredictionLiveHistoryTime(entry.time)}</div>
             </div>
             <div class="prediction-live-history-side">
@@ -7037,7 +7085,8 @@ function renderPredictionLiveHistory() {
                 <div class="prediction-live-history-amount">${entry.amount} RLO</div>
             </div>
         </div>
-    `).join("");
+    `;
+    }).join("");
 }
 
 function addPredictionLiveHistoryEntry(card, amount, txHash = "") {
@@ -7048,12 +7097,16 @@ function addPredictionLiveHistoryEntry(card, amount, txHash = "") {
     const selectedOdd = card.querySelector(".prediction-live-odd-btn.active")?.dataset?.odd
         || card.querySelector(".prediction-live-odd-btn.active")?.textContent?.trim()
         || "";
+    const selection = getPredictionLiveSelection(card, selectedOdd);
 
     history.unshift({
         amount: cleanAmount,
         odd: selectedOdd,
         match: getPredictionLiveMatchTitle(card),
         matchKey: getPredictionLiveMatchKey(card),
+        selectionType: selection.type,
+        selectionLabel: selection.label,
+        selectionLogo: selection.logo,
         time: new Date().toISOString(),
         wallet: connectedWalletAddress || "",
         txHash
@@ -7944,8 +7997,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
-
 
 
 

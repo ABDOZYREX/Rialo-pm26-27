@@ -1603,3 +1603,42 @@ body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
     filter:none!important;
     border-radius:inherit!important;
 }
+
+/* Prediction Live history: make the selected team (or Draw) explicit. */
+body .prediction-live-history-match {
+    display:flex!important;
+    align-items:center!important;
+    gap:8px!important;
+}
+
+body .prediction-live-history-selection {
+    display:inline-flex!important;
+    align-items:center!important;
+    gap:5px!important;
+    color:#247fce!important;
+    font-size:11px!important;
+    font-weight:900!important;
+    white-space:nowrap!important;
+}
+
+body .prediction-live-history-selection img {
+    width:22px!important;
+    height:22px!important;
+    flex:0 0 22px!important;
+    object-fit:contain!important;
+    filter:none!important;
+}
+
+@media (max-width: 620px) {
+    body .prediction-live-history-item {
+        grid-template-columns:1fr!important;
+    }
+
+    body .prediction-live-history-side {
+        justify-content:flex-start!important;
+    }
+
+    body .prediction-live-history-match {
+        flex-wrap:wrap!important;
+    }
+}
