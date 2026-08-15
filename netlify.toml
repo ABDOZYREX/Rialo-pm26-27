@@ -5,8 +5,8 @@
 #    index.html, script.js, style.css, final-overrides.css,
 #    all *.png / *.webp / *.svg / *.mp3, and the *.artifact.json ABI files.
 #
-#  The Node backend (server.js) KEEPS RUNNING ON RENDER:
-#    https://rialo-pmm.onrender.com
+#  The Node backend (server.js) KEEPS RUNNING ON RAILWAY:
+#    https://rialo-pm-production.up.railway.app
 #
 #  Why the backend is not moved to Netlify Functions:
 #    - server.js stores state in a real SQLite file (node:sqlite -> market.db).
@@ -126,7 +126,7 @@ echo "Rialo PM: static bundle ready"
 [[redirects]]
   from = "/api/twitter-avatar"
   query = {username = ":username"}
-  to = "https://rialo-pmm.onrender.com/api/twitter-avatar?username=:username"
+  to = "https://rialo-pm-production.up.railway.app/api/twitter-avatar?username=:username"
   status = 200
   force = true
 
@@ -136,14 +136,14 @@ echo "Rialo PM: static bundle ready"
 # switch getApiUrl() back to relative paths, or if CORS gets blocked.
 [[redirects]]
   from = "/api/*"
-  to = "https://rialo-pmm.onrender.com/api/:splat"
+  to = "https://rialo-pm-production.up.railway.app/api/:splat"
   status = 200
   force = true
 
 # The AI assistant endpoint (server.js POST /ask).
 [[redirects]]
   from = "/ask"
-  to = "https://rialo-pmm.onrender.com/ask"
+  to = "https://rialo-pm-production.up.railway.app/ask"
   status = 200
   force = true
 

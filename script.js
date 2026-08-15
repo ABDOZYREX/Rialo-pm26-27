@@ -441,8 +441,35 @@ const expandedRialoWorldCupNfts = worldCupGroups
         };
     });
 
+// Permanent Rialo team collectibles. These cards are presentation-only,
+// always owned, and can never be minted, listed, sold, or purchased.
+const rialoProtectedOwnedNfts = [
+    {
+        code: "ade",
+        captain: "ADE",
+        subtitle: "CEO",
+        country: "Rialo",
+        image: "item-ADE-01.png",
+        fallbackImage: "item-ADE-01.png",
+        protectedOwned: true
+    },
+    {
+        code: "eric-spider",
+        captain: "ERIC&SPIDER",
+        subtitle: "RIALO TEAM",
+        country: "Rialo",
+        image: "item-ERIC-SPIDER-02.png",
+        fallbackImage: "item-ERIC-SPIDER-02.png",
+        protectedOwned: true
+    }
+];
+
+const protectedNftCodes = new Set(rialoProtectedOwnedNfts.map(card => card.code));
+
 function getNftCardByCode(code) {
-    return expandedRialoWorldCupNfts.find(card => card.code === code) || null;
+    const normalizedCode = String(code || "").toLowerCase();
+    return [...rialoProtectedOwnedNfts, ...expandedRialoWorldCupNfts]
+        .find(card => String(card.code || "").toLowerCase() === normalizedCode) || null;
 }
 
 function getNftTokenIdByCode(code) {
@@ -450,6 +477,9 @@ function getNftTokenIdByCode(code) {
 }
 
 function getNftOwnedBalanceByCode(code) {
+    if (protectedNftCodes.has(String(code || "").toLowerCase())) {
+        return 1;
+    }
     return Number(nftOwnedBalancesByCode[String(code || "").toLowerCase()] || 0);
 }
 
@@ -592,6 +622,7 @@ function setNftListings(listings = []) {
             sellerAddress: String(listing.sellerAddress || ""),
             amount: Number(listing.amount || 0),
             priceRlo: Number(listing.priceRlo || 0),
+            marketplaceAddress: String(listing.marketplaceAddress || ""),
             txHash: String(listing.txHash || ""),
             createdAt: String(listing.createdAt || ""),
             updatedAt: String(listing.updatedAt || "")
@@ -603,7 +634,7 @@ function setNftListings(listings = []) {
     });
 }
 
-const RIALO_BACKEND_URL = "https://rialo-pmm.onrender.com";
+const RIALO_BACKEND_URL = "https://rialo-pm-production.up.railway.app";
 
 function getApiUrl(pathname) {
     const path = String(pathname || "");
@@ -612,7 +643,7 @@ function getApiUrl(pathname) {
     }
 
     const host = window.location.hostname || "";
-    const isLocalBackend = host === "localhost" || host === "127.0.0.1" || host.includes("onrender.com");
+    const isLocalBackend = host === "localhost" || host === "127.0.0.1" || host.includes("railway.app");
     const useRemoteBackend = window.location.protocol === "file:" || !isLocalBackend;
 
     if (!useRemoteBackend) {
@@ -1007,6 +1038,7 @@ async function loadCurrentWalletOnChainNftListings() {
         if (!marketplace) {
             return [];
         }
+        const marketplaceAddress = await marketplace.getAddress();
 
         const results = await Promise.all(expandedRialoWorldCupNfts.map(async card => {
             const tokenId = getNftTokenIdByCode(card.code);
@@ -1028,6 +1060,7 @@ async function loadCurrentWalletOnChainNftListings() {
                     sellerAddress,
                     amount,
                     priceRlo: Number(ethers.formatEther(priceWei)),
+                    marketplaceAddress,
                     txHash: "",
                     source: "blockchain"
                 };
@@ -4267,17 +4300,23 @@ function setupRialoMarketUi() {
         }
 
         state.pollingHandle = setInterval(async () => {
+            if (document.hidden) {
+                return;
+            }
+
             try {
-                await loadTokens();
-                await refreshActiveTokenSilently();
-                await loadPortfolio();
+                await Promise.all([
+                    loadTokens(),
+                    refreshActiveTokenSilently(),
+                    loadPortfolio()
+                ]);
                 if (!state.activeTokenId) {
                     updateLiveStatus("Scanning live market");
                 }
             } catch {
                 // Ignore transient polling errors.
             }
-        }, 4000);
+        }, 12000);
     }
 
     window.refreshRialoMarketUi = async () => {
@@ -4287,9 +4326,11 @@ function setupRialoMarketUi() {
             } else {
                 state.chainRloBalance = null;
             }
-            await loadTokens();
-            await loadPortfolio();
-            await refreshActiveTokenSilently();
+            await Promise.all([
+                loadTokens(),
+                loadPortfolio(),
+                refreshActiveTokenSilently()
+            ]);
         } catch {
             // Ignore refresh errors triggered by wallet/network changes.
         }
@@ -4534,24 +4575,38 @@ function initMouseGlow() {
     let mouseY = window.innerHeight / 2;
     let glowX = mouseX;
     let glowY = mouseY;
+    let glowAnimating = false;
+
+    function requestGlowFrame() {
+        if (glowAnimating || document.hidden) return;
+        glowAnimating = true;
+        requestAnimationFrame(animateGlow);
+    }
 
     document.addEventListener("mousemove", event => {
         mouseX = event.clientX;
         mouseY = event.clientY;
         glow.classList.add("active");
+        requestGlowFrame();
     });
 
-    document.addEventListener("mouseenter", () => glow.classList.add("active"));
+    document.addEventListener("mouseenter", () => {
+        glow.classList.add("active");
+        requestGlowFrame();
+    });
     document.addEventListener("mouseleave", () => glow.classList.remove("active"));
 
     function animateGlow() {
         glowX += (mouseX - glowX) * 0.22;
         glowY += (mouseY - glowY) * 0.22;
         glow.style.transform = `translate3d(${glowX - 80}px, ${glowY - 80}px, 0)`;
-        requestAnimationFrame(animateGlow);
+        const stillMoving = Math.abs(mouseX - glowX) > 0.25 || Math.abs(mouseY - glowY) > 0.25;
+        if (stillMoving && !document.hidden) {
+            requestAnimationFrame(animateGlow);
+        } else {
+            glowAnimating = false;
+        }
     }
-
-    animateGlow();
 }
 
 function queueExpandedNftCollectionRender() {
@@ -4600,6 +4655,9 @@ function setupNftViewTabs() {
 
 function openNftListingModal(code) {
     const card = getNftCardByCode(code);
+    if (card?.protectedOwned) {
+        return;
+    }
     const tokenId = getNftTokenIdByCode(code);
         const priceInput = document.getElementById("nft-listing-price");
         const amountInput = document.getElementById("nft-listing-amount");
@@ -4738,6 +4796,11 @@ async function submitNftListing() {
         const signer = await provider.getSigner();
         const signerAddress = await signer.getAddress();
         const nftContract = new ethers.Contract(NFT_CONTRACT_ADDRESS, NFT_CONTRACT_ABI, signer);
+        const confirmedOwnedBalance = Number((await nftContract.balanceOf(signerAddress, tokenId)).toString());
+        if (confirmedOwnedBalance < amount) {
+            status.textContent = `This wallet owns ${confirmedOwnedBalance} of this NFT on Ethereum Sepolia. Buy or mint it with this same wallet before selling.`;
+            return;
+        }
         const marketplace = await ensureOnChainNftMarketplace(signer);
         const marketplaceAddress = await marketplace.getAddress();
 
@@ -4763,6 +4826,7 @@ async function submitNftListing() {
                 sellerAddress: signerAddress,
                 amount,
                 priceRlo,
+                marketplaceAddress,
                 txHash: receipt?.hash || listTx.hash || ""
             }, status);
         } catch (saveError) {
@@ -5038,8 +5102,13 @@ async function buyListedNft(code, sellerAddress = "") {
 
         const provider = new ethers.BrowserProvider(window.ethereum);
         const signer = await provider.getSigner();
-        const marketplace = await ensureOnChainNftMarketplace(signer);
-        const totalPriceWei = ethers.parseEther(RIALO_REAL_NATIVE_TX_VALUE);
+        const marketplace = listing.marketplaceAddress
+            ? await getNftMarketplaceContract(signer, listing.marketplaceAddress)
+            : await ensureOnChainNftMarketplace(signer);
+        if (!marketplace) {
+            throw new Error("The seller marketplace contract is unavailable.");
+        }
+        const totalPriceWei = ethers.parseEther(String(listing.priceRlo));
         const buyTx = await marketplace.buy(listing.sellerAddress, listing.tokenId, 1, {
             value: totalPriceWei
         });
@@ -5138,10 +5207,11 @@ function renderExpandedNftCollection() {
         const currentListing = getCurrentWalletNftListing(card.code);
         const currentWalletListedAmount = getCurrentWalletNftListedAmountByCode(card.code);
         const totalListedAmount = getTotalNftListedAmountByCode(card.code);
-        const showSell = ownedBalance > 0;
+        const isProtected = Boolean(card.protectedOwned);
+        const showSell = ownedBalance > 0 && !isProtected;
 
         return `
-        <article class="nft-player-card" data-code="${card.code}" data-price="${card.priceRlo}">
+        <article class="nft-player-card${isProtected ? " nft-protected-card" : ""}" data-code="${card.code}" data-price="${card.priceRlo || 0}">
             <div class="nft-player-image">
                 <img src="${card.image}" data-fallback-src="${card.fallbackImage || card.image}" alt="${card.captain} NFT card" loading="lazy" onerror="if (this.dataset.fallbackUsed !== '1') { this.dataset.fallbackUsed = '1'; this.src = this.dataset.fallbackSrc; }">
             </div>
@@ -5149,10 +5219,12 @@ function renderExpandedNftCollection() {
             <div class="nft-player-info">
                 <strong>${card.captain}</strong>
                 <span>${card.subtitle || `${card.country} Captain`}</span>
-                ${ownedBalance > 0 ? `<span class="nft-owned-meta">Owned: ${ownedBalance}</span>` : ""}
+                ${isProtected
+                    ? `<span class="nft-permanent-owned">OWNED</span>`
+                    : ownedBalance > 0 ? `<span class="nft-owned-meta">Owned: ${ownedBalance}</span>` : ""}
                 ${mode === "items" && currentWalletListedAmount > 0 ? `<span class="nft-listing-count">Listed: ${currentWalletListedAmount}</span>` : ""}
                 <div class="nft-action-row">
-                    ${mode === "collection" ? `
+                    ${mode === "collection" && !isProtected ? `
                         <button class="nft-mint-btn" type="button" data-code="${card.code}">
                             Mint 1 NFT - ${card.priceRlo} RLO
                         </button>
@@ -5193,26 +5265,29 @@ function renderExpandedNftCollection() {
         `;
     }
 
-    const collectionMarkup = expandedRialoWorldCupNfts.map(card => renderCard(card, "collection"));
+    const collectionMarkup = [
+        ...expandedRialoWorldCupNfts.map(card => renderCard(card, "collection")),
+        ...rialoProtectedOwnedNfts.map(card => renderCard(card, "collection"))
+    ];
     grid.innerHTML = collectionMarkup.join("");
 
     const listedInventory = buildNftListedInventory();
-    marketGrid.innerHTML = listedInventory.length
-        ? listedInventory.map(({ card, listing, unitIndex }) => renderListedCard(card, listing, unitIndex)).join("")
-        : "";
+    const listedMarketMarkup = listedInventory.map(({ card, listing, unitIndex }) => renderListedCard(card, listing, unitIndex));
+    marketGrid.innerHTML = listedMarketMarkup.join("");
     if (marketNote) {
         marketNote.textContent = listedInventory.length
             ? `${listedInventory.length} listed NFT unit(s), sorted by highest RLO price.`
             : "No active NFT listings yet.";
     }
 
-    const ownedCards = expandedRialoWorldCupNfts.filter(card => {
+    const walletOwnedCards = expandedRialoWorldCupNfts.filter(card => {
         return getNftOwnedBalanceByCode(card.code) > 0 || Boolean(getCurrentWalletNftListing(card.code));
     });
+    const ownedCards = [...rialoProtectedOwnedNfts, ...walletOwnedCards];
     if (itemsNote) {
         itemsNote.textContent = connectedWalletAddress
-            ? (ownedCards.length ? `${connectedWalletAddress.slice(0, 6)}...${connectedWalletAddress.slice(-4)} · ${ownedCards.length} owned captain card type(s)` : "No NFTs owned yet on this wallet.")
-            : "Connect wallet to load your NFT items.";
+            ? `${connectedWalletAddress.slice(0, 6)}...${connectedWalletAddress.slice(-4)} · ${ownedCards.length} owned NFT item(s)`
+            : "2 permanent Rialo team items · Connect wallet to load more items.";
     }
 
     itemsGrid.innerHTML = ownedCards.length
@@ -7670,13 +7745,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
-
-
-
-
-
-
 
 
 

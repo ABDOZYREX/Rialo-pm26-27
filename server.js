@@ -287,6 +287,7 @@ function getMarketDb() {
       seller_address TEXT NOT NULL,
       amount INTEGER NOT NULL DEFAULT 1,
       price_rlo REAL NOT NULL DEFAULT 0,
+      marketplace_address TEXT NOT NULL DEFAULT '',
       tx_hash TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'ACTIVE',
       created_at TEXT NOT NULL,
@@ -306,6 +307,9 @@ function getMarketDb() {
   }
   if (!nftListingColumns.some(column => column.name === "tx_hash")) {
     marketDb.exec(`ALTER TABLE nft_listings ADD COLUMN tx_hash TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!nftListingColumns.some(column => column.name === "marketplace_address")) {
+    marketDb.exec(`ALTER TABLE nft_listings ADD COLUMN marketplace_address TEXT NOT NULL DEFAULT ''`);
   }
 
   normalizeNftListingIdentity(marketDb);
@@ -1092,16 +1096,39 @@ async function requestOpenAiChat(message, contextSummary) {
     `User message: ${message}`
   ].join("\n");
 
+  const usesGeminiGenerateContent = /generativelanguage\.googleapis\.com\/.*:generateContent/i.test(OPENAI_API_URL);
+  const usesChatCompletions = /\/chat\/completions\/?(?:\?|$)/i.test(OPENAI_API_URL);
+  const requestBody = usesGeminiGenerateContent
+    ? {
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 700 }
+      }
+    : usesChatCompletions
+    ? {
+        model: OPENAI_MODEL,
+        messages: [
+          {
+            role: "system",
+            content: "You are Rialo Chat, a concise and helpful in-product assistant for a Web3 sports, NFT, prediction, and meme-market app."
+          },
+          { role: "user", content: prompt }
+        ],
+        max_tokens: 700
+      }
+    : {
+        model: OPENAI_MODEL,
+        input: prompt
+      };
+
   const response = await fetch(OPENAI_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${OPENAI_API_KEY}`
+      ...(usesGeminiGenerateContent
+        ? { "x-goog-api-key": OPENAI_API_KEY }
+        : { Authorization: `Bearer ${OPENAI_API_KEY}` })
     },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      input: prompt
-    })
+    body: JSON.stringify(requestBody)
   });
 
   const data = await response.json().catch(() => ({}));
@@ -1110,6 +1137,8 @@ async function requestOpenAiChat(message, contextSummary) {
   }
 
   const text =
+    data?.candidates?.[0]?.content?.parts?.map(part => part?.text || "").filter(Boolean).join("\n") ||
+    data?.choices?.[0]?.message?.content ||
     data?.output_text ||
     data?.output?.flatMap(item => Array.isArray(item.content) ? item.content : [])
       ?.map(item => item?.text || "")
@@ -1454,7 +1483,7 @@ function normalizeNftListingIdentity(db) {
 function listActiveNftListings() {
   const db = getMarketDb();
   return db.prepare(`
-    SELECT code, token_id, seller_address, amount, price_rlo, tx_hash, created_at, updated_at
+    SELECT code, token_id, seller_address, amount, price_rlo, marketplace_address, tx_hash, created_at, updated_at
     FROM nft_listings
     WHERE status = 'ACTIVE' AND amount > 0
     ORDER BY price_rlo ASC, datetime(updated_at) DESC
@@ -1464,11 +1493,14 @@ function listActiveNftListings() {
     sellerAddress: row.seller_address,
     amount: Number(row.amount || 0),
     priceRlo: Number(row.price_rlo || 0),
+    marketplaceAddress: row.marketplace_address || "",
     txHash: row.tx_hash || "",
     createdAt: row.created_at,
     updatedAt: row.updated_at
   }));
 }
+
+const PROTECTED_NFT_CODES = new Set(["ade", "eric-spider"]);
 
 function createOrUpdateNftListing(payload) {
   const code = sanitizeString(payload.code, 32).toLowerCase();
@@ -1476,11 +1508,16 @@ function createOrUpdateNftListing(payload) {
   const sellerAddress = sanitizeAddress(payload.sellerAddress).toLowerCase();
   const amount = Math.max(1, Math.floor(Number(payload.amount || 0)));
   const priceRlo = sanitizeBalanceSeed(payload.priceRlo);
+  const marketplaceAddress = sanitizeAddress(payload.marketplaceAddress).toLowerCase();
   const txHash = sanitizeString(payload.txHash || "", 120);
   const now = new Date().toISOString();
 
   if (!code) {
     return { error: "NFT code is required." };
+  }
+
+  if (PROTECTED_NFT_CODES.has(code)) {
+    return { error: "This permanent Rialo team NFT cannot be listed or sold." };
   }
 
   if (!sellerAddress) {
@@ -1499,17 +1536,22 @@ function createOrUpdateNftListing(payload) {
     return { error: "Listing price must be greater than 0 RLO." };
   }
 
+  if (!marketplaceAddress) {
+    return { error: "NFT marketplace contract address is required." };
+  }
+
   const db = getMarketDb();
   db.prepare(`
     INSERT INTO nft_listings (
-      code, token_id, seller_address, amount, price_rlo, tx_hash, status, created_at, updated_at
+      code, token_id, seller_address, amount, price_rlo, marketplace_address, tx_hash, status, created_at, updated_at
     ) VALUES (
-      @code, @tokenId, @sellerAddress, @amount, @priceRlo, @txHash, 'ACTIVE', @createdAt, @updatedAt
+      @code, @tokenId, @sellerAddress, @amount, @priceRlo, @marketplaceAddress, @txHash, 'ACTIVE', @createdAt, @updatedAt
     )
     ON CONFLICT(code, seller_address) DO UPDATE SET
       token_id = excluded.token_id,
       amount = excluded.amount,
       price_rlo = excluded.price_rlo,
+      marketplace_address = excluded.marketplace_address,
       tx_hash = excluded.tx_hash,
       status = 'ACTIVE',
       updated_at = excluded.updated_at
@@ -1519,6 +1561,7 @@ function createOrUpdateNftListing(payload) {
     sellerAddress,
     amount,
     priceRlo,
+    marketplaceAddress,
     txHash,
     createdAt: now,
     updatedAt: now
@@ -1531,6 +1574,7 @@ function createOrUpdateNftListing(payload) {
       sellerAddress,
       amount,
       priceRlo,
+      marketplaceAddress,
       txHash,
       createdAt: now,
       updatedAt: now
@@ -2129,8 +2173,14 @@ function serveStatic(req, res, pathname) {
     }
 
     const ext = path.extname(filePath).toLowerCase();
+    const cacheControl = ext === ".html"
+      ? "no-cache"
+      : [".png", ".jpg", ".jpeg", ".webp", ".gif", ".svg", ".ico"].includes(ext)
+        ? "public, max-age=86400"
+        : "public, max-age=3600";
     res.writeHead(200, {
       "Content-Type": MIME_TYPES[ext] || "application/octet-stream",
+      "Cache-Control": cacheControl,
       // The *.artifact.json ABI files are fetched by script.js, which may be
       // served from another origin (Netlify) or from file://, where the page has
       // no host of its own. These are public build outputs, so allow any origin.
