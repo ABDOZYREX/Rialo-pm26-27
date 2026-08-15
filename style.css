@@ -6129,6 +6129,18 @@ html body #ticket-success-overlay #ticket-wallet-mini.ticket-wallet-mini {
     color: #f0fdf4;
 }
 
+.nft-buy-listed-btn[aria-busy="true"] {
+    cursor: wait;
+    opacity: 0.82;
+    background: linear-gradient(110deg, #15803d 25%, #22c55e 45%, #15803d 65%);
+    background-size: 220% 100%;
+    animation: nftBuyProgress 1.1s linear infinite;
+}
+
+@keyframes nftBuyProgress {
+    to { background-position: -220% 0; }
+}
+
 .nft-market-seller {
     display: block;
     color: rgba(203, 213, 225, 0.82) !important;

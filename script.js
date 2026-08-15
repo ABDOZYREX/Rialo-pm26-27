@@ -370,6 +370,10 @@ const rialoNftCardOverrides = [
     ["Santiago Giménez", 2, "nft-2026-29.png"]
 ];
 
+function getOptimizedNftImage(pathname) {
+    return String(pathname || "").replace(/\.png$/i, ".webp");
+}
+
 const rialoNftClubByPlayer = {
     "Vinícius Júnior": "Real Madrid",
     "Kylian Mbappé": "Real Madrid",
@@ -437,7 +441,7 @@ const expandedRialoWorldCupNfts = worldCupGroups
             priceRlo: displayOverride[1],
             subtitle: `${rialoNftClubByPlayer[displayOverride[0]] || "Rialo"} Player`,
             fallbackImage: displayOverride[2],
-            image: displayOverride[2]
+            image: getOptimizedNftImage(displayOverride[2])
         };
     });
 
@@ -449,7 +453,7 @@ const rialoProtectedOwnedNfts = [
         captain: "ADE",
         subtitle: "CEO",
         country: "Rialo",
-        image: "item-ADE-01.png",
+        image: "item-ADE-01.webp",
         fallbackImage: "item-ADE-01.png",
         protectedOwned: true
     },
@@ -458,7 +462,7 @@ const rialoProtectedOwnedNfts = [
         captain: "ERIC&SPIDER",
         subtitle: "RIALO TEAM",
         country: "Rialo",
-        image: "item-ERIC-SPIDER-02.png",
+        image: "item-ERIC-SPIDER-02.webp",
         fallbackImage: "item-ERIC-SPIDER-02.png",
         protectedOwned: true
     }
@@ -4300,7 +4304,7 @@ function setupRialoMarketUi() {
         }
 
         state.pollingHandle = setInterval(async () => {
-            if (document.hidden) {
+            if (document.hidden || !document.body.classList.contains("market-mode")) {
                 return;
             }
 
@@ -4316,7 +4320,7 @@ function setupRialoMarketUi() {
             } catch {
                 // Ignore transient polling errors.
             }
-        }, 12000);
+        }, 20000);
     }
 
     window.refreshRialoMarketUi = async () => {
@@ -4474,11 +4478,9 @@ function init() {
 
     initGroupOrders();
 
-    initMouseGlow();
+    // Disabled for performance: the old glow repainted the page on every
+    // mouse-move frame, even when the visitor was not interacting with content.
     queueExpandedNftCollectionRender();
-    refreshNftUiState().catch(error => {
-        console.warn("Initial NFT UI refresh skipped:", error);
-    });
     setupTabs();
     setupHowPanel();
     setupWallet();
@@ -4610,16 +4612,19 @@ function initMouseGlow() {
 }
 
 function queueExpandedNftCollectionRender() {
-    setTimeout(renderExpandedNftCollection, 0);
-    window.addEventListener("load", renderExpandedNftCollection, { once: true });
-
     if (nftRefreshHookReady) return;
     nftRefreshHookReady = true;
 
     const nftPageBtn = document.getElementById("nft-page-btn");
     if (nftPageBtn) {
         nftPageBtn.addEventListener("click", () => {
-            setTimeout(renderExpandedNftCollection, 0);
+            renderExpandedNftCollection();
+            if (nftPageBtn.dataset.nftLoaded !== "1") {
+                nftPageBtn.dataset.nftLoaded = "1";
+                void refreshNftUiState().catch(error => {
+                    console.warn("NFT UI refresh skipped:", error);
+                });
+            }
         });
     }
 }
@@ -5070,7 +5075,7 @@ async function cancelNftListing(code) {
     }
 }
 
-async function buyListedNft(code, sellerAddress = "") {
+async function buyListedNft(code, sellerAddress = "", actionButton = null) {
     if (!connectedWalletAddress) {
         alert("Connect your wallet first.");
         return;
@@ -5094,6 +5099,14 @@ async function buyListedNft(code, sellerAddress = "") {
         return;
     }
 
+    const originalButtonText = actionButton?.textContent || "Buy NFT";
+    let purchaseConfirmedOnChain = false;
+    if (actionButton) {
+        actionButton.disabled = true;
+        actionButton.textContent = "Preparing wallet...";
+        actionButton.setAttribute("aria-busy", "true");
+    }
+
     try {
         const switched = await ensureRialoTestnetForTransaction();
         if (!switched) {
@@ -5109,10 +5122,36 @@ async function buyListedNft(code, sellerAddress = "") {
             throw new Error("The seller marketplace contract is unavailable.");
         }
         const totalPriceWei = ethers.parseEther(String(listing.priceRlo));
+        if (actionButton) actionButton.textContent = "Confirm in wallet...";
         const buyTx = await marketplace.buy(listing.sellerAddress, listing.tokenId, 1, {
             value: totalPriceWei
         });
+
+        if (actionButton) actionButton.textContent = "Confirming on Sepolia...";
         const receipt = await buyTx.wait();
+        purchaseConfirmedOnChain = true;
+
+        // The purchase is final on-chain now. Reflect it immediately instead of
+        // blocking the buyer while every NFT balance and listing is re-read.
+        const normalizedCode = String(code || "").toLowerCase();
+        const previousOwnedBalance = getNftOwnedBalanceByCode(code);
+        nftOwnedBalancesByCode[normalizedCode] = previousOwnedBalance + 1;
+
+        const optimisticListings = Object.values(nftListingsByCode)
+            .flat()
+            .map(item => {
+                const isPurchasedListing =
+                    String(item.code || "").toLowerCase() === normalizedCode &&
+                    String(item.sellerAddress || "").toLowerCase() === String(listing.sellerAddress || "").toLowerCase();
+                return isPurchasedListing
+                    ? { ...item, amount: Math.max(0, Number(item.amount || 0) - 1) }
+                    : item;
+            })
+            .filter(item => Number(item.amount || 0) > 0);
+
+        setNftListings(optimisticListings);
+        renderExpandedNftCollection();
+        document.getElementById("nft-tab-items")?.click();
 
         const data = await apiFetchJson("/api/nft-listings/purchase", {
             method: "POST",
@@ -5125,14 +5164,21 @@ async function buyListedNft(code, sellerAddress = "") {
         });
 
         setNftListings(data.listings || []);
-        await refreshNftUiState();
-        nftOwnedBalancesByCode[String(code || "").toLowerCase()] = Math.max(
-            1,
-            getNftOwnedBalanceByCode(code)
-        );
         renderExpandedNftCollection();
         document.getElementById("nft-tab-items")?.click();
+
+        // Full chain/server reconciliation is useful, but it should never keep
+        // the buyer staring at a loading button after the receipt is confirmed.
+        void refreshNftUiState().catch(() => {});
     } catch (error) {
+        if (purchaseConfirmedOnChain) {
+            // Never tell the user that a confirmed on-chain purchase failed only
+            // because Railway was slow to save its display record.
+            void refreshNftUiState().catch(() => {});
+            alert("Purchase confirmed on Sepolia. The marketplace list is still syncing in the background.");
+            return;
+        }
+
         const raw = [error?.shortMessage, error?.reason, error?.message].filter(Boolean).join(" ");
         if (/incorrect payment/i.test(raw)) {
             alert("The listed NFT price changed before your transaction was sent.");
@@ -5143,6 +5189,12 @@ async function buyListedNft(code, sellerAddress = "") {
             return;
         }
         alert(error.message || "Failed to buy the listed NFT.");
+    } finally {
+        if (actionButton?.isConnected) {
+            actionButton.disabled = false;
+            actionButton.textContent = originalButtonText;
+            actionButton.removeAttribute("aria-busy");
+        }
     }
 }
 
@@ -5311,7 +5363,7 @@ function renderExpandedNftCollection() {
     });
     document.querySelectorAll("[data-nft-buy]").forEach(button => {
         button.addEventListener("click", () => {
-            buyListedNft(button.dataset.nftBuy || "", button.dataset.nftBuySeller || "");
+            buyListedNft(button.dataset.nftBuy || "", button.dataset.nftBuySeller || "", button);
         });
     });
 }
@@ -5948,14 +6000,16 @@ function setupFinalClick() {
     const homeMusic = new Audio("rialo-home.mp3");
     homeMusic.id = "rialo-home-music";
     homeMusic.loop = true;
-    homeMusic.autoplay = true;
-    homeMusic.preload = "auto";
+    homeMusic.autoplay = false;
+    // Load the 4.5 MB soundtrack only after the visitor interacts with Home.
+    homeMusic.preload = "none";
     homeMusic.volume = 0.1;
     homeMusic.setAttribute("aria-hidden", "true");
     document.body.appendChild(homeMusic);
+    let homeMusicUnlocked = false;
 
     const syncHomeMusic = () => {
-        if (document.body.classList.contains("home-mode")) {
+        if (homeMusicUnlocked && document.body.classList.contains("home-mode")) {
             homeMusic.play().catch(() => {});
         } else {
             homeMusic.pause();
@@ -5969,6 +6023,7 @@ function setupFinalClick() {
 
     const unlockHomeMusic = () => {
         if (document.body.classList.contains("home-mode")) {
+            homeMusicUnlocked = true;
             homeMusic.volume = 0.1;
             homeMusic.play().catch(() => {});
         }
@@ -5980,7 +6035,6 @@ function setupFinalClick() {
     window.addEventListener("pageshow", syncHomeMusic);
     window.addEventListener("focus", syncHomeMusic);
     homeMusic.addEventListener("canplaythrough", syncHomeMusic, { once: true });
-    syncHomeMusic();
 })();
 
 function getBracketStatus() {
@@ -6488,9 +6542,13 @@ function setupWallet() {
         if (window.refreshRialoSwapUi) {
             window.refreshRialoSwapUi();
         }
-        refreshNftUiState().catch(error => {
-            console.warn("Failed to refresh NFT UI after wallet unlock:", error);
-        });
+        if (document.body.classList.contains("nft-mode")) {
+            refreshNftUiState().catch(error => {
+                console.warn("Failed to refresh NFT UI after wallet unlock:", error);
+            });
+        } else {
+            document.getElementById("nft-page-btn")?.removeAttribute("data-nft-loaded");
+        }
         setTimeout(drawConnectors, 100);
     }
 
@@ -6515,9 +6573,13 @@ function setupWallet() {
         if (window.refreshRialoSwapUi) {
             window.refreshRialoSwapUi();
         }
-        refreshNftUiState().catch(error => {
-            console.warn("Failed to refresh NFT UI after disconnect:", error);
-        });
+        if (document.body.classList.contains("nft-mode")) {
+            refreshNftUiState().catch(error => {
+                console.warn("Failed to refresh NFT UI after disconnect:", error);
+            });
+        } else {
+            document.getElementById("nft-page-btn")?.removeAttribute("data-nft-loaded");
+        }
     }
 
     function wrongNetworkUI(address = "") {
@@ -6541,9 +6603,13 @@ function setupWallet() {
         if (window.refreshRialoSwapUi) {
             window.refreshRialoSwapUi();
         }
-        refreshNftUiState().catch(error => {
-            console.warn("Failed to refresh NFT UI after wrong network state:", error);
-        });
+        if (document.body.classList.contains("nft-mode")) {
+            refreshNftUiState().catch(error => {
+                console.warn("Failed to refresh NFT UI after wrong network state:", error);
+            });
+        } else {
+            document.getElementById("nft-page-btn")?.removeAttribute("data-nft-loaded");
+        }
     }
 
     async function switchToRialoTestnet() {
@@ -7745,13 +7811,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
-
-
-
-
-
-
 
 
 
