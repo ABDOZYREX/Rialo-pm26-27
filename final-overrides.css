@@ -1391,27 +1391,6 @@ body.market-mode #market-view .market-detail-hero #market-detail-hero-image {
     filter:none!important;
 }
 
-/* Keep only the large artwork in the Trade asset panel. */
-body.market-mode #market-view .market-detail-orb.has-image {
-    display:none!important;
-}
-
-body.market-mode #market-view .market-detail-copy p,
-body.market-mode #market-view .market-token-body p {
-    opacity:1!important;
-    font-weight:800!important;
-    text-shadow:none!important;
-    -webkit-text-fill-color:currentColor!important;
-}
-
-body.market-mode #market-view .market-token-body p {
-    color:#334155!important;
-}
-
-body.market-mode #market-view .market-detail-copy p {
-    color:#cbd5e1!important;
-}
-
 /* Trade history semantics: BUY is green and SELL is red everywhere. */
 body.market-mode #market-view .market-feed-row-trade.buy {
     border-color:rgba(34,197,94,.38)!important;
