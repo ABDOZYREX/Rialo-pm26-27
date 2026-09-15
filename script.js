@@ -150,22 +150,9 @@ const LALIGA_SEPTEMBER_2026_TEAMS = {
 };
 
 const LALIGA_SEPTEMBER_2026_MATCHES = [
-    ["September 16, 2026 · 19:00 CEST", "Atlético Madrid", "Osasuna", ["1.96", "4.55", "3.70"]],
-    ["September 16, 2026 · 19:00 CEST", "Deportivo La Coruña", "Sevilla FC", ["2.13", "4.55", "3.23"]],
     ["September 16, 2026 · 21:30 CEST", "FC Barcelona", "Racing Santander", ["1.79", "4.76", "4.17"]],
-    ["September 16, 2026 · 21:30 CEST", "Levante UD", "Athletic Club", ["2.22", "4.55", "3.03"]],
-    ["September 17, 2026 · 19:00 CEST", "Real Betis", "Getafe CF", ["2.00", "4.55", "3.57"]],
-    ["September 17, 2026 · 21:30 CEST", "Málaga CF", "Villarreal CF", ["2.22", "4.55", "3.13"]],
-    ["September 18, 2026 · 21:00 CEST", "Espanyol", "Elche CF", ["2.08", "4.55", "3.33"]],
-    ["September 19, 2026 · 14:00 CEST", "Osasuna", "Rayo Vallecano", ["2.13", "4.55", "3.23"]],
-    ["September 19, 2026 · 16:15 CEST", "Athletic Club", "Deportivo Alavés", ["2.33", "4.35", "2.86"]],
-    ["September 19, 2026 · 18:30 CEST", "Celta Vigo", "Racing Santander", ["2.27", "4.55", "3.03"]],
     ["September 19, 2026 · 21:00 CEST", "Sevilla FC", "FC Barcelona", ["2.56", "4.35", "2.63"]],
-    ["September 20, 2026 · 14:00 CEST", "Getafe CF", "Málaga CF", ["2.13", "4.55", "3.33"]],
-    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["2.27", "4.35", "2.94"]],
-    ["September 20, 2026 · 18:30 CEST", "Deportivo La Coruña", "Real Betis", ["2.13", "4.55", "3.23"]],
-    ["September 20, 2026 · 18:30 CEST", "Villarreal CF", "Levante UD", ["2.27", "4.35", "2.94"]],
-    ["September 20, 2026 · 21:00 CEST", "Valencia CF", "Real Sociedad", ["2.38", "4.35", "2.86"]]
+    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["2.27", "4.35", "2.94"]]
 ];
 
 function getLaLigaSeptemberTeam(teamName) {
@@ -234,40 +221,20 @@ function renderLaLigaSeptemberMatches() {
 
 const PREMIER_LEAGUE_SEPTEMBER_2026_MATCHES = [
     ["September 18, 2026 · 20:00 BST", "Brentford", "Chelsea", ["3.40", "3.60", "2.10"]],
-    ["September 19, 2026 · 12:30 BST", "Tottenham Hotspur", "Aston Villa", ["2.05", "3.55", "3.40"]],
     ["September 19, 2026 · 15:00 BST", "Brighton", "Arsenal", ["3.90", "3.70", "1.85"]],
-    ["September 19, 2026 · 15:00 BST", "Everton", "Ipswich Town", ["1.80", "3.60", "4.50"]],
-    ["September 19, 2026 · 15:00 BST", "Newcastle United", "Hull City", ["1.45", "4.50", "6.50"]],
-    ["September 19, 2026 · 17:30 BST", "Nottingham Forest", "Coventry City", ["1.95", "3.45", "3.90"]],
-    ["September 20, 2026 · 14:00 BST", "Bournemouth", "Liverpool", ["4.60", "4.00", "1.67"]],
-    ["September 20, 2026 · 14:00 BST", "Leeds United", "Crystal Palace", ["2.20", "3.35", "3.25"]],
-    ["September 20, 2026 · 14:00 BST", "Manchester City", "Sunderland", ["1.25", "6.20", "10.00"]],
     ["September 20, 2026 · 16:30 BST", "Fulham", "Manchester United", ["2.90", "3.40", "2.35"]]
 ];
 
 const BUNDESLIGA_SEPTEMBER_2026_MATCHES = [
     ["September 18, 2026 · 20:30 CEST", "Bayern Munich", "Union Berlin", ["1.25", "6.50", "9.50"]],
-    ["September 19, 2026 · 15:30 CEST", "Eintracht Frankfurt", "Freiburg", ["2.00", "3.60", "3.45"]],
-    ["September 19, 2026 · 15:30 CEST", "Borussia Mönchengladbach", "Mainz 05", ["2.25", "3.55", "2.95"]],
-    ["September 19, 2026 · 15:30 CEST", "Hamburger SV", "FC Köln", ["2.30", "3.45", "2.90"]],
-    ["September 19, 2026 · 15:30 CEST", "Werder Bremen", "Augsburg", ["2.10", "3.50", "3.25"]],
     ["September 19, 2026 · 18:30 CEST", "Stuttgart", "Borussia Dortmund", ["2.80", "3.70", "2.25"]],
-    ["September 20, 2026 · 15:30 CEST", "Bayer Leverkusen", "RB Leipzig", ["1.95", "3.75", "3.45"]],
-    ["September 20, 2026 · 17:30 CEST", "Schalke 04", "Elversberg", ["1.75", "3.75", "4.40"]],
-    ["September 20, 2026 · 19:30 CEST", "Paderborn", "Hoffenheim", ["2.65", "3.60", "2.40"]]
+    ["September 20, 2026 · 15:30 CEST", "Bayer Leverkusen", "RB Leipzig", ["1.95", "3.75", "3.45"]]
 ];
 
 const SERIE_A_SEPTEMBER_2026_MATCHES = [
-    ["September 18, 2026 · 20:45 CEST", "Monza", "Sassuolo", ["2.55", "3.25", "2.70"]],
-    ["September 19, 2026 · 15:00 CEST", "Bologna", "Torino", ["2.05", "3.20", "3.75"]],
-    ["September 19, 2026 · 15:00 CEST", "Udinese", "Cagliari", ["2.00", "3.25", "3.90"]],
     ["September 19, 2026 · 18:00 CEST", "Roma", "Inter", ["2.90", "3.30", "2.40"]],
-    ["September 19, 2026 · 20:45 CEST", "Venezia", "Lazio", ["3.80", "3.45", "1.95"]],
     ["September 20, 2026 · 12:30 CEST", "Fiorentina", "Napoli", ["3.10", "3.35", "2.25"]],
-    ["September 20, 2026 · 15:00 CEST", "Frosinone", "Como", ["2.90", "3.30", "2.40"]],
-    ["September 20, 2026 · 15:00 CEST", "Parma", "Genoa", ["2.40", "3.10", "3.05"]],
-    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.95", "3.45", "3.75"]],
-    ["September 20, 2026 · 20:45 CEST", "AC Milan", "Lecce", ["1.40", "4.60", "7.50"]]
+    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.95", "3.45", "3.75"]]
 ];
 
 const PREDICTION_LEAGUE_LOGO_ALIASES = {
@@ -8266,7 +8233,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
 
 
 
