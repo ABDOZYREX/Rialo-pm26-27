@@ -79,35 +79,35 @@ let clubRankingConfirmed = false;
 
 const clubLogoUrls = {
     "Paris": "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg",
-    "Chelsea": "https://upload.wikimedia.org/wikipedia/en/c/cc/Chelsea_FC.svg",
-    "Atalanta": "https://logotyp.us/file/atalanta.svg",
+    "Chelsea": "https://a.espncdn.com/i/teamlogos/soccer/500/363.png",
+    "Atalanta": "https://a.espncdn.com/i/teamlogos/soccer/500/105.png",
     "Newcastle": "https://upload.wikimedia.org/wikipedia/en/5/56/Newcastle_United_Logo.svg",
     "Tottenham": "https://upload.wikimedia.org/wikipedia/en/b/b4/Tottenham_Hotspur.svg",
     "Bodø/Glimt": "https://logotyp.us/file/bodo-glimt.svg",
-    "Bayer Leverkusen": "https://upload.wikimedia.org/wikipedia/en/5/59/Bayer_04_Leverkusen_logo.svg",
+    "Bayer Leverkusen": "https://a.espncdn.com/i/teamlogos/soccer/500/131.png",
     "PSG": "https://upload.wikimedia.org/wikipedia/en/a/a7/Paris_Saint-Germain_F.C..svg",
-    "Bayern Munich": "https://upload.wikimedia.org/wikipedia/commons/1/1b/FC_Bayern_M%C3%BCnchen_logo_%282017%29.svg",
-    "Real Madrid": "https://upload.wikimedia.org/wikipedia/en/5/56/Real_Madrid_CF.svg",
+    "Bayern Munich": "https://a.espncdn.com/i/teamlogos/soccer/500/132.png",
+    "Real Madrid": "https://a.espncdn.com/i/teamlogos/soccer/500/86.png",
     "Liverpool": "https://upload.wikimedia.org/wikipedia/en/0/0c/Liverpool_FC.svg",
-    "Inter": "https://upload.wikimedia.org/wikipedia/commons/0/05/FC_Internazionale_Milano_2021.svg",
+    "Inter": "https://a.espncdn.com/i/teamlogos/soccer/500/110.png",
     "Manchester City": "https://upload.wikimedia.org/wikipedia/en/e/eb/Manchester_City_FC_badge.svg",
-    "Arsenal": "https://upload.wikimedia.org/wikipedia/en/5/53/Arsenal_FC.svg",
+    "Arsenal": "https://a.espncdn.com/i/teamlogos/soccer/500/359.png",
     "Barcelona": "https://upload.wikimedia.org/wikipedia/en/4/47/FC_Barcelona_%28crest%29.svg",
-    "Atlético Madrid": "https://www.footylogos.com/downloads/logo/atletico-madrid-logo-footylogos.png?v=2024",
-    "Borussia Dortmund": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Borussia_Dortmund_logo.svg",
-    "AS Roma": "https://logotyp.us/file/as-roma.svg",
+    "Atlético Madrid": "https://a.espncdn.com/i/teamlogos/soccer/500/1068.png",
+    "Borussia Dortmund": "https://a.espncdn.com/i/teamlogos/soccer/500/124.png",
+    "AS Roma": "https://a.espncdn.com/i/teamlogos/soccer/500/104.png",
     "Sporting CP": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Sporting_Clube_de_Portugal_2026.svg",
     "Aston Villa": "https://logotyp.us/file/aston-villa.svg",
     "Porto": "https://www.footylogos.com/downloads/logo/fc-porto-logo-footylogos.png?v=2026",
-    "Manchester United": "https://logotyp.us/file/manchester-united.svg",
+    "Manchester United": "https://a.espncdn.com/i/teamlogos/soccer/500/360.png",
     "Club Brugge": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Club_Brugge_KV_logo.svg",
     "Real Betis": "https://logotyp.us/file/real-betis.svg",
     "PSV": "https://logotyp.us/file/psv.svg",
     "Feyenoord": "https://logotyp.us/file/feyenoord.svg",
     "Lille": "https://logotyp.us/file/lille.svg",
     "Lyon": "https://logotyp.us/file/olympique-lyonnais.svg",
-    "Napoli": "https://logotyp.us/file/napoli.svg",
-    "Leipzig": "https://upload.wikimedia.org/wikipedia/en/0/04/RB_Leipzig_2014_logo.svg",
+    "Napoli": "https://a.espncdn.com/i/teamlogos/soccer/500/114.png",
+    "Leipzig": "https://a.espncdn.com/i/teamlogos/soccer/500/11420.png",
     "Villarreal": "https://logotyp.us/file/villarreal.svg",
     "Shakhtar Donetsk": "https://logotyp.us/file/shakhtar-donetsk.svg",
     "Galatasaray": "https://logotyp.us/file/galatasaray.svg",
@@ -116,16 +116,26 @@ const clubLogoUrls = {
     "Dinamo Zagreb": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Dinamo_Zagreb_logo.png",
     "Celtic": "https://logotyp.us/file/celtic.svg",
     "Slavia Praha": "https://commons.wikimedia.org/wiki/Special:Redirect/file/SK_Slavia_Praha_full_logo.svg",
-    "Stuttgart": "https://upload.wikimedia.org/wikipedia/commons/e/eb/VfB_Stuttgart_1893_Logo.svg",
+    "Stuttgart": "https://a.espncdn.com/i/teamlogos/soccer/500/134.png",
     "AEK Athens": "https://logotyp.us/file/aek-athens.svg",
     "Como": "https://commons.wikimedia.org/wiki/Special:Redirect/file/Calcio_Como_-_logo_%28Italy%2C_2019-%29.svg",
     "RC Lens": "https://logotyp.us/file/lens.svg",
-    "Viking": "https://logotyp.us/file/viking.svg"
+    "Viking": "https://logotyp.us/file/viking.svg",
+    "Brentford": "https://a.espncdn.com/i/teamlogos/soccer/500/337.png",
+    "Brighton": "https://a.espncdn.com/i/teamlogos/soccer/500/331.png",
+    "Fulham": "https://a.espncdn.com/i/teamlogos/soccer/500/370.png",
+    "Union Berlin": "https://a.espncdn.com/i/teamlogos/soccer/500/598.png",
+    "Fiorentina": "https://a.espncdn.com/i/teamlogos/soccer/500/109.png",
+    "Juventus": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png",
+    "FC Barcelona": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
+    "Racing Santander": "https://a.espncdn.com/i/teamlogos/soccer/500/87.png",
+    "Sevilla FC": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png"
 };
 
 // Upcoming LaLiga fixtures still to be played in September 2026.
 // Kick-off times are official local Spain times (CEST). The three values are
-// fair decimal estimates derived from the displayed model probabilities.
+// 1X2 decimal odds snapshot checked against 1xBet on September 15-16, 2026.
+// These prices can move before kick-off and are not a live odds feed.
 const LALIGA_SEPTEMBER_2026_TEAMS = {
     "Espanyol": ["206352", "ESP"],
     "Elche CF": ["205608", "ELC"],
@@ -150,9 +160,9 @@ const LALIGA_SEPTEMBER_2026_TEAMS = {
 };
 
 const LALIGA_SEPTEMBER_2026_MATCHES = [
-    ["September 16, 2026 · 21:30 CEST", "FC Barcelona", "Racing Santander", ["1.79", "4.76", "4.17"]],
-    ["September 19, 2026 · 21:00 CEST", "Sevilla FC", "FC Barcelona", ["2.56", "4.35", "2.63"]],
-    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["2.27", "4.35", "2.94"]]
+    ["September 16, 2026 · 21:30 CEST", "FC Barcelona", "Racing Santander", ["1.056", "13.50", "29.00"]],
+    ["September 19, 2026 · 21:00 CEST", "Sevilla FC", "FC Barcelona", ["12.00", "6.60", "1.22"]],
+    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["3.96", "3.92", "1.83"]]
 ];
 
 function getLaLigaSeptemberTeam(teamName) {
@@ -160,7 +170,7 @@ function getLaLigaSeptemberTeam(teamName) {
     return {
         name: teamName,
         abbreviation,
-        logo: `https://rfef.es/themes/custom/rfef/img/novanet/50x50/${crestId}_50x50.png`
+        logo: clubLogoUrls[teamName] || `https://rfef.es/themes/custom/rfef/img/novanet/50x50/${crestId}_50x50.png`
     };
 }
 
@@ -202,7 +212,7 @@ function renderLaLigaSeptemberMatches() {
                     </div>
                 </div>
                 <div class="prediction-live-match-meta">
-                    <div class="prediction-live-match-odds" aria-label="Home, draw, away estimates">
+                    <div class="prediction-live-match-odds" aria-label="1xBet home, draw and away odds snapshot">
                         ${odds.map(odd => `<button class="prediction-live-odd-btn" type="button" data-odd="${odd}">${odd}</button>`).join("")}
                     </div>
                     <div class="prediction-live-bet-row">
@@ -220,21 +230,21 @@ function renderLaLigaSeptemberMatches() {
 }
 
 const PREMIER_LEAGUE_SEPTEMBER_2026_MATCHES = [
-    ["September 18, 2026 · 20:00 BST", "Brentford", "Chelsea", ["3.40", "3.60", "2.10"]],
-    ["September 19, 2026 · 15:00 BST", "Brighton", "Arsenal", ["3.90", "3.70", "1.85"]],
-    ["September 20, 2026 · 16:30 BST", "Fulham", "Manchester United", ["2.90", "3.40", "2.35"]]
+    ["September 18, 2026 · 20:00 BST", "Brentford", "Chelsea", ["2.88", "3.82", "2.255"]],
+    ["September 19, 2026 · 15:00 BST", "Brighton", "Arsenal", ["4.60", "3.90", "1.725"]],
+    ["September 20, 2026 · 16:30 BST", "Fulham", "Manchester United", ["3.50", "3.74", "2.00"]]
 ];
 
 const BUNDESLIGA_SEPTEMBER_2026_MATCHES = [
-    ["September 18, 2026 · 20:30 CEST", "Bayern Munich", "Union Berlin", ["1.25", "6.50", "9.50"]],
-    ["September 19, 2026 · 18:30 CEST", "Stuttgart", "Borussia Dortmund", ["2.80", "3.70", "2.25"]],
-    ["September 20, 2026 · 15:30 CEST", "Bayer Leverkusen", "RB Leipzig", ["1.95", "3.75", "3.45"]]
+    ["September 18, 2026 · 20:30 CEST", "Bayern Munich", "Union Berlin", ["1.075", "12.00", "23.00"]],
+    ["September 19, 2026 · 18:30 CEST", "Stuttgart", "Borussia Dortmund", ["2.29", "3.76", "2.85"]],
+    ["September 20, 2026 · 15:30 CEST", "Bayer Leverkusen", "RB Leipzig", ["1.94", "4.06", "3.42"]]
 ];
 
 const SERIE_A_SEPTEMBER_2026_MATCHES = [
-    ["September 19, 2026 · 18:00 CEST", "Roma", "Inter", ["2.90", "3.30", "2.40"]],
-    ["September 20, 2026 · 12:30 CEST", "Fiorentina", "Napoli", ["3.10", "3.35", "2.25"]],
-    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.95", "3.45", "3.75"]]
+    ["September 19, 2026 · 18:00 CEST", "Roma", "Inter", ["2.67", "3.42", "2.87"]],
+    ["September 20, 2026 · 12:30 CEST", "Fiorentina", "Napoli", ["3.48", "3.50", "2.26"]],
+    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.77", "4.00", "4.99"]]
 ];
 
 const PREDICTION_LEAGUE_LOGO_ALIASES = {
@@ -293,7 +303,7 @@ function renderSeptemberLeagueMatches(viewId, title, matches) {
                 </div>
             </div>
             <div class="prediction-live-match-meta">
-                <div class="prediction-live-match-odds" aria-label="Home, draw, away estimates">${odds.map(odd => `<button class="prediction-live-odd-btn" type="button" data-odd="${odd}">${odd}</button>`).join("")}</div>
+                <div class="prediction-live-match-odds" aria-label="1xBet home, draw and away odds snapshot">${odds.map(odd => `<button class="prediction-live-odd-btn" type="button" data-odd="${odd}">${odd}</button>`).join("")}</div>
                 <div class="prediction-live-bet-row"><div class="prediction-live-bet-label">Bet amount</div><div class="prediction-live-bet-input"><input type="number" min="0" step="any" placeholder="Enter amount"><span class="prediction-live-bet-currency">RLO</span></div><button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button></div>
             </div>
         </article>
@@ -7141,7 +7151,14 @@ function getTransactionReceiverAddress(account) {
     return account;
 }
 
-const PREDICTION_LIVE_HISTORY_STORAGE_KEY = "rialo-prediction-live-history-v1";
+const PREDICTION_LIVE_HISTORY_STORAGE_KEY = "rialo-prediction-live-history-v2";
+
+// Remove the obsolete August 2026 demo entries saved by the previous build.
+try {
+    localStorage.removeItem("rialo-prediction-live-history-v1");
+} catch (error) {
+    // Storage can be unavailable in privacy-restricted browser contexts.
+}
 
 function getPredictionLiveHistory() {
     try {
@@ -8233,9 +8250,5 @@ function flashAdvancedConnector() {
 }
 
 init();
-
-
-
-
 
 
