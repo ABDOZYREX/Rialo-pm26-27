@@ -123,6 +123,115 @@ const clubLogoUrls = {
     "Viking": "https://logotyp.us/file/viking.svg"
 };
 
+// Upcoming LaLiga fixtures still to be played in September 2026.
+// Kick-off times are official local Spain times (CEST). The three values are
+// fair decimal estimates derived from the displayed model probabilities.
+const LALIGA_SEPTEMBER_2026_TEAMS = {
+    "Espanyol": ["206352", "ESP"],
+    "Elche CF": ["205608", "ELC"],
+    "Osasuna": ["206463", "OSA"],
+    "Rayo Vallecano": ["205951", "RAY"],
+    "Athletic Club": ["205512", "ATH"],
+    "Deportivo Alavés": ["205482", "ALA"],
+    "Celta Vigo": ["205934", "CEL"],
+    "Racing Santander": ["205629", "RAC"],
+    "Sevilla FC": ["206198", "SEV"],
+    "FC Barcelona": ["206343", "BAR"],
+    "Getafe CF": ["205863", "GET"],
+    "Málaga CF": ["205916", "MLG"],
+    "Atlético Madrid": ["205945", "ATM"],
+    "Real Madrid": ["205940", "RMA"],
+    "Deportivo La Coruña": ["205699", "DEP"],
+    "Real Betis": ["206204", "BET"],
+    "Villarreal CF": ["205994", "VIL"],
+    "Levante UD": ["205665", "LEV"],
+    "Valencia CF": ["205661", "VAL"],
+    "Real Sociedad": ["205595", "RSO"]
+};
+
+const LALIGA_SEPTEMBER_2026_MATCHES = [
+    ["September 16, 2026 · 19:00 CEST", "Atlético Madrid", "Osasuna", ["1.96", "4.55", "3.70"]],
+    ["September 16, 2026 · 19:00 CEST", "Deportivo La Coruña", "Sevilla FC", ["2.13", "4.55", "3.23"]],
+    ["September 16, 2026 · 21:30 CEST", "FC Barcelona", "Racing Santander", ["1.79", "4.76", "4.17"]],
+    ["September 16, 2026 · 21:30 CEST", "Levante UD", "Athletic Club", ["2.22", "4.55", "3.03"]],
+    ["September 17, 2026 · 19:00 CEST", "Real Betis", "Getafe CF", ["2.00", "4.55", "3.57"]],
+    ["September 17, 2026 · 21:30 CEST", "Málaga CF", "Villarreal CF", ["2.22", "4.55", "3.13"]],
+    ["September 18, 2026 · 21:00 CEST", "Espanyol", "Elche CF", ["2.08", "4.55", "3.33"]],
+    ["September 19, 2026 · 14:00 CEST", "Osasuna", "Rayo Vallecano", ["2.13", "4.55", "3.23"]],
+    ["September 19, 2026 · 16:15 CEST", "Athletic Club", "Deportivo Alavés", ["2.33", "4.35", "2.86"]],
+    ["September 19, 2026 · 18:30 CEST", "Celta Vigo", "Racing Santander", ["2.27", "4.55", "3.03"]],
+    ["September 19, 2026 · 21:00 CEST", "Sevilla FC", "FC Barcelona", ["2.56", "4.35", "2.63"]],
+    ["September 20, 2026 · 14:00 CEST", "Getafe CF", "Málaga CF", ["2.13", "4.55", "3.33"]],
+    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["2.27", "4.35", "2.94"]],
+    ["September 20, 2026 · 18:30 CEST", "Deportivo La Coruña", "Real Betis", ["2.13", "4.55", "3.23"]],
+    ["September 20, 2026 · 18:30 CEST", "Villarreal CF", "Levante UD", ["2.27", "4.35", "2.94"]],
+    ["September 20, 2026 · 21:00 CEST", "Valencia CF", "Real Sociedad", ["2.38", "4.35", "2.86"]]
+];
+
+function getLaLigaSeptemberTeam(teamName) {
+    const [crestId, abbreviation] = LALIGA_SEPTEMBER_2026_TEAMS[teamName];
+    return {
+        name: teamName,
+        abbreviation,
+        logo: `https://rfef.es/themes/custom/rfef/img/novanet/50x50/${crestId}_50x50.png`
+    };
+}
+
+function renderLaLigaSeptemberMatches() {
+    const list = document.getElementById("prediction-live-laliga-list");
+    if (!list) return;
+
+    const upcomingMatches = LALIGA_SEPTEMBER_2026_MATCHES.filter(([kickoff]) => {
+        const kickoffTimestamp = Date.parse(kickoff.replace(" · ", " ").replace(" CEST", " GMT+0200"));
+        return Number.isNaN(kickoffTimestamp) || Date.now() < kickoffTimestamp;
+    });
+
+    if (!upcomingMatches.length) {
+        list.innerHTML = `<div class="prediction-live-history-empty">No upcoming September fixtures.</div>`;
+        return;
+    }
+
+    list.innerHTML = upcomingMatches.map(([kickoff, homeName, awayName, odds]) => {
+        const home = getLaLigaSeptemberTeam(homeName);
+        const away = getLaLigaSeptemberTeam(awayName);
+        return `
+            <article class="prediction-live-match-card">
+                <div class="prediction-live-match-time">${kickoff}</div>
+                <div class="prediction-live-match-teams">
+                    <div class="prediction-live-team">
+                        <div class="prediction-live-team-logo">
+                            <img src="${home.logo}" alt="${home.name} logo" loading="lazy">
+                            <span class="prediction-live-team-logo-fallback" aria-hidden="true">${home.abbreviation}</span>
+                        </div>
+                        <div class="prediction-live-team-name">${home.name}</div>
+                    </div>
+                    <div class="prediction-live-vs">VS</div>
+                    <div class="prediction-live-team right">
+                        <div class="prediction-live-team-logo">
+                            <img src="${away.logo}" alt="${away.name} logo" loading="lazy">
+                            <span class="prediction-live-team-logo-fallback" aria-hidden="true">${away.abbreviation}</span>
+                        </div>
+                        <div class="prediction-live-team-name">${away.name}</div>
+                    </div>
+                </div>
+                <div class="prediction-live-match-meta">
+                    <div class="prediction-live-match-odds" aria-label="Home, draw, away estimates">
+                        ${odds.map(odd => `<button class="prediction-live-odd-btn" type="button" data-odd="${odd}">${odd}</button>`).join("")}
+                    </div>
+                    <div class="prediction-live-bet-row">
+                        <div class="prediction-live-bet-label">Bet amount</div>
+                        <div class="prediction-live-bet-input">
+                            <input type="number" min="0" step="any" placeholder="Enter amount">
+                            <span class="prediction-live-bet-currency">RLO</span>
+                        </div>
+                        <button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button>
+                    </div>
+                </div>
+            </article>
+        `;
+    }).join("");
+}
+
 const groupOrders = {};
 const completedGroups = new Set();
 const madePicks = new Set();
@@ -4668,6 +4777,7 @@ function init() {
     setupSubmit();
     setupFinalClick();
     setupEntryOdds();
+    renderLaLigaSeptemberMatches();
     setupRialoWorldCupNftPage();
     setupRialoSwapUi();
     setupRialoMarketUi();
@@ -8052,9 +8162,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
-
-
 
 
 
