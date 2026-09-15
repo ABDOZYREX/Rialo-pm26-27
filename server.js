@@ -21,7 +21,8 @@ const LOCAL_AI_CONFIG_FILE = path.join(DATA_DIR, "rialo-ai.config.json");
 const DEFAULT_WALLET_RLO_BALANCE = 250000;
 const DEFAULT_FEE_BPS = 30;
 const DEFAULT_CREATOR_SHARE = 0.2;
-const RIALO_RPC_URL = process.env.RIALO_RPC_URL || "https://carrot.megaeth.com/rpc";
+const RIALO_RPC_URL = process.env.RIALO_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
+const RIALO_CHAIN_ID = "0xaa36a7";
 const INDEXER_POLL_MS = Number(process.env.RIALO_INDEXER_POLL_MS || 12000);
 const TRADE_EXECUTED_TOPIC = "0x9ce8a552d9a28a585b4d3bd87da383f1f7ee25a97365977f122cf1b2a1fcaa46";
 const GET_POOL_SELECTOR = "bbe4f6db";
@@ -41,7 +42,7 @@ function downloadRemoteImage(sourceUrl, redirectsLeft = 4) {
   return new Promise((resolve, reject) => {
     const request = https.get(sourceUrl, {
       headers: { "User-Agent": "RialoPM/1.0" },
-      rejectUnauthorized: false
+      rejectUnauthorized: true
     }, (response) => {
       if (response.statusCode >= 300 && response.statusCode < 400 && response.headers.location && redirectsLeft > 0) {
         response.resume();
@@ -2257,7 +2258,9 @@ const server = http.createServer(async (req, res) => {
         lastSyncAt: indexerState.lastSyncAt || getMetadataValue("indexer:lastSyncAt") || "",
         lastError: indexerState.lastError || getMetadataValue("indexer:lastError") || "",
         factories: indexerState.lastFactories || 0,
-        rpcUrl: RIALO_RPC_URL
+        rpcUrl: RIALO_RPC_URL,
+        chainId: RIALO_CHAIN_ID,
+        network: "Ethereum Sepolia"
       }
     });
     return;

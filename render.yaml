@@ -11,7 +11,7 @@
       - key: NODE_VERSION
         value: 22.15.0
       - key: RIALO_RPC_URL
-        value: https://sepolia.base.org
+        value: https://ethereum-sepolia-rpc.publicnode.com
       - key: OPENAI_API_KEY
         sync: false
       - key: OPENAI_MODEL

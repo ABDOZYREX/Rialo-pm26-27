@@ -15,6 +15,7 @@ const BASE = `http://127.0.0.1:${PORT}`;
 const SELLER_CHECKSUM = "0xAbC0000000000000000000000000000000000001";
 const SELLER_LOWER = SELLER_CHECKSUM.toLowerCase();
 const OTHER_SELLER = "0x00000000000000000000000000000000000000f2";
+const MARKETPLACE_ADDRESS = "0x00000000000000000000000000000000000000a1";
 
 let failures = 0;
 function check(name, condition, detail = "") {
@@ -89,7 +90,8 @@ async function main() {
   try {
     // Case mismatch: list with checksum casing, cancel with lowercase.
     let res = await api("/api/nft-listings", {
-      code: "MA", tokenId: 10, sellerAddress: SELLER_CHECKSUM, amount: 2, priceRlo: 5, txHash: "0xlist"
+      code: "MA", tokenId: 10, sellerAddress: SELLER_CHECKSUM, amount: 2, priceRlo: 5,
+      marketplaceAddress: MARKETPLACE_ADDRESS, txHash: "0xlist"
     });
     check("list accepted", res.status === 201, JSON.stringify(res.data).slice(0, 200));
 
@@ -127,7 +129,8 @@ async function main() {
 
     // Re-listing after a cancel works (ON CONFLICT path).
     res = await api("/api/nft-listings", {
-      code: "ma", tokenId: 10, sellerAddress: SELLER_CHECKSUM, amount: 3, priceRlo: 7, txHash: "0xrelist"
+      code: "ma", tokenId: 10, sellerAddress: SELLER_CHECKSUM, amount: 3, priceRlo: 7,
+      marketplaceAddress: MARKETPLACE_ADDRESS, txHash: "0xrelist"
     });
     rows = await listings();
     check("re-list after cancel restores an active listing",
@@ -135,7 +138,8 @@ async function main() {
 
     // A different wallet's listing is untouched by our cancels.
     await api("/api/nft-listings", {
-      code: "ma", tokenId: 10, sellerAddress: OTHER_SELLER, amount: 1, priceRlo: 4, txHash: "0xother"
+      code: "ma", tokenId: 10, sellerAddress: OTHER_SELLER, amount: 1, priceRlo: 4,
+      marketplaceAddress: MARKETPLACE_ADDRESS, txHash: "0xother"
     });
     await api("/api/nft-listings/cancel", { code: "ma", sellerAddress: SELLER_CHECKSUM });
     rows = await listings();

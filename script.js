@@ -685,7 +685,12 @@ function setNftListings(listings = []) {
     });
 }
 
-const RIALO_BACKEND_URL = "https://rialo-pm-production.up.railway.app";
+// The API and the frontend are deployed by the same Node service. Use the
+// current origin so custom domains (Northflank, localhost, or any future host)
+// never keep calling an obsolete deployment URL.
+const RIALO_BACKEND_URL = window.location.protocol === "file:"
+    ? "http://localhost:3000"
+    : window.location.origin;
 
 function getApiUrl(pathname) {
     const path = String(pathname || "");
@@ -693,11 +698,7 @@ function getApiUrl(pathname) {
         return path;
     }
 
-    const host = window.location.hostname || "";
-    const isLocalBackend = host === "localhost" || host === "127.0.0.1" || host.includes("railway.app");
-    const useRemoteBackend = window.location.protocol === "file:" || !isLocalBackend;
-
-    if (!useRemoteBackend) {
+    if (window.location.protocol !== "file:") {
         return path;
     }
 
@@ -8051,7 +8052,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
 
 
 
