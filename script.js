@@ -232,6 +232,107 @@ function renderLaLigaSeptemberMatches() {
     }).join("");
 }
 
+const PREMIER_LEAGUE_SEPTEMBER_2026_MATCHES = [
+    ["September 18, 2026 · 20:00 BST", "Brentford", "Chelsea", ["3.40", "3.60", "2.10"]],
+    ["September 19, 2026 · 12:30 BST", "Tottenham Hotspur", "Aston Villa", ["2.05", "3.55", "3.40"]],
+    ["September 19, 2026 · 15:00 BST", "Brighton", "Arsenal", ["3.90", "3.70", "1.85"]],
+    ["September 19, 2026 · 15:00 BST", "Everton", "Ipswich Town", ["1.80", "3.60", "4.50"]],
+    ["September 19, 2026 · 15:00 BST", "Newcastle United", "Hull City", ["1.45", "4.50", "6.50"]],
+    ["September 19, 2026 · 17:30 BST", "Nottingham Forest", "Coventry City", ["1.95", "3.45", "3.90"]],
+    ["September 20, 2026 · 14:00 BST", "Bournemouth", "Liverpool", ["4.60", "4.00", "1.67"]],
+    ["September 20, 2026 · 14:00 BST", "Leeds United", "Crystal Palace", ["2.20", "3.35", "3.25"]],
+    ["September 20, 2026 · 14:00 BST", "Manchester City", "Sunderland", ["1.25", "6.20", "10.00"]],
+    ["September 20, 2026 · 16:30 BST", "Fulham", "Manchester United", ["2.90", "3.40", "2.35"]]
+];
+
+const BUNDESLIGA_SEPTEMBER_2026_MATCHES = [
+    ["September 18, 2026 · 20:30 CEST", "Bayern Munich", "Union Berlin", ["1.25", "6.50", "9.50"]],
+    ["September 19, 2026 · 15:30 CEST", "Eintracht Frankfurt", "Freiburg", ["2.00", "3.60", "3.45"]],
+    ["September 19, 2026 · 15:30 CEST", "Borussia Mönchengladbach", "Mainz 05", ["2.25", "3.55", "2.95"]],
+    ["September 19, 2026 · 15:30 CEST", "Hamburger SV", "FC Köln", ["2.30", "3.45", "2.90"]],
+    ["September 19, 2026 · 15:30 CEST", "Werder Bremen", "Augsburg", ["2.10", "3.50", "3.25"]],
+    ["September 19, 2026 · 18:30 CEST", "Stuttgart", "Borussia Dortmund", ["2.80", "3.70", "2.25"]],
+    ["September 20, 2026 · 15:30 CEST", "Bayer Leverkusen", "RB Leipzig", ["1.95", "3.75", "3.45"]],
+    ["September 20, 2026 · 17:30 CEST", "Schalke 04", "Elversberg", ["1.75", "3.75", "4.40"]],
+    ["September 20, 2026 · 19:30 CEST", "Paderborn", "Hoffenheim", ["2.65", "3.60", "2.40"]]
+];
+
+const SERIE_A_SEPTEMBER_2026_MATCHES = [
+    ["September 18, 2026 · 20:45 CEST", "Monza", "Sassuolo", ["2.55", "3.25", "2.70"]],
+    ["September 19, 2026 · 15:00 CEST", "Bologna", "Torino", ["2.05", "3.20", "3.75"]],
+    ["September 19, 2026 · 15:00 CEST", "Udinese", "Cagliari", ["2.00", "3.25", "3.90"]],
+    ["September 19, 2026 · 18:00 CEST", "Roma", "Inter", ["2.90", "3.30", "2.40"]],
+    ["September 19, 2026 · 20:45 CEST", "Venezia", "Lazio", ["3.80", "3.45", "1.95"]],
+    ["September 20, 2026 · 12:30 CEST", "Fiorentina", "Napoli", ["3.10", "3.35", "2.25"]],
+    ["September 20, 2026 · 15:00 CEST", "Frosinone", "Como", ["2.90", "3.30", "2.40"]],
+    ["September 20, 2026 · 15:00 CEST", "Parma", "Genoa", ["2.40", "3.10", "3.05"]],
+    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.95", "3.45", "3.75"]],
+    ["September 20, 2026 · 20:45 CEST", "AC Milan", "Lecce", ["1.40", "4.60", "7.50"]]
+];
+
+const PREDICTION_LEAGUE_LOGO_ALIASES = {
+    "Tottenham Hotspur": "Tottenham",
+    "Newcastle United": "Newcastle",
+    "Roma": "AS Roma",
+    "RB Leipzig": "Leipzig"
+};
+
+function predictionLeagueLogo(teamName) {
+    if (teamName === "Coventry City") return "team-coventry.svg?v=2";
+    const clubLogoName = PREDICTION_LEAGUE_LOGO_ALIASES[teamName] || teamName;
+    if (clubLogoUrls[clubLogoName]) return clubLogoUrls[clubLogoName];
+    const slug = teamName.normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    return `https://logotyp.us/file/${slug}.svg`;
+}
+
+function predictionLiveAbbreviation(teamName) {
+    return teamName.split(/\s+/).map(part => part[0]).join("").slice(0, 3).toUpperCase();
+}
+
+function predictionLiveKickoffTimestamp(kickoff) {
+    return Date.parse(kickoff.replace(" · ", " ")
+        .replace(" CEST", " GMT+0200").replace(" BST", " GMT+0100"));
+}
+
+function renderSeptemberLeagueMatches(viewId, title, matches) {
+    const view = document.getElementById(viewId);
+    const list = view?.querySelector(".prediction-live-match-list");
+    const heading = view?.querySelector(".prediction-live-match-head span");
+    if (!view || !list) return;
+    if (heading) heading.textContent = `${title} · September 2026`;
+
+    const upcomingMatches = matches.filter(([kickoff]) => {
+        const timestamp = predictionLiveKickoffTimestamp(kickoff);
+        return Number.isNaN(timestamp) || Date.now() < timestamp;
+    });
+    if (!upcomingMatches.length) {
+        list.innerHTML = `<div class="prediction-live-history-empty">No upcoming September fixtures.</div>`;
+        return;
+    }
+
+    list.innerHTML = upcomingMatches.map(([kickoff, homeName, awayName, odds]) => `
+        <article class="prediction-live-match-card">
+            <div class="prediction-live-match-time">${kickoff}</div>
+            <div class="prediction-live-match-teams">
+                <div class="prediction-live-team">
+                    <div class="prediction-live-team-logo"><img src="${predictionLeagueLogo(homeName)}" alt="${homeName} logo" loading="lazy"><span class="prediction-live-team-logo-fallback" aria-hidden="true">${predictionLiveAbbreviation(homeName)}</span></div>
+                    <div class="prediction-live-team-name">${homeName}</div>
+                </div>
+                <div class="prediction-live-vs">VS</div>
+                <div class="prediction-live-team right">
+                    <div class="prediction-live-team-logo"><img src="${predictionLeagueLogo(awayName)}" alt="${awayName} logo" loading="lazy"><span class="prediction-live-team-logo-fallback" aria-hidden="true">${predictionLiveAbbreviation(awayName)}</span></div>
+                    <div class="prediction-live-team-name">${awayName}</div>
+                </div>
+            </div>
+            <div class="prediction-live-match-meta">
+                <div class="prediction-live-match-odds" aria-label="Home, draw, away estimates">${odds.map(odd => `<button class="prediction-live-odd-btn" type="button" data-odd="${odd}">${odd}</button>`).join("")}</div>
+                <div class="prediction-live-bet-row"><div class="prediction-live-bet-label">Bet amount</div><div class="prediction-live-bet-input"><input type="number" min="0" step="any" placeholder="Enter amount"><span class="prediction-live-bet-currency">RLO</span></div><button class="prediction-live-confirm-btn" type="button" disabled>Confirm</button></div>
+            </div>
+        </article>
+    `).join("");
+}
+
 const groupOrders = {};
 const completedGroups = new Set();
 const madePicks = new Set();
@@ -4778,6 +4879,9 @@ function init() {
     setupFinalClick();
     setupEntryOdds();
     renderLaLigaSeptemberMatches();
+    renderSeptemberLeagueMatches("prediction-live-premier-view", "Premier League", PREMIER_LEAGUE_SEPTEMBER_2026_MATCHES);
+    renderSeptemberLeagueMatches("prediction-live-bundesliga-view", "Bundesliga", BUNDESLIGA_SEPTEMBER_2026_MATCHES);
+    renderSeptemberLeagueMatches("prediction-live-seriea-view", "Serie A", SERIE_A_SEPTEMBER_2026_MATCHES);
     setupRialoWorldCupNftPage();
     setupRialoSwapUi();
     setupRialoMarketUi();
@@ -8162,7 +8266,6 @@ function flashAdvancedConnector() {
 }
 
 init();
-
 
 
 
