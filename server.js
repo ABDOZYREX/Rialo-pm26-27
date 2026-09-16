@@ -1713,6 +1713,11 @@ function sanitizeString(value, maxLength = 140) {
   return String(value || "").trim().slice(0, maxLength);
 }
 
+function pruneExpiredCommunityChatMessages(db = getMarketDb()) {
+  const expiresBefore = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  db.prepare(`DELETE FROM community_chat_messages WHERE created_at < ?`).run(expiresBefore);
+}
+
 function sanitizeAddress(value) {
   const address = String(value || "").trim();
   return /^0x[a-fA-F0-9]{40}$/.test(address) ? address : "";
@@ -2224,6 +2229,7 @@ const server = http.createServer(async (req, res) => {
 
   if (req.method === "GET" && pathname === "/api/community-chat") {
     const db = getMarketDb();
+    pruneExpiredCommunityChatMessages(db);
     const after = Math.max(0, Number.parseInt(url.searchParams.get("after") || "0", 10) || 0);
     let rows;
 
@@ -2283,6 +2289,7 @@ const server = http.createServer(async (req, res) => {
       communityChatRateLimits.set(clientKey, recentPosts);
 
       const db = getMarketDb();
+      pruneExpiredCommunityChatMessages(db);
       const createdAt = new Date().toISOString();
       const result = db.prepare(`
         INSERT INTO community_chat_messages (username, wallet_address, message, created_at)

@@ -1065,8 +1065,8 @@ function updateCommunityChatIdentity() {
 
     setCommunityChatMeta(
         canSend
-            ? `Public chat — posting as @${username}. Everyone can read messages.`
-            : "Everyone can read. Connect your wallet and confirm your X username to send."
+            ? `Posting as @${username}. Messages disappear after 24 hours.`
+            : "Everyone can read. Messages disappear after 24 hours. Connect your wallet and confirm your X username to send."
     );
 }
 
