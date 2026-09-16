@@ -7138,8 +7138,8 @@ body.market-mode .made-by-section {
 }
 
 .community-chat-panel {
-    width: min(360px, calc(100vw - 28px));
-    padding: 14px;
+    width: min(320px, calc(100vw - 28px));
+    padding: 12px;
     border: 1px solid rgba(88, 184, 255, 0.20);
     border-radius: 20px;
     display: flex;
@@ -7200,8 +7200,8 @@ body.market-mode .made-by-section {
 }
 
 .community-chat-messages {
-    min-height: 190px;
-    max-height: 34vh;
+    min-height: 140px;
+    max-height: 26vh;
     padding: 4px 4px 4px 0;
     overflow-y: auto;
     display: flex;
@@ -7306,8 +7306,8 @@ body.market-mode .made-by-section {
     }
 
     .community-chat-panel {
-        width: min(350px, calc(100vw - 16px));
-        max-height: 68vh;
+        width: min(320px, calc(100vw - 16px));
+        max-height: 58vh;
     }
 }
 

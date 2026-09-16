@@ -1212,6 +1212,7 @@ function setupCommunityChat() {
     });
     window.addEventListener("rialo:twitter-username-saved", updateCommunityChatIdentity);
 
+    refs.fab.setAttribute("aria-expanded", refs.panel.classList.contains("hidden") ? "false" : "true");
     loadCommunityChatMessages();
     communityChatTimer = window.setInterval(loadCommunityChatMessages, 5000);
 }
