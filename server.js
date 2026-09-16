@@ -28,9 +28,17 @@ const TRADE_EXECUTED_TOPIC = "0x9ce8a552d9a28a585b4d3bd87da383f1f7ee25a97365977f
 const GET_POOL_SELECTOR = "bbe4f6db";
 const LOCAL_AI_CONFIG = loadLocalAiConfig();
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const GROQ_MODEL_ALIASES = Object.freeze({
+  "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
+  "llama-3.1-8b-instant": "openai/gpt-oss-20b"
+});
+const CONFIGURED_GROQ_MODEL = String(process.env.GROQ_MODEL || "").trim();
+const ACTIVE_GROQ_MODEL = GROQ_MODEL_ALIASES[CONFIGURED_GROQ_MODEL]
+  || CONFIGURED_GROQ_MODEL
+  || "openai/gpt-oss-120b";
 const AI_API_KEY = GROQ_API_KEY || process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "";
 const AI_MODEL = GROQ_API_KEY
-  ? process.env.GROQ_MODEL || "llama-3.3-70b-versatile"
+  ? ACTIVE_GROQ_MODEL
   : process.env.OPENAI_MODEL || LOCAL_AI_CONFIG.model || "gpt-4.1-mini";
 const AI_API_URL = GROQ_API_KEY
   ? process.env.GROQ_API_URL || "https://api.groq.com/openai/v1/chat/completions"
@@ -1090,10 +1098,10 @@ function buildLocalAiReply(message, contextSummary) {
   return reply(
     arabic
       ? `Ø£Ù†Ø§ Ù…Ø³Ø§Ø¹Ø¯ Rialo Ø¯Ø§Ø®Ù„ Ø§Ù„Ù…ÙˆÙ‚Ø¹. Ø£Ù‚Ø¯Ø± Ø£Ø´Ø±Ø­ Ù„Ùƒ Ø§Ù„Ø³ÙˆÙ‚ØŒ Ø§Ù„Ù€ NFTsØŒ Ø§Ù„Ù€ walletØŒ Ø§Ù„ØªÙˆÙ‚Ø¹Ø§ØªØŒ Ø£Ùˆ Ø®Ø·ÙˆØ§Øª Ø£ÙŠ Ø¹Ù…Ù„ÙŠØ© ØªØ±ÙŠØ¯Ù‡Ø§.`
-      : `Iâ€™m the Rialo in-app assistant. I can explain the market, NFTs, wallet flow, predictions, or the steps behind any action you want.`,
+      : `I'm the Rialo in-app assistant. I can explain the market, NFTs, wallet flow, predictions, or the steps behind any action you want.`,
     arabic
       ? `Ø§ÙƒØªØ¨ Ø³Ø¤Ø§Ù„Ùƒ Ù…Ø¨Ø§Ø´Ø±Ø© ÙˆØ³Ø£Ø¬Ø§ÙˆØ¨Ùƒ Ø­Ø³Ø¨ Ø§Ù„ØµÙØ­Ø© Ø§Ù„ØªÙŠ Ø£Ù†Øª ÙÙŠÙ‡Ø§ Ø§Ù„Ø¢Ù†: ${contextSummary.page}.`
-      : `Ask directly and Iâ€™ll answer based on the page you are currently on: ${contextSummary.page}.`
+      : `Ask directly and I'll answer based on the page you are currently on: ${contextSummary.page}.`
   );
 }
 

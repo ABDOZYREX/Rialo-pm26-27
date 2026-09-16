@@ -1372,13 +1372,17 @@ async function askAI(question) {
             "Content-Type": "application/json"
         },
         body: JSON.stringify({
-            question: question
+            question,
+            context: buildAiContextPayload()
         })
     });
 
-    const data = await response.json();
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+        throw new Error(data.error || "Rialo Helper could not reach the AI service.");
+    }
 
-    return data.answer;
+    return data;
 }
 async function submitAiAssistantMessage(messageText) {
     const refs = getAiAssistantRefs();
@@ -1404,11 +1408,11 @@ async function submitAiAssistantMessage(messageText) {
     refs.messages.scrollTop = refs.messages.scrollHeight;
 
     try {
-        const answer = await askAI(text);
+        const response = await askAI(text);
 
         typing.remove();
-        appendAiMessage("assistant", answer || "I’m here. Try asking me again.");
-        setAiAssistantMeta("Live Rialo Helper response delivered.");
+        appendAiMessage("assistant", response.answer || "I’m here. Try asking me again.");
+        setAiAssistantMeta(buildAiAssistantMetaText(response));
     } catch (error) {
         typing.remove();
         appendAiMessage("assistant", error.message || "I couldn’t answer that right now.");
