@@ -124,9 +124,18 @@ const clubLogoUrls = {
     "Brentford": "https://a.espncdn.com/i/teamlogos/soccer/500/337.png",
     "Brighton": "https://a.espncdn.com/i/teamlogos/soccer/500/331.png",
     "Fulham": "https://a.espncdn.com/i/teamlogos/soccer/500/370.png",
+    "AFC Bournemouth": "https://a.espncdn.com/i/teamlogos/soccer/500/349.png",
     "Union Berlin": "https://a.espncdn.com/i/teamlogos/soccer/500/598.png",
+    "Eintracht Frankfurt": "https://a.espncdn.com/i/teamlogos/soccer/500/125.png",
+    "Freiburg": "https://a.espncdn.com/i/teamlogos/soccer/500/126.png",
+    "Borussia Mönchengladbach": "https://a.espncdn.com/i/teamlogos/soccer/500/268.png",
+    "Mainz": "https://a.espncdn.com/i/teamlogos/soccer/500/2950.png",
     "Fiorentina": "https://a.espncdn.com/i/teamlogos/soccer/500/109.png",
     "Juventus": "https://a.espncdn.com/i/teamlogos/soccer/500/111.png",
+    "Bologna": "https://a.espncdn.com/i/teamlogos/soccer/500/107.png",
+    "Torino": "https://a.espncdn.com/i/teamlogos/soccer/500/239.png",
+    "AC Milan": "https://a.espncdn.com/i/teamlogos/soccer/500/103.png",
+    "Lecce": "https://a.espncdn.com/i/teamlogos/soccer/500/113.png",
     "FC Barcelona": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
     "Racing Santander": "https://a.espncdn.com/i/teamlogos/soccer/500/87.png",
     "Sevilla FC": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png"
@@ -161,8 +170,10 @@ const LALIGA_SEPTEMBER_2026_TEAMS = {
 
 const LALIGA_SEPTEMBER_2026_MATCHES = [
     ["September 16, 2026 · 21:30 CEST", "FC Barcelona", "Racing Santander", ["1.056", "13.50", "29.00"]],
+    ["September 19, 2026 · 16:15 CEST", "Athletic Club", "Deportivo Alavés", ["1.81", "3.71", "5.15"]],
     ["September 19, 2026 · 21:00 CEST", "Sevilla FC", "FC Barcelona", ["12.00", "6.60", "1.22"]],
-    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["3.96", "3.92", "1.83"]]
+    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["3.96", "3.92", "1.83"]],
+    ["September 20, 2026 · 21:00 CEST", "Valencia CF", "Real Sociedad", ["2.744", "3.46", "2.50"]]
 ];
 
 function getLaLigaSeptemberTeam(teamName) {
@@ -231,20 +242,26 @@ function renderLaLigaSeptemberMatches() {
 
 const PREMIER_LEAGUE_SEPTEMBER_2026_MATCHES = [
     ["September 18, 2026 · 20:00 BST", "Brentford", "Chelsea", ["2.88", "3.82", "2.255"]],
+    ["September 19, 2026 · 12:30 BST", "Tottenham Hotspur", "Aston Villa", ["1.99", "3.64", "3.62"]],
     ["September 19, 2026 · 15:00 BST", "Brighton", "Arsenal", ["4.60", "3.90", "1.725"]],
+    ["September 20, 2026 · 14:00 BST", "AFC Bournemouth", "Liverpool", ["3.22", "3.80", "2.08"]],
     ["September 20, 2026 · 16:30 BST", "Fulham", "Manchester United", ["3.50", "3.74", "2.00"]]
 ];
 
 const BUNDESLIGA_SEPTEMBER_2026_MATCHES = [
     ["September 18, 2026 · 20:30 CEST", "Bayern Munich", "Union Berlin", ["1.075", "12.00", "23.00"]],
+    ["September 19, 2026 · 15:30 CEST", "Eintracht Frankfurt", "Freiburg", ["2.344", "3.80", "2.755"]],
+    ["September 19, 2026 · 15:30 CEST", "Borussia Mönchengladbach", "Mainz", ["2.98", "3.70", "2.23"]],
     ["September 19, 2026 · 18:30 CEST", "Stuttgart", "Borussia Dortmund", ["2.29", "3.76", "2.85"]],
     ["September 20, 2026 · 15:30 CEST", "Bayer Leverkusen", "RB Leipzig", ["1.94", "4.06", "3.42"]]
 ];
 
 const SERIE_A_SEPTEMBER_2026_MATCHES = [
+    ["September 19, 2026 · 15:00 CEST", "Bologna", "Torino", ["1.99", "3.66", "4.20"]],
     ["September 19, 2026 · 18:00 CEST", "Roma", "Inter", ["2.67", "3.42", "2.87"]],
     ["September 20, 2026 · 12:30 CEST", "Fiorentina", "Napoli", ["3.48", "3.50", "2.26"]],
-    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.77", "4.00", "4.99"]]
+    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.77", "4.00", "4.99"]],
+    ["September 20, 2026 · 20:45 CEST", "AC Milan", "Lecce", ["1.31", "5.78", "12.30"]]
 ];
 
 const PREDICTION_LEAGUE_LOGO_ALIASES = {
