@@ -1081,7 +1081,7 @@ async function requestOpenAiChat(message, contextSummary) {
   }
 
   const prompt = [
-    "You are Rialo Chat, a concise in-product assistant inside a Web3 sports + meme market app.",
+    "You are Rialo Helper, a concise in-product assistant inside a Web3 sports + meme market app.",
     "Be practical, brief, and helpful.",
     "Use the current UI context when it matters.",
     "If the user asks a general question unrelated to the app, answer it normally and clearly instead of forcing the topic back to Rialo.",
@@ -1110,7 +1110,7 @@ async function requestOpenAiChat(message, contextSummary) {
         messages: [
           {
             role: "system",
-            content: "You are Rialo Chat, a concise and helpful in-product assistant for a Web3 sports, NFT, prediction, and meme-market app."
+            content: "You are Rialo Helper, a concise and helpful in-product assistant for a Web3 sports, NFT, prediction, and meme-market app."
           },
           { role: "user", content: prompt }
         ],

@@ -1056,7 +1056,7 @@ function appendAiMessage(role, text) {
     const article = document.createElement("article");
     article.className = `ai-message ${role === "user" ? "ai-message-user" : "ai-message-assistant"}`;
     article.innerHTML = `
-        <strong>${role === "user" ? "You" : "Rialo Chat"}</strong>
+        <strong>${role === "user" ? "You" : "Rialo Helper"}</strong>
         <p>${escapeAiHtml(text)}</p>
     `;
     refs.messages.appendChild(article);
@@ -1203,7 +1203,7 @@ async function submitAiAssistantMessage(messageText) {
     const typing = document.createElement("div");
     typing.className = "ai-assistant-typing";
     typing.id = "ai-assistant-typing";
-    typing.textContent = "Rialo Chat is typing...";
+    typing.textContent = "Rialo Helper is typing...";
     refs.messages?.appendChild(typing);
     refs.messages.scrollTop = refs.messages.scrollHeight;
 
@@ -1212,7 +1212,7 @@ async function submitAiAssistantMessage(messageText) {
 
         typing.remove();
         appendAiMessage("assistant", answer || "I’m here. Try asking me again.");
-        setAiAssistantMeta("Live Rialo Chat response delivered.");
+        setAiAssistantMeta("Live Rialo Helper response delivered.");
     } catch (error) {
         typing.remove();
         appendAiMessage("assistant", error.message || "I couldn’t answer that right now.");
@@ -8250,5 +8250,4 @@ function flashAdvancedConnector() {
 }
 
 init();
-
 
