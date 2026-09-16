@@ -326,6 +326,11 @@ let nftRefreshHookReady = false;
 let rialoAppInitialized = false;
 let aiAssistantReady = false;
 let aiAssistantBusy = false;
+let communityChatReady = false;
+let communityChatBusy = false;
+let communityChatLoading = false;
+let communityChatLastId = 0;
+let communityChatTimer = null;
 
 const teamRatings = {
     Brazil: 95,
@@ -1023,6 +1028,178 @@ async function apiFetchJson(pathname, options = {}) {
   return data;
 }
 
+function getCommunityChatRefs() {
+    return {
+        shell: document.getElementById("community-chat-shell"),
+        fab: document.getElementById("community-chat-fab"),
+        statusDot: document.querySelector("#community-chat-fab .community-chat-status-dot"),
+        panel: document.getElementById("community-chat-panel"),
+        close: document.getElementById("community-chat-close"),
+        meta: document.getElementById("community-chat-meta"),
+        messages: document.getElementById("community-chat-messages"),
+        form: document.getElementById("community-chat-form"),
+        input: document.getElementById("community-chat-input"),
+        send: document.querySelector("#community-chat-form button[type='submit']")
+    };
+}
+
+function setCommunityChatMeta(text, isError = false) {
+    const refs = getCommunityChatRefs();
+    if (!refs.meta) return;
+    refs.meta.textContent = text;
+    refs.meta.classList.toggle("error", isError);
+}
+
+function updateCommunityChatIdentity() {
+    const refs = getCommunityChatRefs();
+    const username = getSavedTwitterUsername();
+    const canSend = Boolean(username);
+
+    if (refs.input) {
+        refs.input.disabled = !canSend;
+        refs.input.placeholder = canSend
+            ? `Message as @${username}...`
+            : "Connect wallet and confirm your X username first";
+    }
+    if (refs.send) refs.send.disabled = !canSend;
+
+    setCommunityChatMeta(
+        canSend
+            ? `Public chat — posting as @${username}. Everyone can read messages.`
+            : "Everyone can read. Connect your wallet and confirm your X username to send."
+    );
+}
+
+function formatCommunityChatTime(value) {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+}
+
+function appendCommunityChatMessage(message) {
+    const refs = getCommunityChatRefs();
+    if (!refs.messages || !message || !message.id) return;
+    if (refs.messages.querySelector(`[data-chat-id="${Number(message.id)}"]`)) return;
+
+    refs.messages.querySelector(".community-chat-empty")?.remove();
+    const article = document.createElement("article");
+    const currentUsername = getSavedTwitterUsername().toLowerCase();
+    const messageUsername = String(message.username || "player");
+    article.className = `community-chat-message${currentUsername && messageUsername.toLowerCase() === currentUsername ? " mine" : ""}`;
+    article.dataset.chatId = String(message.id);
+    article.innerHTML = `
+        <div class="community-chat-message-head">
+            <strong>@${escapeAiHtml(messageUsername)}</strong>
+            <time datetime="${escapeAiHtml(message.createdAt || "")}">${escapeAiHtml(formatCommunityChatTime(message.createdAt))}</time>
+        </div>
+        <p>${escapeAiHtml(message.message || "")}</p>
+    `;
+    refs.messages.appendChild(article);
+    communityChatLastId = Math.max(communityChatLastId, Number(message.id) || 0);
+
+    while (refs.messages.children.length > 100) {
+        refs.messages.firstElementChild?.remove();
+    }
+}
+
+async function loadCommunityChatMessages() {
+    if (communityChatLoading) return;
+    communityChatLoading = true;
+    const refs = getCommunityChatRefs();
+    const wasNearBottom = refs.messages
+        ? refs.messages.scrollHeight - refs.messages.scrollTop - refs.messages.clientHeight < 70
+        : true;
+
+    try {
+        const query = communityChatLastId ? `?after=${communityChatLastId}` : "";
+        const data = await apiFetchJson(`/api/community-chat${query}`);
+        const messages = Array.isArray(data.messages) ? data.messages : [];
+        const panelOpen = refs.panel && !refs.panel.classList.contains("hidden");
+
+        messages.forEach(appendCommunityChatMessage);
+        if (messages.length && !panelOpen) refs.statusDot?.classList.add("has-unread");
+        if (refs.messages && wasNearBottom) refs.messages.scrollTop = refs.messages.scrollHeight;
+    } catch (error) {
+        setCommunityChatMeta(error.message || "Rialo Chat is temporarily unavailable.", true);
+    } finally {
+        communityChatLoading = false;
+    }
+}
+
+function closeCommunityChat() {
+    const refs = getCommunityChatRefs();
+    refs.panel?.classList.add("hidden");
+    refs.fab?.setAttribute("aria-expanded", "false");
+}
+
+async function openCommunityChat() {
+    const refs = getCommunityChatRefs();
+    if (!refs.panel || !refs.fab) return;
+    closeAiAssistant();
+    refs.panel.classList.remove("hidden");
+    refs.fab.setAttribute("aria-expanded", "true");
+    refs.statusDot?.classList.remove("has-unread");
+    updateCommunityChatIdentity();
+    await loadCommunityChatMessages();
+    refs.messages.scrollTop = refs.messages.scrollHeight;
+    setTimeout(() => refs.input?.focus(), 50);
+}
+
+async function submitCommunityChatMessage() {
+    const refs = getCommunityChatRefs();
+    if (!refs.input || communityChatBusy) return;
+    const username = getSavedTwitterUsername();
+    const message = String(refs.input.value || "").trim();
+
+    if (!username) {
+        updateCommunityChatIdentity();
+        return;
+    }
+    if (!message) return;
+
+    communityChatBusy = true;
+    refs.input.disabled = true;
+    if (refs.send) refs.send.disabled = true;
+
+    try {
+        const data = await apiFetchJson("/api/community-chat", {
+            method: "POST",
+            body: JSON.stringify({ username, walletAddress: connectedWalletAddress || "", message })
+        });
+        refs.input.value = "";
+        if (data.message) appendCommunityChatMessage(data.message);
+        refs.messages.scrollTop = refs.messages.scrollHeight;
+    } catch (error) {
+        setCommunityChatMeta(error.message || "The message could not be sent.", true);
+    } finally {
+        communityChatBusy = false;
+        updateCommunityChatIdentity();
+        refs.input?.focus();
+    }
+}
+
+function setupCommunityChat() {
+    const refs = getCommunityChatRefs();
+    if (!refs.shell || !refs.fab || !refs.panel || !refs.form || communityChatReady) return;
+    communityChatReady = true;
+    updateCommunityChatIdentity();
+
+    refs.fab.addEventListener("click", async () => {
+        if (refs.panel.classList.contains("hidden")) await openCommunityChat();
+        else closeCommunityChat();
+    });
+    refs.close?.addEventListener("click", closeCommunityChat);
+    refs.form.addEventListener("submit", async event => {
+        event.preventDefault();
+        await submitCommunityChatMessage();
+    });
+    window.addEventListener("rialo:twitter-username-saved", updateCommunityChatIdentity);
+
+    loadCommunityChatMessages();
+    communityChatTimer = window.setInterval(loadCommunityChatMessages, 5000);
+}
+
+
 function getAiAssistantRefs() {
     return {
         shell: document.getElementById("ai-assistant-shell"),
@@ -1126,6 +1303,7 @@ function buildAiAssistantMetaText(response) {
 function openAiAssistant() {
     const refs = getAiAssistantRefs();
     if (!refs.panel || !refs.fab) return;
+    closeCommunityChat();
     refs.panel.classList.remove("hidden");
     refs.fab.setAttribute("aria-expanded", "true");
     setAiAssistantMeta("Ask about trading, NFTs, wallet steps, predictions, or how this product works.");
@@ -4851,6 +5029,7 @@ function init() {
     setupTabs();
     setupHowPanel();
     setupWallet();
+    setupCommunityChat();
     setupAiAssistant();
     setupSubmit();
     setupFinalClick();
@@ -6822,6 +7001,7 @@ function setupWallet() {
 
             twitterInput.value = cleaned;
             localStorage.setItem(storageKey, cleaned);
+            window.dispatchEvent(new CustomEvent("rialo:twitter-username-saved", { detail: { username: cleaned } }));
 
             if (twitterConfirmBtn) {
                 twitterConfirmBtn.textContent = "Saved";
@@ -8250,4 +8430,3 @@ function flashAdvancedConnector() {
 }
 
 init();
-

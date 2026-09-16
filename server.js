@@ -31,6 +31,7 @@ const OPENAI_API_KEY = process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "
 const OPENAI_MODEL = process.env.OPENAI_MODEL || LOCAL_AI_CONFIG.model || "gpt-4.1-mini";
 const OPENAI_API_URL = process.env.OPENAI_API_URL || LOCAL_AI_CONFIG.apiUrl || "https://api.openai.com/v1/responses";
 let marketDb = null;
+const communityChatRateLimits = new Map();
 let indexerState = {
   running: false,
   lastSyncAt: "",
@@ -295,6 +296,17 @@ function getMarketDb() {
       updated_at TEXT NOT NULL,
       UNIQUE (code, seller_address)
     );
+
+    CREATE TABLE IF NOT EXISTS community_chat_messages (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      username TEXT NOT NULL,
+      wallet_address TEXT NOT NULL DEFAULT '',
+      message TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_community_chat_messages_created
+    ON community_chat_messages(id DESC);
   `);
 
   const tradeColumns = marketDb.prepare(`PRAGMA table_info(trades)`).all();
@@ -2209,6 +2221,98 @@ const server = http.createServer(async (req, res) => {
 
   const url = new URL(req.url, `http://${req.headers.host}`);
   const { pathname } = url;
+
+  if (req.method === "GET" && pathname === "/api/community-chat") {
+    const db = getMarketDb();
+    const after = Math.max(0, Number.parseInt(url.searchParams.get("after") || "0", 10) || 0);
+    let rows;
+
+    if (after > 0) {
+      rows = db.prepare(`
+        SELECT id, username, wallet_address, message, created_at
+        FROM community_chat_messages
+        WHERE id > ?
+        ORDER BY id ASC
+        LIMIT 100
+      `).all(after);
+    } else {
+      rows = db.prepare(`
+        SELECT id, username, wallet_address, message, created_at
+        FROM community_chat_messages
+        ORDER BY id DESC
+        LIMIT 80
+      `).all().reverse();
+    }
+
+    sendJson(res, 200, {
+      messages: rows.map(row => ({
+        id: Number(row.id),
+        username: row.username,
+        walletAddress: row.wallet_address,
+        message: row.message,
+        createdAt: row.created_at
+      }))
+    });
+    return;
+  }
+
+  if (req.method === "POST" && pathname === "/api/community-chat") {
+    try {
+      const body = await parseBody(req);
+      const username = String(body.username || "").replace(/^@+/, "").trim();
+      const walletAddress = sanitizeAddress(body.walletAddress || "");
+      const message = sanitizeString(body.message || "", 280);
+
+      if (!/^[A-Za-z0-9_]{2,32}$/.test(username)) {
+        sendJson(res, 400, { error: "Connect your wallet and confirm a valid X username first." });
+        return;
+      }
+      if (!message) {
+        sendJson(res, 400, { error: "Message is required." });
+        return;
+      }
+
+      const clientKey = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "unknown").split(",")[0].trim();
+      const now = Date.now();
+      const recentPosts = (communityChatRateLimits.get(clientKey) || []).filter(timestamp => now - timestamp < 30000);
+      if (recentPosts.length >= 10) {
+        sendJson(res, 429, { error: "Too many messages. Wait a moment and try again." });
+        return;
+      }
+      recentPosts.push(now);
+      communityChatRateLimits.set(clientKey, recentPosts);
+
+      const db = getMarketDb();
+      const createdAt = new Date().toISOString();
+      const result = db.prepare(`
+        INSERT INTO community_chat_messages (username, wallet_address, message, created_at)
+        VALUES (@username, @walletAddress, @message, @createdAt)
+      `).run({ username, walletAddress, message, createdAt });
+
+      db.exec(`
+        DELETE FROM community_chat_messages
+        WHERE id NOT IN (
+          SELECT id FROM community_chat_messages ORDER BY id DESC LIMIT 1000
+        )
+      `);
+
+      sendJson(res, 201, {
+        ok: true,
+        message: {
+          id: Number(result.lastInsertRowid),
+          username,
+          walletAddress,
+          message,
+          createdAt
+        }
+      });
+      return;
+    } catch (error) {
+      sendJson(res, error.statusCode || 400, { error: error.message });
+      return;
+    }
+  }
+
 
   if (req.method === "GET" && pathname === "/api/twitter-avatar") {
     const username = String(url.searchParams.get("username") || "").replace(/^@+/, "").trim();
