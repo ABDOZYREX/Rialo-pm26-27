@@ -27,9 +27,19 @@ const INDEXER_POLL_MS = Number(process.env.RIALO_INDEXER_POLL_MS || 12000);
 const TRADE_EXECUTED_TOPIC = "0x9ce8a552d9a28a585b4d3bd87da383f1f7ee25a97365977f122cf1b2a1fcaa46";
 const GET_POOL_SELECTOR = "bbe4f6db";
 const LOCAL_AI_CONFIG = loadLocalAiConfig();
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "";
-const OPENAI_MODEL = process.env.OPENAI_MODEL || LOCAL_AI_CONFIG.model || "gpt-4.1-mini";
-const OPENAI_API_URL = process.env.OPENAI_API_URL || LOCAL_AI_CONFIG.apiUrl || "https://api.openai.com/v1/responses";
+const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const AI_API_KEY = GROQ_API_KEY || process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "";
+const AI_MODEL = GROQ_API_KEY
+  ? process.env.GROQ_MODEL || "llama-3.3-70b-versatile"
+  : process.env.OPENAI_MODEL || LOCAL_AI_CONFIG.model || "gpt-4.1-mini";
+const AI_API_URL = GROQ_API_KEY
+  ? process.env.GROQ_API_URL || "https://api.groq.com/openai/v1/chat/completions"
+  : process.env.OPENAI_API_URL || LOCAL_AI_CONFIG.apiUrl || "https://api.openai.com/v1/responses";
+const AI_PROVIDER = GROQ_API_KEY
+  ? "groq"
+  : /generativelanguage\.googleapis\.com/i.test(AI_API_URL)
+    ? "gemini"
+    : "openai";
 let marketDb = null;
 const communityChatRateLimits = new Map();
 let indexerState = {
@@ -1087,8 +1097,8 @@ function buildLocalAiReply(message, contextSummary) {
   );
 }
 
-async function requestOpenAiChat(message, contextSummary) {
-  if (!OPENAI_API_KEY) {
+async function requestAiChat(message, contextSummary) {
+  if (!AI_API_KEY) {
     return null;
   }
 
@@ -1109,8 +1119,8 @@ async function requestOpenAiChat(message, contextSummary) {
     `User message: ${message}`
   ].join("\n");
 
-  const usesGeminiGenerateContent = /generativelanguage\.googleapis\.com\/.*:generateContent/i.test(OPENAI_API_URL);
-  const usesChatCompletions = /\/chat\/completions\/?(?:\?|$)/i.test(OPENAI_API_URL);
+  const usesGeminiGenerateContent = /generativelanguage\.googleapis\.com\/.*:generateContent/i.test(AI_API_URL);
+  const usesChatCompletions = /\/chat\/completions\/?(?:\?|$)/i.test(AI_API_URL);
   const requestBody = usesGeminiGenerateContent
     ? {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -1118,7 +1128,7 @@ async function requestOpenAiChat(message, contextSummary) {
       }
     : usesChatCompletions
     ? {
-        model: OPENAI_MODEL,
+        model: AI_MODEL,
         messages: [
           {
             role: "system",
@@ -1129,24 +1139,24 @@ async function requestOpenAiChat(message, contextSummary) {
         max_tokens: 700
       }
     : {
-        model: OPENAI_MODEL,
+        model: AI_MODEL,
         input: prompt
       };
 
-  const response = await fetch(OPENAI_API_URL, {
+  const response = await fetch(AI_API_URL, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(usesGeminiGenerateContent
-        ? { "x-goog-api-key": OPENAI_API_KEY }
-        : { Authorization: `Bearer ${OPENAI_API_KEY}` })
+        ? { "x-goog-api-key": AI_API_KEY }
+        : { Authorization: `Bearer ${AI_API_KEY}` })
     },
     body: JSON.stringify(requestBody)
   });
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data?.error?.message || "OpenAI request failed");
+    throw new Error(data?.error?.message || "AI provider request failed");
   }
 
   const text =
@@ -2393,13 +2403,13 @@ const server = http.createServer(async (req, res) => {
       let fallbackReason = "";
 
       try {
-        const openAiReply = await requestOpenAiChat(question, contextSummary);
-        if (openAiReply) {
-          answer = openAiReply;
-          mode = "openai";
+        const aiReply = await requestAiChat(question, contextSummary);
+        if (aiReply) {
+          answer = aiReply;
+          mode = AI_PROVIDER;
         }
       } catch (error) {
-        fallbackReason = error?.message || "OpenAI request failed";
+        fallbackReason = error?.message || "AI provider request failed";
         indexerState.lastError = `AI fallback used: ${fallbackReason}`;
       }
 
@@ -2435,13 +2445,13 @@ const server = http.createServer(async (req, res) => {
       let fallbackReason = "";
 
       try {
-        const openAiReply = await requestOpenAiChat(message, contextSummary);
-        if (openAiReply) {
-          reply = openAiReply;
-          mode = "openai";
+        const aiReply = await requestAiChat(message, contextSummary);
+        if (aiReply) {
+          reply = aiReply;
+          mode = AI_PROVIDER;
         }
       } catch (error) {
-        fallbackReason = error?.message || "OpenAI request failed";
+        fallbackReason = error?.message || "AI provider request failed";
         indexerState.lastError = `AI fallback used: ${fallbackReason}`;
       }
 

@@ -1297,24 +1297,24 @@ function setupAiAssistantCustomIcon() {
 }
 
 function buildAiAssistantMetaText(response) {
-    if (response?.mode === "openai") {
+    if (["openai", "groq", "gemini"].includes(response?.mode)) {
         return "Live AI response delivered.";
     }
 
     const reason = String(response?.fallbackReason || "").toLowerCase();
     if (reason.includes("quota") || reason.includes("billing")) {
-        return "OpenAI is connected, but the API quota or billing is exhausted. Using local assistant.";
+        return "The AI service is connected, but its quota or billing is exhausted. Using local assistant.";
     }
 
     if (reason.includes("invalid api key") || reason.includes("incorrect api key")) {
-        return "OpenAI key is invalid. Using local assistant.";
+        return "The AI key is invalid. Using local assistant.";
     }
 
     if (reason.includes("rate limit")) {
-        return "OpenAI rate limit reached. Using local assistant.";
+        return "AI rate limit reached. Using local assistant.";
     }
 
-    return "OpenAI is unavailable right now. Using local assistant.";
+    return "The AI service is unavailable right now. Using local assistant.";
 }
 
 function openAiAssistant() {
