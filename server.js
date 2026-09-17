@@ -320,6 +320,9 @@ function getMarketDb() {
       username TEXT NOT NULL,
       wallet_address TEXT NOT NULL DEFAULT '',
       message TEXT NOT NULL,
+      reply_to_id INTEGER NOT NULL DEFAULT 0,
+      reply_username TEXT NOT NULL DEFAULT '',
+      reply_message TEXT NOT NULL DEFAULT '',
       created_at TEXT NOT NULL
     );
 
@@ -341,6 +344,17 @@ function getMarketDb() {
   }
   if (!nftListingColumns.some(column => column.name === "marketplace_address")) {
     marketDb.exec(`ALTER TABLE nft_listings ADD COLUMN marketplace_address TEXT NOT NULL DEFAULT ''`);
+  }
+
+  const communityChatColumns = marketDb.prepare(`PRAGMA table_info(community_chat_messages)`).all();
+  if (!communityChatColumns.some(column => column.name === "reply_to_id")) {
+    marketDb.exec(`ALTER TABLE community_chat_messages ADD COLUMN reply_to_id INTEGER NOT NULL DEFAULT 0`);
+  }
+  if (!communityChatColumns.some(column => column.name === "reply_username")) {
+    marketDb.exec(`ALTER TABLE community_chat_messages ADD COLUMN reply_username TEXT NOT NULL DEFAULT ''`);
+  }
+  if (!communityChatColumns.some(column => column.name === "reply_message")) {
+    marketDb.exec(`ALTER TABLE community_chat_messages ADD COLUMN reply_message TEXT NOT NULL DEFAULT ''`);
   }
 
   normalizeNftListingIdentity(marketDb);
@@ -761,6 +775,7 @@ async function syncFactoryTrades(factoryAddress, market) {
 
   const factoryTokens = (Array.isArray(market.tokens) ? market.tokens : []).filter(token =>
     sanitizeAddress(token.factoryAddress).toLowerCase() === normalizedFactory.toLowerCase()
+      && token.pool?.mode !== "virtual"
   );
 
   if (!factoryTokens.length) {
@@ -839,6 +854,7 @@ async function syncFactoryPools(factoryAddress, market) {
   const tokens = (Array.isArray(market.tokens) ? market.tokens : []).filter(token =>
     sanitizeAddress(token.factoryAddress).toLowerCase() === normalizedFactory.toLowerCase()
       && sanitizeAddress(token.tokenAddress)
+      && token.pool?.mode !== "virtual"
   );
   let updated = 0;
 
@@ -2253,7 +2269,7 @@ const server = http.createServer(async (req, res) => {
 
     if (after > 0) {
       rows = db.prepare(`
-        SELECT id, username, wallet_address, message, created_at
+        SELECT id, username, wallet_address, message, reply_to_id, reply_username, reply_message, created_at
         FROM community_chat_messages
         WHERE id > ?
         ORDER BY id ASC
@@ -2261,7 +2277,7 @@ const server = http.createServer(async (req, res) => {
       `).all(after);
     } else {
       rows = db.prepare(`
-        SELECT id, username, wallet_address, message, created_at
+        SELECT id, username, wallet_address, message, reply_to_id, reply_username, reply_message, created_at
         FROM community_chat_messages
         ORDER BY id DESC
         LIMIT 80
@@ -2274,6 +2290,9 @@ const server = http.createServer(async (req, res) => {
         username: row.username,
         walletAddress: row.wallet_address,
         message: row.message,
+        replyToId: Number(row.reply_to_id) || 0,
+        replyUsername: row.reply_username || "",
+        replyMessage: row.reply_message || "",
         createdAt: row.created_at
       }))
     });
@@ -2286,6 +2305,7 @@ const server = http.createServer(async (req, res) => {
       const username = String(body.username || "").replace(/^@+/, "").trim();
       const walletAddress = sanitizeAddress(body.walletAddress || "");
       const message = sanitizeString(body.message || "", 280);
+      const replyToId = Math.max(0, Number.parseInt(body.replyToId || "0", 10) || 0);
 
       if (!/^[A-Za-z0-9_]{2,32}$/.test(username)) {
         sendJson(res, 400, { error: "Connect your wallet and confirm a valid X username first." });
@@ -2309,10 +2329,28 @@ const server = http.createServer(async (req, res) => {
       const db = getMarketDb();
       pruneExpiredCommunityChatMessages(db);
       const createdAt = new Date().toISOString();
+      const repliedMessage = replyToId
+        ? db.prepare(`SELECT id, username, message FROM community_chat_messages WHERE id = ?`).get(replyToId)
+        : null;
+      const replyUsername = repliedMessage ? sanitizeString(repliedMessage.username || "", 32) : "";
+      const replyMessage = repliedMessage ? sanitizeString(repliedMessage.message || "", 120) : "";
+      const storedReplyToId = repliedMessage ? Number(repliedMessage.id) : 0;
       const result = db.prepare(`
-        INSERT INTO community_chat_messages (username, wallet_address, message, created_at)
-        VALUES (@username, @walletAddress, @message, @createdAt)
-      `).run({ username, walletAddress, message, createdAt });
+        INSERT INTO community_chat_messages (
+          username, wallet_address, message, reply_to_id, reply_username, reply_message, created_at
+        )
+        VALUES (
+          @username, @walletAddress, @message, @replyToId, @replyUsername, @replyMessage, @createdAt
+        )
+      `).run({
+        username,
+        walletAddress,
+        message,
+        replyToId: storedReplyToId,
+        replyUsername,
+        replyMessage,
+        createdAt
+      });
 
       db.exec(`
         DELETE FROM community_chat_messages
@@ -2328,6 +2366,9 @@ const server = http.createServer(async (req, res) => {
           username,
           walletAddress,
           message,
+          replyToId: storedReplyToId,
+          replyUsername,
+          replyMessage,
           createdAt
         }
       });
@@ -2638,6 +2679,10 @@ const server = http.createServer(async (req, res) => {
         if (wallet) {
           wallet.tokenBalances[tokenId] = walletTokenBalance;
         }
+      }
+
+      if (body.virtualTrade === true && token.pool) {
+        token.pool.mode = "virtual";
       }
 
       const result = applyTrade(

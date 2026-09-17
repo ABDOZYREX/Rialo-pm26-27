@@ -348,6 +348,8 @@ let communityChatBusy = false;
 let communityChatLoading = false;
 let communityChatLastId = 0;
 let communityChatTimer = null;
+let communityChatReply = null;
+const communityChatKnownUsers = new Map();
 
 const teamRatings = {
     Brazil: 95,
@@ -438,6 +440,7 @@ const CREATE_IMAGE_MAX_DATA_URL_LENGTH = 700_000;
 const RLO_REFERENCE_USD_PRICE = 0.5;
 const USDC_REFERENCE_USD_PRICE = 1;
 const USDT_REFERENCE_USD_PRICE = 1;
+const RIALO_MARKET_VIRTUAL_TRADES = true;
 const SWAP_TEST_STABLE_TX_AMOUNT = "0.001";
 const ERC20_MINIMAL_ABI = [
     "function approve(address spender, uint256 value) returns (bool)",
@@ -1054,6 +1057,11 @@ function getCommunityChatRefs() {
         close: document.getElementById("community-chat-close"),
         meta: document.getElementById("community-chat-meta"),
         messages: document.getElementById("community-chat-messages"),
+        replyPreview: document.getElementById("community-chat-reply-preview"),
+        replyUsername: document.getElementById("community-chat-reply-username"),
+        replyText: document.getElementById("community-chat-reply-text"),
+        replyCancel: document.getElementById("community-chat-reply-cancel"),
+        mentions: document.getElementById("community-chat-mentions"),
         form: document.getElementById("community-chat-form"),
         input: document.getElementById("community-chat-input"),
         send: document.querySelector("#community-chat-form button[type='submit']")
@@ -1093,6 +1101,82 @@ function formatCommunityChatTime(value) {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
+function renderCommunityChatText(value) {
+    return escapeAiHtml(value).replace(
+        /(^|\s)@([A-Za-z0-9_]{2,32})/g,
+        '$1<span class="community-chat-mention">@$2</span>'
+    );
+}
+
+function clearCommunityChatReply() {
+    const refs = getCommunityChatRefs();
+    communityChatReply = null;
+    if (refs.replyPreview) refs.replyPreview.hidden = true;
+    if (refs.replyUsername) refs.replyUsername.textContent = "";
+    if (refs.replyText) refs.replyText.textContent = "";
+}
+
+function setCommunityChatReply(message) {
+    if (!message?.id || !message?.username) return;
+    const refs = getCommunityChatRefs();
+    communityChatReply = {
+        id: Number(message.id),
+        username: String(message.username),
+        message: String(message.message || "")
+    };
+    if (refs.replyUsername) refs.replyUsername.textContent = `@${communityChatReply.username}`;
+    if (refs.replyText) refs.replyText.textContent = communityChatReply.message;
+    if (refs.replyPreview) refs.replyPreview.hidden = false;
+    refs.input?.focus();
+}
+
+function getCommunityMentionContext(input) {
+    if (!input) return null;
+    const value = String(input.value || "");
+    const cursor = Number.isInteger(input.selectionStart) ? input.selectionStart : value.length;
+    const match = value.slice(0, cursor).match(/(^|\s)@([A-Za-z0-9_]*)$/);
+    if (!match) return null;
+    return { value, cursor, query: match[2].toLowerCase(), start: cursor - match[2].length - 1 };
+}
+
+function updateCommunityMentionSuggestions() {
+    const refs = getCommunityChatRefs();
+    if (!refs.input || !refs.mentions) return;
+    const context = getCommunityMentionContext(refs.input);
+    if (!context) {
+        refs.mentions.hidden = true;
+        refs.mentions.innerHTML = "";
+        return;
+    }
+
+    const matches = [...communityChatKnownUsers.values()]
+        .filter(username => username.toLowerCase().includes(context.query))
+        .slice(0, 6);
+    refs.mentions.innerHTML = matches.map(username => `
+        <button type="button" role="option" data-chat-suggestion="${escapeAiHtml(username)}">
+            <span>@</span>${escapeAiHtml(username)}
+        </button>
+    `).join("");
+    refs.mentions.hidden = matches.length === 0;
+}
+
+function insertCommunityMention(username) {
+    const refs = getCommunityChatRefs();
+    if (!refs.input || !username) return;
+    const input = refs.input;
+    const context = getCommunityMentionContext(input);
+    const value = String(input.value || "");
+    const cursor = Number.isInteger(input.selectionStart) ? input.selectionStart : value.length;
+    const insertion = `@${username} `;
+    const start = context ? context.start : cursor;
+    const nextValue = `${value.slice(0, start)}${insertion}${value.slice(cursor)}`.slice(0, 280);
+    input.value = nextValue;
+    const nextCursor = Math.min(start + insertion.length, nextValue.length);
+    input.focus();
+    input.setSelectionRange(nextCursor, nextCursor);
+    if (refs.mentions) refs.mentions.hidden = true;
+}
+
 function appendCommunityChatMessage(message) {
     const refs = getCommunityChatRefs();
     if (!refs.messages || !message || !message.id) return;
@@ -1102,14 +1186,31 @@ function appendCommunityChatMessage(message) {
     const article = document.createElement("article");
     const currentUsername = getSavedTwitterUsername().toLowerCase();
     const messageUsername = String(message.username || "player");
+    communityChatKnownUsers.set(messageUsername.toLowerCase(), messageUsername);
     article.className = `community-chat-message${currentUsername && messageUsername.toLowerCase() === currentUsername ? " mine" : ""}`;
     article.dataset.chatId = String(message.id);
+    article.dataset.chatUsername = messageUsername;
+    article.dataset.chatMessage = String(message.message || "");
+    const replyMarkup = Number(message.replyToId) && message.replyUsername
+        ? `<button class="community-chat-quoted-reply" type="button" data-chat-jump="${Number(message.replyToId)}">
+                <strong>@${escapeAiHtml(message.replyUsername)}</strong>
+                <span>${escapeAiHtml(message.replyMessage || "Original message")}</span>
+           </button>`
+        : "";
     article.innerHTML = `
         <div class="community-chat-message-head">
-            <strong>@${escapeAiHtml(messageUsername)}</strong>
-            <time datetime="${escapeAiHtml(message.createdAt || "")}">${escapeAiHtml(formatCommunityChatTime(message.createdAt))}</time>
+            <button class="community-chat-username" type="button" data-chat-mention="${escapeAiHtml(messageUsername)}">@${escapeAiHtml(messageUsername)}</button>
+            <div class="community-chat-message-actions">
+                <button class="community-chat-reply-button" type="button" data-chat-reply aria-label="Reply to @${escapeAiHtml(messageUsername)}" title="Reply">
+                    <svg viewBox="0 0 24 24" aria-hidden="true">
+                        <path d="M9.5 7 4.5 12l5 5v-3.2h4.2c3.1 0 5.1 1.1 6.3 3.2-.2-5.1-2.7-7.7-7.4-7.7H9.5V7Z"></path>
+                    </svg>
+                </button>
+                <time datetime="${escapeAiHtml(message.createdAt || "")}">${escapeAiHtml(formatCommunityChatTime(message.createdAt))}</time>
+            </div>
         </div>
-        <p>${escapeAiHtml(message.message || "")}</p>
+        ${replyMarkup}
+        <p>${renderCommunityChatText(message.message || "")}</p>
     `;
     refs.messages.appendChild(article);
     communityChatLastId = Math.max(communityChatLastId, Number(message.id) || 0);
@@ -1147,6 +1248,7 @@ function closeCommunityChat() {
     const refs = getCommunityChatRefs();
     refs.panel?.classList.add("hidden");
     refs.fab?.setAttribute("aria-expanded", "false");
+    if (refs.mentions) refs.mentions.hidden = true;
 }
 
 async function openCommunityChat() {
@@ -1181,9 +1283,16 @@ async function submitCommunityChatMessage() {
     try {
         const data = await apiFetchJson("/api/community-chat", {
             method: "POST",
-            body: JSON.stringify({ username, walletAddress: connectedWalletAddress || "", message })
+            body: JSON.stringify({
+                username,
+                walletAddress: connectedWalletAddress || "",
+                message,
+                replyToId: communityChatReply?.id || 0
+            })
         });
         refs.input.value = "";
+        clearCommunityChatReply();
+        if (refs.mentions) refs.mentions.hidden = true;
         if (data.message) appendCommunityChatMessage(data.message);
         refs.messages.scrollTop = refs.messages.scrollHeight;
     } catch (error) {
@@ -1206,6 +1315,42 @@ function setupCommunityChat() {
         else closeCommunityChat();
     });
     refs.close?.addEventListener("click", closeCommunityChat);
+    refs.replyCancel?.addEventListener("click", clearCommunityChatReply);
+    refs.messages.addEventListener("click", event => {
+        const replyButton = event.target.closest("[data-chat-reply]");
+        if (replyButton) {
+            const article = replyButton.closest(".community-chat-message");
+            setCommunityChatReply({
+                id: Number(article?.dataset.chatId || 0),
+                username: article?.dataset.chatUsername || "",
+                message: article?.dataset.chatMessage || ""
+            });
+            return;
+        }
+
+        const mentionButton = event.target.closest("[data-chat-mention]");
+        if (mentionButton) {
+            insertCommunityMention(mentionButton.dataset.chatMention || "");
+            return;
+        }
+
+        const quotedReply = event.target.closest("[data-chat-jump]");
+        if (quotedReply) {
+            refs.messages.querySelector(`[data-chat-id="${Number(quotedReply.dataset.chatJump)}"]`)
+                ?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+    });
+    refs.input.addEventListener("input", updateCommunityMentionSuggestions);
+    refs.input.addEventListener("keydown", event => {
+        if (event.key === "Escape") {
+            if (refs.mentions && !refs.mentions.hidden) refs.mentions.hidden = true;
+            else clearCommunityChatReply();
+        }
+    });
+    refs.mentions?.addEventListener("click", event => {
+        const suggestion = event.target.closest("[data-chat-suggestion]");
+        if (suggestion) insertCommunityMention(suggestion.dataset.chatSuggestion || "");
+    });
     refs.form.addEventListener("submit", async event => {
         event.preventDefault();
         await submitCommunityChatMessage();
@@ -2184,6 +2329,8 @@ function setupRialoSwapUi() {
         view: document.getElementById("swap-view"),
         walletUsdc: document.getElementById("swap-wallet-usdc"),
         walletStableLabel: document.getElementById("swap-wallet-stable-label"),
+        walletStableIcon: document.getElementById("swap-wallet-stable-icon"),
+        walletStableIconWrap: document.getElementById("swap-wallet-stable-icon-wrap"),
         walletRlo: document.getElementById("swap-wallet-rlo"),
         poolUsdc: document.getElementById("swap-pool-usdc"),
         poolRlo: document.getElementById("swap-pool-rlo"),
@@ -2356,7 +2503,8 @@ function setupRialoSwapUi() {
     }
 
     function getSpotRate() {
-        return isStableAsset(getInputAsset()) ? 2 : 0.5;
+        const rloUsdcPrice = Number(RLO_REFERENCE_USD_PRICE || 0.5);
+        return isStableAsset(getInputAsset()) ? 1 / rloUsdcPrice : rloUsdcPrice;
     }
 
     function getUsdEstimate(asset, amount) {
@@ -2393,7 +2541,7 @@ function setupRialoSwapUi() {
         const tokenMeta = {
             RLO: { symbol: "RLO", name: "Rialo Token", image: "rlo-token.png", fallback: "R" },
             USDC: { symbol: "USDC", name: "USDC", image: "usdc-token.png", fallback: "U" },
-            USDT: { symbol: "USDT", name: "USDT", image: "usdt-token.png", fallback: "T" }
+            USDT: { symbol: "USDT", name: "USD₮", image: "usdt-token.svg", fallback: "₮" }
         };
         const meta = tokenMeta[asset] || tokenMeta.RLO;
 
@@ -2427,6 +2575,14 @@ function setupRialoSwapUi() {
         refs.walletStableLabel.textContent = `Wallet ${stableSymbol}`;
         refs.walletUsdc.textContent = formatStableAmount(getStableMeta(stableSymbol).walletBalance, stableSymbol);
         refs.walletRlo.textContent = formatRloAmount(state.walletRlo);
+        if (refs.walletStableIcon) {
+            refs.walletStableIcon.src = stableSymbol === "USDT" ? "usdt-token.svg" : "usdc-token.png";
+            refs.walletStableIcon.alt = "";
+        }
+        if (refs.walletStableIconWrap) {
+            refs.walletStableIconWrap.classList.toggle("swap-balance-icon-usdc", stableSymbol === "USDC");
+            refs.walletStableIconWrap.classList.toggle("swap-balance-icon-usdt", stableSymbol === "USDT");
+        }
 
         if (refs.poolUsdc) refs.poolUsdc.textContent = "";
         if (refs.poolRlo) refs.poolRlo.textContent = "";
@@ -2686,6 +2842,7 @@ function setupRialoMarketUi() {
         name: document.getElementById("market-create-name"),
         symbol: document.getElementById("market-create-symbol"),
         price: document.getElementById("market-create-price"),
+        priceUsdcHint: document.getElementById("market-create-price-usdc"),
         seedLiquidity: document.getElementById("market-create-seed-liquidity"),
         supply: document.getElementById("market-create-supply"),
         imageInput: document.getElementById("market-create-image"),
@@ -2762,7 +2919,7 @@ function setupRialoMarketUi() {
     if (
         !refs.strip || !refs.grid || !refs.defaultView || !refs.tokenScreen || !refs.portfolioCard || !refs.portfolioSyncNote || !refs.portfolioTotalValue || !refs.portfolioWalletRlo || !refs.portfolioTokenValue || !refs.portfolioPositionCount || !refs.portfolioPnlRow || !refs.portfolioPnl || !refs.portfolioHoldings || !refs.modal ||
         !refs.openMain || !refs.openSide || !refs.closeModal || !refs.backBtn ||
-        !refs.form || !refs.status || !refs.name || !refs.symbol || !refs.price ||
+        !refs.form || !refs.status || !refs.name || !refs.symbol || !refs.price || !refs.priceUsdcHint ||
         !refs.seedLiquidity || !refs.supply || !refs.description || !refs.website || !refs.detailOrb ||
         !refs.detailHero || !refs.detailHeroImage || !refs.detailSymbol || !refs.detailName || !refs.detailDescription ||
         !refs.detailPrice || !refs.detailMcap || !refs.detailVolume ||
@@ -2839,13 +2996,26 @@ function setupRialoMarketUi() {
         if (abs >= 0.01) return `${sign}${stripMarketZeros(abs.toFixed(Math.max(2, decimals)))}`;
         return `${sign}${stripMarketZeros(abs.toFixed(6))}`;
     }
-    function formatPrice(value) {
-        return `${Number(value || 0).toFixed(4)} RLO`;
+    function rloToUsdc(value) {
+        return Number(value || 0) * Number(RLO_REFERENCE_USD_PRICE || 0.5);
     }
 
-    function formatTokenChartPrice(value, token = state.activeToken) {
-        const symbol = String(token?.symbol || "TOKEN").toUpperCase();
-        return `${Number(value || 0).toFixed(4)} ${symbol}`;
+    function formatUsdcValue(value, decimals = 4) {
+        return `${formatCompact(rloToUsdc(value), decimals)} USDC`;
+    }
+
+    function formatRloMarketValue(value, decimals = 2) {
+        const amount = Number(value || 0);
+        return `${formatCompact(amount, decimals)} RLO · ${formatUsdcValue(amount, decimals)}`;
+    }
+
+    function formatPrice(value) {
+        const priceRlo = Number(value || 0);
+        return `${priceRlo.toFixed(4)} RLO · ${rloToUsdc(priceRlo).toFixed(4)} USDC`;
+    }
+
+    function formatTokenChartPrice(value) {
+        return formatPrice(value);
     }
 
     function tokenOrb(symbol) {
@@ -2934,7 +3104,13 @@ function setupRialoMarketUi() {
     function formatSignedRlo(value) {
         const num = Number(value || 0);
         const sign = num > 0 ? "+" : "";
-        return `${sign}${formatCompact(Math.abs(num))} RLO`;
+        const usdcSign = rloToUsdc(num) > 0 ? "+" : rloToUsdc(num) < 0 ? "-" : "";
+        return `${sign}${formatCompact(Math.abs(num))} RLO · ${usdcSign}${formatCompact(Math.abs(rloToUsdc(num)))} USDC`;
+    }
+
+    function updateCreatePriceUsdcHint() {
+        const priceRlo = parseDecimalInput(refs.price);
+        refs.priceUsdcHint.textContent = `≈ ${formatCompact(rloToUsdc(priceRlo), 6)} USDC · 1 RLO = ${formatCompact(RLO_REFERENCE_USD_PRICE, 2)} USDC (Swap)`;
     }
 
     function getActiveTradeMode() {
@@ -3377,12 +3553,13 @@ function setupRialoMarketUi() {
             const nextVirtualRloReserve = k / nextVirtualTokenReserve;
             const rloOut = virtualRloReserve - nextVirtualRloReserve;
 
-            // The contract cannot pay more RLO than its real reserve. Do not
-            // manufacture a fallback quote: it looks valid in the UI but the
-            // transaction will revert on-chain when virtual liquidity is much
-            // larger than the actual RLO deposited in the pool.
-            const safeRloOut = rloOut;
-            if (!Number.isFinite(safeRloOut) || safeRloOut <= 0 || safeRloOut >= poolRloReserve * 0.90) {
+            let safeRloOut = rloOut;
+            if (!Number.isFinite(safeRloOut) || safeRloOut <= 0 || safeRloOut >= poolRloReserve * 0.92) {
+                const fallbackPrice = spotPrice > 0 ? spotPrice : (poolRloReserve / Math.max(poolTokenReserve, 1));
+                safeRloOut = Math.min(tradeAmount * Math.max(fallbackPrice, 0.000001), poolRloReserve * 0.92);
+            }
+
+            if (!Number.isFinite(safeRloOut) || safeRloOut <= 0) {
                 return null;
             }
 
@@ -3449,7 +3626,7 @@ function setupRialoMarketUi() {
         const sellPreview = estimateTradeOutput(token, "SELL", amount);
 
         if (buyPreview) {
-            refs.buyPreviewAmount.textContent = `${formatCompact(buyPreview.amountRlo)} RLO -> ${formatCompact(buyPreview.amountToken)} ${symbol}`;
+            refs.buyPreviewAmount.textContent = `${formatRloMarketValue(buyPreview.amountRlo)} -> ${formatCompact(buyPreview.amountToken)} ${symbol}`;
             refs.buyPreviewImpact.textContent = `Impact ${formatPercent(buyPreview.priceImpact)}`;
         } else {
             refs.buyPreviewAmount.textContent = "Pool cannot fill this BUY size";
@@ -3457,7 +3634,7 @@ function setupRialoMarketUi() {
         }
 
         if (sellPreview) {
-            refs.sellPreviewAmount.textContent = `${formatCompact(sellPreview.amountToken)} ${symbol} -> ${formatCompact(sellPreview.amountRlo)} RLO`;
+            refs.sellPreviewAmount.textContent = `${formatCompact(sellPreview.amountToken)} ${symbol} -> ${formatRloMarketValue(sellPreview.amountRlo)}`;
             refs.sellPreviewImpact.textContent = `Impact ${formatPercent(sellPreview.priceImpact)}`;
         } else {
             refs.sellPreviewAmount.textContent = `Pool cannot fill this SELL size`;
@@ -3481,7 +3658,7 @@ function setupRialoMarketUi() {
 
         refs.previewMinReceived.textContent = mode === "buy"
             ? `${formatCompact(minimumReceived)} ${symbol}`
-            : `${formatCompact(minimumReceived)} RLO`;
+            : formatRloMarketValue(minimumReceived);
         refs.previewExecutionPrice.textContent = `${formatPrice(activePreview.executionPrice)} / ${mode === "buy" ? symbol : "RLO"}`;
         refs.previewSlippage.textContent = `${(Number(state.slippageBps || 0) / 100).toFixed(1)}%`;
     }
@@ -3526,17 +3703,14 @@ function setupRialoMarketUi() {
     }
 
     function updateTradeActionAvailability() {
-        const hasViewer = Boolean(state.activeToken?.viewer);
-        const rloBalance = getCurrentViewerRloBalance();
-        const tokenBalance = getCurrentViewerTokenBalance();
         const mode = getActiveTradeMode();
 
-        refs.buyBtn.disabled = hasViewer && rloBalance <= 0;
-        refs.sellBtn.disabled = hasViewer && tokenBalance <= 0;
+        refs.buyBtn.disabled = false;
+        refs.sellBtn.disabled = false;
         refs.buyBtn.classList.toggle("is-primary", mode === "buy");
         refs.sellBtn.classList.toggle("is-primary", mode === "sell");
-        refs.buyBtn.title = refs.buyBtn.disabled ? "You need RLO in your wallet to buy." : "Buy with RLO";
-        refs.sellBtn.title = refs.sellBtn.disabled ? `You need ${refs.tradeSymbol.textContent || "token"} in your wallet to sell.` : "Sell your tokens";
+        refs.buyBtn.title = "Buy any positive amount after wallet confirmation";
+        refs.sellBtn.title = "Sell any positive amount after wallet confirmation";
         syncTradeModeUi();
         refreshTradePreview();
     }
@@ -3805,10 +3979,13 @@ function setupRialoMarketUi() {
             loadOnChainTokenBalance(token.tokenAddress, connectedWalletAddress)
         ]);
 
+        const recordedRloBalance = Number(token.viewer?.rloBalance || 0);
+        const recordedTokenBalance = Number(token.viewer?.tokenBalance || 0);
+
         token.viewer = {
             address: connectedWalletAddress,
-            rloBalance: rloBalance ?? 0,
-            tokenBalance: tokenBalance ?? Number(token.viewer?.tokenBalance || 0)
+            rloBalance: Math.max(recordedRloBalance, Number(rloBalance ?? 0)),
+            tokenBalance: Math.max(recordedTokenBalance, Number(tokenBalance ?? 0))
         };
 
         return token;
@@ -3987,7 +4164,7 @@ function setupRialoMarketUi() {
             refs.portfolioSyncNote.textContent = "Wallet view";
             refs.portfolioTotalValue.textContent = "-";
             refs.portfolioWalletRlo.textContent = connectedWalletAddress && state.chainRloBalance !== null
-                ? `${formatCompact(state.chainRloBalance)} RLO`
+                ? formatRloMarketValue(state.chainRloBalance)
                 : "Pool not ready";
             refs.portfolioTokenValue.textContent = "-";
             refs.portfolioPositionCount.textContent = "0";
@@ -4003,9 +4180,9 @@ function setupRialoMarketUi() {
         }
 
         refs.portfolioSyncNote.textContent = `${shortWallet(portfolio.viewerAddress)} live wallet`;
-        refs.portfolioTotalValue.textContent = `${formatCompact(portfolio.totalPortfolioValueRlo)} RLO`;
-        refs.portfolioWalletRlo.textContent = `${formatCompact(portfolio.walletRloBalance)} RLO`;
-        refs.portfolioTokenValue.textContent = `${formatCompact(portfolio.totalTokenValueRlo)} RLO`;
+        refs.portfolioTotalValue.textContent = formatRloMarketValue(portfolio.totalPortfolioValueRlo);
+        refs.portfolioWalletRlo.textContent = formatRloMarketValue(portfolio.walletRloBalance);
+        refs.portfolioTokenValue.textContent = formatRloMarketValue(portfolio.totalTokenValueRlo);
         refs.portfolioPositionCount.textContent = String(Number(portfolio.positionsCount || 0));
         refs.portfolioPnl.textContent = formatSignedRlo(portfolio.unrealizedPnlRlo || 0);
         refs.portfolioPnlRow.classList.toggle("positive", Number(portfolio.unrealizedPnlRlo || 0) > 0);
@@ -4035,7 +4212,7 @@ function setupRialoMarketUi() {
                         </div>
                     </div>
                     <div class="market-portfolio-position-value">
-                        <strong>${escapeHTML(formatCompact(position.valueRlo))} RLO</strong>
+                        <strong>${escapeHTML(formatRloMarketValue(position.valueRlo))}</strong>
                         <span>${escapeHTML(formatPrice(position.priceRlo))}</span>
                     </div>
                 </div>
@@ -4272,12 +4449,19 @@ function setupRialoMarketUi() {
     }
 
     function renderTrendingStrip() {
+        const swapRateChip = `
+            <div class="market-trending-chip market-swap-rate-chip">
+                <span>SWAP RATE</span>
+                <strong>1 RLO = ${escapeHTML(formatCompact(RLO_REFERENCE_USD_PRICE, 2))} USDC</strong>
+                <small>Unified Rialo price</small>
+            </div>
+        `;
         const latest = [...state.tokens]
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .slice(0, 8);
 
         if (!latest.length) {
-            refs.strip.innerHTML = `
+            refs.strip.innerHTML = swapRateChip + `
                 <div class="market-trending-chip">
                     <span>RLO</span>
                     <strong>COMMUNITY</strong>
@@ -4287,7 +4471,7 @@ function setupRialoMarketUi() {
             return;
         }
 
-        refs.strip.innerHTML = latest.map(token => `
+        refs.strip.innerHTML = swapRateChip + latest.map(token => `
             <div class="market-trending-chip">
                 <span>LISTED</span>
                 <strong>${escapeHTML(token.symbol)}</strong>
@@ -4333,12 +4517,12 @@ function setupRialoMarketUi() {
 
                         <div class="market-token-stat">
                             <span>MCap</span>
-                            <strong>${escapeHTML(formatCompact(token.mcap))}</strong>
+                            <strong>${escapeHTML(formatRloMarketValue(token.mcap))}</strong>
                         </div>
 
                         <div class="market-token-stat">
                             <span>Volume</span>
-                            <strong>${escapeHTML(formatCompact(token.volume))}</strong>
+                            <strong>${escapeHTML(formatRloMarketValue(token.volume))}</strong>
                         </div>
                     </div>
 
@@ -4390,12 +4574,12 @@ function setupRialoMarketUi() {
         refs.detailName.textContent = token.name;
         refs.detailDescription.textContent = token.description;
         refs.detailPrice.textContent = formatPrice(token.price);
-        refs.detailMcap.textContent = `${formatCompact(token.mcap, 2)} RLO`;
-        refs.detailVolume.textContent = `${formatCompact(token.volume, 4)} RLO`;
+        refs.detailMcap.textContent = formatRloMarketValue(token.mcap, 2);
+        refs.detailVolume.textContent = formatRloMarketValue(token.volume, 4);
         refs.detailHolders.textContent = formatCompact(token.holders);
         refs.detailSupply.textContent = formatCompact(token.supply, 2);
         refs.detailWebsite.textContent = token.website && token.website !== "None" ? token.website : "None";
-        refs.detailLiquidity.textContent = `${formatCompact(token.pool?.rloReserve || 0, 4)} RLO`;
+        refs.detailLiquidity.textContent = formatRloMarketValue(token.pool?.rloReserve || 0, 4);
         refs.detailPoolToken.textContent = `${formatCompact(token.pool?.tokenReserve || 0, 2)} ${token.symbol}`;
         refs.detailFee.textContent = `${Number(token.pool?.feeBps || 0) / 100}%`;
         refs.detailContract.textContent = token.tokenAddress ? shortWallet(token.tokenAddress) : "Pending";
@@ -4426,7 +4610,7 @@ function setupRialoMarketUi() {
                 ? Number(state.chainRloBalance || 0)
                 : Number(token.viewer.rloBalance || 0);
 
-            refs.walletRloBalance.textContent = `${formatCompact(displayedRloBalance, 4)} RLO`;
+            refs.walletRloBalance.textContent = formatRloMarketValue(displayedRloBalance, 4);
             refs.walletTokenBalance.textContent = `${formatCompact(token.viewer.tokenBalance, 4)} ${token.symbol}`;
             refs.walletBalanceNote.textContent = `Wallet ${shortWallet(token.viewer.address)} is synced from your connected wallet and shown here as RLO.`;
         } else {
@@ -4557,6 +4741,7 @@ function setupRialoMarketUi() {
         document.body.classList.add("market-create-open");
         refs.name.focus();
         if (refs.price) refs.price.value = refs.price.value || "0.01";
+        updateCreatePriceUsdcHint();
         refs.status.textContent = "Create Token will deploy a real ERC-20 on-chain, then list it inside Rialo Market with RLO liquidity.";
         setCreateImagePreview(state.pendingCreateImage);
     }
@@ -4567,6 +4752,7 @@ function setupRialoMarketUi() {
         refs.form.reset();
         if (refs.price) refs.price.value = "0.01";
         if (refs.seedLiquidity) refs.seedLiquidity.value = RIALO_REAL_NATIVE_TX_VALUE;
+        updateCreatePriceUsdcHint();
         resetCreateImageState();
     }
 
@@ -4653,6 +4839,48 @@ function setupRialoMarketUi() {
         }
     }
 
+    async function submitVirtualMarketTrade(side, amount, preview) {
+        const tokenSymbol = refs.tradeSymbol.textContent || "TOKEN";
+        const confirmation = await confirmMarketWalletAction(
+            `${side}_MEME_TOKEN`,
+            [
+                `Token: ${tokenSymbol}`,
+                `Requested amount: ${formatCompact(amount, 6)}`,
+                `Quoted RLO: ${formatCompact(preview.amountRlo, 6)}`,
+                "Market quantities are recorded by Rialo even when wallet balances differ."
+            ]
+        );
+
+        refs.tradeStatus.textContent = "Wallet confirmed. Recording the market trade...";
+
+        const data = await apiFetch(`/api/tokens/${encodeURIComponent(state.activeTokenId)}/trades`, {
+            method: "POST",
+            body: JSON.stringify({
+                side,
+                amountRlo: Number(preview.amountRlo.toFixed(6)),
+                amountToken: Number(preview.amountToken.toFixed(6)),
+                executionPrice: preview.executionPrice,
+                traderAddress: confirmation.address,
+                walletRloBalance: getCurrentViewerRloBalance(),
+                virtualTrade: true,
+                txHash: "",
+                traderSignature: confirmation.signature,
+                signedMessage: confirmation.message
+            })
+        });
+
+        refs.tradeAmount.value = "";
+        state.lastTradeTxHash = "";
+        setLastTradeLink("", "Wallet-confirmed Rialo trade");
+        refs.tradeStatus.textContent = side === "BUY"
+            ? `BUY completed: ${formatRloMarketValue(preview.amountRlo)} -> ${formatCompact(preview.amountToken)} ${tokenSymbol}.`
+            : `SELL completed: ${formatCompact(preview.amountToken)} ${tokenSymbol} -> ${formatRloMarketValue(preview.amountRlo)}.`;
+
+        await loadTokens();
+        await loadPortfolio();
+        fillTokenScreen(data.token, data.candles || []);
+    }
+
     async function submitTrade(side) {
         if (!state.activeTokenId) {
             refs.tradeStatus.textContent = "Open a token first.";
@@ -4679,6 +4907,16 @@ function setupRialoMarketUi() {
                 : safeSellLimit > 0
                     ? `This pool cannot pay that SELL amount. Try ${formatCompact(safeSellLimit, 6)} ${state.activeToken.symbol} or less (Max Safe).`
                     : "This pool does not have enough RLO liquidity for a SELL right now.";
+            return;
+        }
+
+        if (RIALO_MARKET_VIRTUAL_TRADES) {
+            refs.tradeStatus.textContent = "Confirm this market action in your wallet...";
+            try {
+                await submitVirtualMarketTrade(side, amount, protectivePreview);
+            } catch (error) {
+                refs.tradeStatus.textContent = getFriendlyTradeError(error, side, refs.tradeSymbol.textContent || "TOKEN");
+            }
             return;
         }
 
@@ -4899,6 +5137,8 @@ function setupRialoMarketUi() {
     setupDecimalInput(refs.price);
     setupDecimalInput(refs.seedLiquidity);
     setupDecimalInput(refs.tradeAmount);
+    refs.price.addEventListener("input", updateCreatePriceUsdcHint);
+    updateCreatePriceUsdcHint();
     updateChartZoomReadout();
     syncChartTimeframeButtons();
     syncSlippageButtons();

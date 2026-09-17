@@ -9,7 +9,7 @@
     <link rel="shortcut icon" type="image/png" href="bracket-trophy.png.png?v=1">
     <link rel="apple-touch-icon" href="bracket-trophy.png.png?v=1">
 
-    <link rel="stylesheet" href="style.css?v=20260916-3">
+    <link rel="stylesheet" href="style.css?v=20260917-12">
 
     <style>
         .how-extra-flow {
@@ -2450,14 +2450,24 @@
         <div class="swap-stage swap-stage--simple">
             <div class="swap-widget-shell">
                 <div class="swap-balance-strip">
-                    <div class="swap-balance-chip">
-                        <span id="swap-wallet-stable-label">Wallet USDC</span>
-                        <strong id="swap-wallet-usdc">-</strong>
+                    <div class="swap-balance-chip swap-balance-chip-stable">
+                        <div class="swap-balance-icon swap-balance-icon-usdc" id="swap-wallet-stable-icon-wrap" aria-hidden="true">
+                            <img id="swap-wallet-stable-icon" src="usdc-token.png" alt="">
+                        </div>
+                        <div class="swap-balance-copy">
+                            <span id="swap-wallet-stable-label">Wallet USDC</span>
+                            <strong id="swap-wallet-usdc">-</strong>
+                        </div>
                     </div>
 
-                    <div class="swap-balance-chip">
-                        <span>Wallet RLO</span>
-                        <strong id="swap-wallet-rlo">-</strong>
+                    <div class="swap-balance-chip swap-balance-chip-rlo">
+                        <div class="swap-balance-icon swap-balance-icon-rlo" aria-hidden="true">
+                            <img src="rlo-token.png" alt="">
+                        </div>
+                        <div class="swap-balance-copy">
+                            <span>Wallet RLO</span>
+                            <strong id="swap-wallet-rlo">-</strong>
+                        </div>
                     </div>
 
                     <div class="swap-balance-chip">
@@ -2495,7 +2505,7 @@
 
                             <div class="swap-token-picker">
                                 <button class="swap-token-pill swap-token-pill-button" id="swap-input-token-pill" type="button" aria-expanded="false" aria-haspopup="listbox">
-                                    <span class="swap-token-mark" id="swap-input-token-mark">U</span>
+                                    <span class="swap-token-mark swap-token-mark-usdc" id="swap-input-token-mark"><img src="usdc-token.png" alt="USDC"></span>
                                     <div>
                                         <strong id="swap-input-token-symbol">USDC</strong>
                                         <small id="swap-input-token-name">USDC</small>
@@ -2504,11 +2514,11 @@
                                 </button>
                                 <div class="swap-token-menu" id="swap-token-menu" role="listbox" hidden>
                                     <button class="swap-token-option active" type="button" data-swap-stable="USDC" role="option" aria-selected="true">
-                                        <span class="swap-token-mark swap-token-mark-usdc">U</span>
+                                        <span class="swap-token-mark swap-token-mark-usdc"><img src="usdc-token.png" alt="USDC"></span>
                                         <span>USDC</span>
                                     </button>
                                     <button class="swap-token-option" type="button" data-swap-stable="USDT" role="option" aria-selected="false">
-                                        <span class="swap-token-mark swap-token-mark-usdt">T</span>
+                                        <span class="swap-token-mark swap-token-mark-usdt"><img src="usdt-token.svg" alt="USDt"></span>
                                         <span>USDT</span>
                                     </button>
                                 </div>
@@ -2984,6 +2994,7 @@
                             <label class="market-create-field">
                                 <span>Market Opening Price (RLO)</span>
                                 <input type="text" id="market-create-price" inputmode="decimal" placeholder="0.0125">
+                                <small class="market-create-rate-hint" id="market-create-price-usdc">≈ 0 USDC · synced with Swap</small>
                             </label>
 
                             <input type="hidden" id="market-create-seed-liquidity" value="0.001">
@@ -3407,10 +3418,20 @@
                 <p class="community-chat-empty">No messages yet. Start the conversation.</p>
             </div>
 
-            <form class="community-chat-form" id="community-chat-form">
-                <input id="community-chat-input" type="text" maxlength="280" autocomplete="off" placeholder="Write a public message...">
-                <button type="submit">Send</button>
-            </form>
+            <div class="community-chat-composer">
+                <div class="community-chat-reply-preview" id="community-chat-reply-preview" hidden>
+                    <div>
+                        <span>Replying to <strong id="community-chat-reply-username"></strong></span>
+                        <small id="community-chat-reply-text"></small>
+                    </div>
+                    <button id="community-chat-reply-cancel" type="button" aria-label="Cancel reply">&times;</button>
+                </div>
+                <div class="community-chat-mentions" id="community-chat-mentions" role="listbox" aria-label="Mention a community member" hidden></div>
+                <form class="community-chat-form" id="community-chat-form">
+                    <input id="community-chat-input" type="text" maxlength="280" autocomplete="off" placeholder="Write a public message...">
+                    <button type="submit">Send</button>
+                </form>
+            </div>
         </section>
 
         <button class="community-chat-fab" id="community-chat-fab" type="button" aria-label="Toggle RIALO CHAT" aria-expanded="false">
@@ -3474,7 +3495,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-    <script src="script.js?v=20260916-11"></script>
+    <script src="script.js?v=20260917-6"></script>
     <script>
         const predictionTeamBadgeColors = {
             NU: ["#101820", "#41b6e6"],
