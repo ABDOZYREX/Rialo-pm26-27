@@ -2413,6 +2413,7 @@ function setupRialoSwapUi() {
         walletUsdc: 1000,
         walletUsdt: 1000,
         walletRlo: 0,
+        walletRloLoaded: false,
         expectedOutput: 0
     };
 
@@ -2457,7 +2458,6 @@ function setupRialoSwapUi() {
             const saved = JSON.parse(localStorage.getItem(getBalanceStorageKey()) || "{}");
             state.walletUsdc = Number.isFinite(Number(saved.usdc)) ? Number(saved.usdc) : 1000;
             state.walletUsdt = Number.isFinite(Number(saved.usdt)) ? Number(saved.usdt) : 1000;
-            state.walletRlo = Number.isFinite(Number(saved.rlo)) ? Number(saved.rlo) : state.walletRlo;
         } catch (error) {
             state.walletUsdc = 1000;
             state.walletUsdt = 1000;
@@ -2467,8 +2467,7 @@ function setupRialoSwapUi() {
     function saveDemoBalances() {
         localStorage.setItem(getBalanceStorageKey(), JSON.stringify({
             usdc: state.walletUsdc,
-            usdt: state.walletUsdt,
-            rlo: state.walletRlo
+            usdt: state.walletUsdt
         }));
     }
 
@@ -2588,10 +2587,20 @@ function setupRialoSwapUi() {
         const inputAsset = getInputAsset();
         const outputAsset = getOutputAsset();
         const stableSymbol = state.activeStable;
+        const hasConnectedWallet = Boolean(walletConnected && connectedWalletAddress);
+        const formatVisibleBalance = (asset, value) => {
+            if (!hasConnectedWallet) return "-";
+            if (asset === "RLO" && !state.walletRloLoaded) return "-";
+            return formatAssetAmount(asset, value);
+        };
 
         refs.walletStableLabel.textContent = `Wallet ${stableSymbol}`;
-        refs.walletUsdc.textContent = formatStableAmount(getStableMeta(stableSymbol).walletBalance, stableSymbol);
-        refs.walletRlo.textContent = formatRloAmount(state.walletRlo);
+        refs.walletUsdc.textContent = hasConnectedWallet
+            ? formatStableAmount(getStableMeta(stableSymbol).walletBalance, stableSymbol)
+            : "-";
+        refs.walletRlo.textContent = state.walletRloLoaded && hasConnectedWallet
+            ? formatRloAmount(state.walletRlo)
+            : "-";
         if (refs.walletStableIcon) {
             refs.walletStableIcon.src = stableSymbol === "USDT" ? "usdt-token.svg" : "usdc-token.png";
             refs.walletStableIcon.alt = "";
@@ -2606,8 +2615,8 @@ function setupRialoSwapUi() {
 
         refs.inputSideLabel.textContent = "Sell";
         refs.outputSideLabel.textContent = "Buy";
-        refs.inputBalance.textContent = `Balance: ${formatAssetAmount(inputAsset, getInputBalanceValue())}`;
-        refs.outputBalance.textContent = `Balance: ${formatAssetAmount(outputAsset, getOutputBalanceValue())}`;
+        refs.inputBalance.textContent = `Balance: ${formatVisibleBalance(inputAsset, getInputBalanceValue())}`;
+        refs.outputBalance.textContent = `Balance: ${formatVisibleBalance(outputAsset, getOutputBalanceValue())}`;
         refs.submitBtn.textContent = `Swap ${inputAsset} to ${outputAsset}`;
         refs.flipBtn.setAttribute("aria-label", `Flip to ${outputAsset} -> ${inputAsset}`);
 
@@ -2653,6 +2662,7 @@ function setupRialoSwapUi() {
 
     async function syncSwapUi() {
         loadDemoBalances();
+        state.walletRloLoaded = false;
 
         if (!window.ethereum) {
             setSwapLiveState("MetaMask not installed", "bad");
@@ -2663,8 +2673,6 @@ function setupRialoSwapUi() {
 
         if (!walletConnected || !connectedWalletAddress) {
             setSwapLiveState("Wallet not connected", "bad");
-            refs.walletUsdc.textContent = "-";
-            refs.walletRlo.textContent = "-";
             syncDirectionUi();
             updateQuoteUi();
             return;
@@ -2673,14 +2681,13 @@ function setupRialoSwapUi() {
         try {
             const provider = new ethers.BrowserProvider(window.ethereum);
             const nativeBalance = Number(ethers.formatEther(await provider.getBalance(connectedWalletAddress)));
-            const saved = JSON.parse(localStorage.getItem(getBalanceStorageKey()) || "{}");
-            if (!Number.isFinite(Number(saved.rlo))) {
-                state.walletRlo = nativeBalance;
-                saveDemoBalances();
-            }
+            state.walletRlo = Number.isFinite(nativeBalance) ? nativeBalance : 0;
+            state.walletRloLoaded = true;
             setSwapLiveState("Live wallet transaction ready", "ok");
         } catch (error) {
             console.warn("Swap native balance refresh skipped:", error);
+            state.walletRlo = 0;
+            state.walletRloLoaded = false;
             setSwapLiveState("Wallet connected", "warn");
         }
 
@@ -2706,16 +2713,12 @@ function setupRialoSwapUi() {
             state.walletUsdc = Math.max(0, state.walletUsdc - inputAmount);
         } else if (inputAsset === "USDT") {
             state.walletUsdt = Math.max(0, state.walletUsdt - inputAmount);
-        } else {
-            state.walletRlo = Math.max(0, state.walletRlo - inputAmount);
         }
 
         if (outputAsset === "USDC") {
             state.walletUsdc += outputAmount;
         } else if (outputAsset === "USDT") {
             state.walletUsdt += outputAmount;
-        } else {
-            state.walletRlo += outputAmount;
         }
 
         saveDemoBalances();
