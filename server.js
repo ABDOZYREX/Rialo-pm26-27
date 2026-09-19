@@ -1834,7 +1834,10 @@ function ensureWalletRecord(market, address, seedRloBalance = null) {
     wallet.seededFromWallet = true;
   }
 
-  wallet.rloBalance = Number(wallet.rloBalance || DEFAULT_WALLET_RLO_BALANCE);
+  const currentRloBalance = Number(wallet.rloBalance);
+  wallet.rloBalance = Number.isFinite(currentRloBalance) && currentRloBalance >= 0
+    ? Number(currentRloBalance.toFixed(6))
+    : (safeSeedBalance ?? DEFAULT_WALLET_RLO_BALANCE);
   return market.wallets[normalized];
 }
 
@@ -2028,8 +2031,10 @@ function applyTrade(market, token, side, amountValue, traderAddress, traderRloBa
   let amountToken = 0;
 
   if (normalizedSide === "BUY") {
-    if (wallet.rloBalance < amount) {
-      wallet.rloBalance = Number(amount.toFixed(6));
+    if (Number(wallet.rloBalance || 0) + 0.0000001 < amount) {
+      return {
+        error: `Insufficient RLO balance. Available: ${Number(wallet.rloBalance || 0).toFixed(6)} RLO.`
+      };
     }
 
     const effectiveRloIn = amount * feeMultiplier;
@@ -2060,8 +2065,11 @@ function applyTrade(market, token, side, amountValue, traderAddress, traderRloBa
     token.pool.virtualRloReserve = Number(nextVirtualRloReserve.toFixed(6));
     token.pool.virtualTokenReserve = Number(safeNextVirtualTokenReserve.toFixed(6));
   } else if (normalizedSide === "SELL") {
-    if (Number(wallet.tokenBalances[token.id] || 0) < amount) {
-      wallet.tokenBalances[token.id] = Number(amount.toFixed(6));
+    const availableTokenBalance = Number(wallet.tokenBalances[token.id] || 0);
+    if (availableTokenBalance + 0.0000001 < amount) {
+      return {
+        error: `Insufficient ${token.symbol || "token"} balance. Available: ${availableTokenBalance.toFixed(6)}.`
+      };
     }
 
     const effectiveTokenIn = amount * feeMultiplier;
@@ -2670,11 +2678,11 @@ const server = http.createServer(async (req, res) => {
       const creatorAddress = sanitizeAddress(body.creatorAddress || "");
       const token = market.tokens[tokenIndex];
       if (!creatorAddress || !token.creatorAddress || creatorAddress.toLowerCase() !== token.creatorAddress.toLowerCase()) {
-        sendJson(res, 403, { error: "Only the token creator can delete this token." });
+        sendJson(res, 403, { error: "Only the meme creator can cancel this meme." });
         return;
       }
       if (!sanitizeString(body.creatorSignature || "", 400)) {
-        sendJson(res, 400, { error: "Wallet confirmation is required to delete this token." });
+        sendJson(res, 400, { error: "Wallet confirmation is required to cancel this meme." });
         return;
       }
 
@@ -2685,7 +2693,7 @@ const server = http.createServer(async (req, res) => {
         }
       });
       writeMarket(market);
-      sendJson(res, 200, { ok: true, deletedTokenId: tokenId });
+      sendJson(res, 200, { ok: true, cancelledTokenId: tokenId, deletedTokenId: tokenId });
       return;
     } catch (error) {
       sendJson(res, error.statusCode || 400, { error: error.message });
@@ -2710,14 +2718,6 @@ const server = http.createServer(async (req, res) => {
       const shadowTradeAmount = normalizedSide === "SELL"
         ? Number(body.amountToken || body.amount || 0)
         : Number(body.amountRlo || body.amount || 0);
-      const walletTokenBalance = sanitizeBalanceSeed(body.walletTokenBalance);
-
-      if (walletTokenBalance !== null && body.traderAddress) {
-        const wallet = ensureWalletRecord(market, body.traderAddress, body.walletRloBalance);
-        if (wallet) {
-          wallet.tokenBalances[tokenId] = walletTokenBalance;
-        }
-      }
 
       if (body.virtualTrade === true && token.pool) {
         token.pool.mode = "virtual";

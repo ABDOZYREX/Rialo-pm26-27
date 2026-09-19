@@ -3712,11 +3712,16 @@ function setupRialoMarketUi() {
     }
 
     function getCurrentViewerRloBalance() {
-        if (Number.isFinite(Number(state.chainRloBalance))) {
-            return Number(state.chainRloBalance || 0);
+        const chainBalance = Number(state.chainRloBalance);
+        const recordedBalance = Number(state.activeToken?.viewer?.rloBalance);
+        const hasChainBalance = state.chainRloBalance !== null && Number.isFinite(chainBalance);
+        const hasRecordedBalance = Number.isFinite(recordedBalance);
+
+        if (RIALO_MARKET_VIRTUAL_TRADES && hasRecordedBalance) {
+            return Math.max(0, hasChainBalance ? Math.min(chainBalance, recordedBalance) : recordedBalance);
         }
 
-        return Number(state.activeToken?.viewer?.rloBalance || 0);
+        return Math.max(0, hasChainBalance ? chainBalance : (hasRecordedBalance ? recordedBalance : 0));
     }
 
     function getCurrentViewerTokenBalance() {
@@ -3725,13 +3730,23 @@ function setupRialoMarketUi() {
 
     function updateTradeActionAvailability() {
         const mode = getActiveTradeMode();
+        const amount = parseDecimalInput(refs.tradeAmount);
+        const hasWallet = Boolean(connectedWalletAddress && state.activeToken?.viewer);
+        const buyBalance = getCurrentViewerRloBalance();
+        const sellBalance = getCurrentViewerTokenBalance();
+        const hasBuyQuote = Boolean(amount > 0 && estimateTradeOutput(state.activeToken, "BUY", amount));
+        const hasSellQuote = Boolean(amount > 0 && estimateTradeOutput(state.activeToken, "SELL", amount));
 
-        refs.buyBtn.disabled = false;
-        refs.sellBtn.disabled = false;
+        refs.buyBtn.disabled = !hasWallet || !hasBuyQuote || amount > buyBalance + 0.0000001;
+        refs.sellBtn.disabled = !hasWallet || !hasSellQuote || amount > sellBalance + 0.0000001;
         refs.buyBtn.classList.toggle("is-primary", mode === "buy");
         refs.sellBtn.classList.toggle("is-primary", mode === "sell");
-        refs.buyBtn.title = "Buy any positive amount after wallet confirmation";
-        refs.sellBtn.title = "Sell any positive amount after wallet confirmation";
+        refs.buyBtn.title = hasWallet
+            ? `Available: ${formatCompact(buyBalance, 6)} RLO`
+            : "Connect wallet to buy";
+        refs.sellBtn.title = hasWallet
+            ? `Available: ${formatCompact(sellBalance, 6)} ${state.activeToken?.symbol || "TOKEN"}`
+            : "Connect wallet to sell";
         syncTradeModeUi();
         refreshTradePreview();
     }
@@ -4002,10 +4017,14 @@ function setupRialoMarketUi() {
 
         const recordedRloBalance = Number(token.viewer?.rloBalance || 0);
         const recordedTokenBalance = Number(token.viewer?.tokenBalance || 0);
+        const chainRloValue = Number(rloBalance ?? recordedRloBalance);
+        const spendableRloBalance = RIALO_MARKET_VIRTUAL_TRADES
+            ? Math.min(recordedRloBalance, chainRloValue)
+            : chainRloValue;
 
         token.viewer = {
             address: connectedWalletAddress,
-            rloBalance: Math.max(recordedRloBalance, Number(rloBalance ?? 0)),
+            rloBalance: Math.max(0, spendableRloBalance),
             tokenBalance: Math.max(recordedTokenBalance, Number(tokenBalance ?? 0))
         };
 
@@ -4626,13 +4645,11 @@ function setupRialoMarketUi() {
         );
 
         if (token.viewer) {
-            const displayedRloBalance = Number.isFinite(Number(state.chainRloBalance))
-                ? Number(state.chainRloBalance || 0)
-                : Number(token.viewer.rloBalance || 0);
+            const displayedRloBalance = getCurrentViewerRloBalance();
 
             refs.walletRloBalance.textContent = formatRloMarketValue(displayedRloBalance, 4);
             refs.walletTokenBalance.textContent = `${formatCompact(token.viewer.tokenBalance, 4)} ${token.symbol}`;
-            refs.walletBalanceNote.textContent = `Wallet ${shortWallet(token.viewer.address)} is synced from your connected wallet and shown here as RLO.`;
+            refs.walletBalanceNote.textContent = `Wallet ${shortWallet(token.viewer.address)} · only available balances can be traded.`;
         } else {
             refs.walletRloBalance.textContent = "-";
             refs.walletTokenBalance.textContent = "-";
@@ -4754,7 +4771,7 @@ function setupRialoMarketUi() {
         refs.tradeAmount.placeholder = isSellMode
             ? `Sell: amount in ${tokenSymbol}`
             : "Buy: amount in RLO";
-        refreshTradePreview();
+        updateTradeActionAvailability();
     }
 
     function openCreateModal() {
@@ -4868,7 +4885,7 @@ function setupRialoMarketUi() {
                 `Token: ${tokenSymbol}`,
                 `Requested amount: ${formatCompact(amount, 6)}`,
                 `Quoted RLO: ${formatCompact(preview.amountRlo, 6)}`,
-                "Market quantities are recorded by Rialo even when wallet balances differ."
+                "The trade is limited by your available wallet balance."
             ]
         );
 
@@ -4914,19 +4931,19 @@ function setupRialoMarketUi() {
             String(connectedWalletAddress).toLowerCase() === String(token.creatorAddress).toLowerCase()
         );
         if (!isTokenCreator) {
-            refs.tradeStatus.textContent = "Only the wallet that created this token can delete it.";
+            refs.tradeStatus.textContent = "Only the wallet that created this meme can cancel it.";
             return;
         }
 
         const accepted = window.confirm(
-            `Delete ${token.name} ($${token.symbol}) from Rialo Meme Market?\n\nThis removes its market listing, trades, and portfolio balances. The deployed blockchain contract cannot be deleted.`
+            `Cancel ${token.name} ($${token.symbol}) from Rialo Meme Market?\n\nThis removes the meme from Rialo Market. The deployed blockchain contract cannot be deleted.`
         );
         if (!accepted) {
             return;
         }
 
         refs.deleteTokenBtn.disabled = true;
-        refs.deleteTokenBtn.textContent = "Confirm in Wallet...";
+        refs.deleteTokenBtn.textContent = "Confirm Cancel...";
 
         try {
             const confirmation = await confirmMarketWalletAction(
@@ -4938,7 +4955,7 @@ function setupRialoMarketUi() {
                 ]
             );
 
-            refs.deleteTokenBtn.textContent = "Deleting...";
+            refs.deleteTokenBtn.textContent = "Cancelling...";
             await apiFetch(`/api/tokens/${encodeURIComponent(state.activeTokenId)}/delete`, {
                 method: "POST",
                 body: JSON.stringify({
@@ -4950,12 +4967,12 @@ function setupRialoMarketUi() {
 
             resetMarketView();
             await Promise.all([loadTokens(), loadPortfolio()]);
-            window.alert(`${token.name} was removed from Rialo Meme Market.`);
+            window.alert(`${token.name} was cancelled and removed from Rialo Meme Market.`);
         } catch (error) {
             refs.tradeStatus.textContent = error.message;
         } finally {
             refs.deleteTokenBtn.disabled = false;
-            refs.deleteTokenBtn.textContent = "Delete Token";
+            refs.deleteTokenBtn.textContent = "Cancel Meme";
         }
     }
 
@@ -4974,6 +4991,24 @@ function setupRialoMarketUi() {
 
         if (!amount || amount <= 0) {
             refs.tradeStatus.textContent = "Enter a valid amount first.";
+            return;
+        }
+
+        const availableRloBalance = getCurrentViewerRloBalance();
+        const availableTokenBalance = getCurrentViewerTokenBalance();
+
+        if (side === "BUY" && amount > availableRloBalance + 0.0000001) {
+            refs.tradeStatus.textContent = `You only have ${formatCompact(availableRloBalance, 6)} RLO available. Enter that amount or less.`;
+            return;
+        }
+
+        if (side === "SELL" && availableTokenBalance <= 0) {
+            refs.tradeStatus.textContent = `You do not have any ${state.activeToken.symbol} available to sell.`;
+            return;
+        }
+
+        if (side === "SELL" && amount > availableTokenBalance + 0.0000001) {
+            refs.tradeStatus.textContent = `You only have ${formatCompact(availableTokenBalance, 6)} ${state.activeToken.symbol}. Enter that amount or less.`;
             return;
         }
 
@@ -5223,7 +5258,7 @@ function setupRialoMarketUi() {
     syncSlippageButtons();
     syncTradeModeUi();
     refreshTradePreview();
-    refs.tradeAmount.addEventListener("input", refreshTradePreview);
+    refs.tradeAmount.addEventListener("input", updateTradeActionAvailability);
 
     if (refs.imageInput) {
         refs.imageInput.addEventListener("change", async event => {
