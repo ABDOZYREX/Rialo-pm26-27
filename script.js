@@ -138,12 +138,24 @@ const clubLogoUrls = {
     "Lecce": "https://a.espncdn.com/i/teamlogos/soccer/500/113.png",
     "FC Barcelona": "https://a.espncdn.com/i/teamlogos/soccer/500/83.png",
     "Racing Santander": "https://a.espncdn.com/i/teamlogos/soccer/500/87.png",
-    "Sevilla FC": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png"
+    "Sevilla FC": "https://a.espncdn.com/i/teamlogos/soccer/500/243.png",
+    "Leeds United": "https://a.espncdn.com/i/teamlogos/soccer/500/357.png",
+    "Ipswich Town": "https://a.espncdn.com/i/teamlogos/soccer/500/373.png",
+    "Sunderland": "https://a.espncdn.com/i/teamlogos/soccer/500/366.png",
+    "Augsburg": "https://a.espncdn.com/i/teamlogos/soccer/500/3841.png",
+    "Werder Bremen": "https://a.espncdn.com/i/teamlogos/soccer/500/137.png",
+    "Paderborn 07": "https://a.espncdn.com/i/teamlogos/soccer/500/3307.png",
+    "Elversberg": "https://a.espncdn.com/i/teamlogos/soccer/500/10388.png",
+    "Genoa": "https://a.espncdn.com/i/teamlogos/soccer/500/3263.png",
+    "Parma": "https://a.espncdn.com/i/teamlogos/soccer/500/115.png",
+    "Frosinone": "https://a.espncdn.com/i/teamlogos/soccer/500/4057.png",
+    "Lazio": "https://a.espncdn.com/i/teamlogos/soccer/500/112.png",
+    "Monza": "https://a.espncdn.com/i/teamlogos/soccer/500/4007.png"
 };
 
-// Upcoming LaLiga fixtures still to be played in September 2026.
-// Kick-off times are official local Spain times (CEST). The three values are
-// 1X2 decimal odds snapshot checked against 1xBet on September 15-16, 2026.
+// First league fixtures after September 25, 2026. Kick-off times are the
+// official local league times. The three values are the 1X2 decimal odds
+// snapshot checked against 1xBet on September 19, 2026.
 // These prices can move before kick-off and are not a live odds feed.
 const LALIGA_SEPTEMBER_2026_TEAMS = {
     "Espanyol": ["206352", "ESP"],
@@ -169,11 +181,11 @@ const LALIGA_SEPTEMBER_2026_TEAMS = {
 };
 
 const LALIGA_SEPTEMBER_2026_MATCHES = [
-    ["September 16, 2026 · 21:30 CEST", "FC Barcelona", "Racing Santander", ["1.056", "13.50", "29.00"]],
-    ["September 19, 2026 · 16:15 CEST", "Athletic Club", "Deportivo Alavés", ["1.81", "3.71", "5.15"]],
-    ["September 19, 2026 · 21:00 CEST", "Sevilla FC", "FC Barcelona", ["12.00", "6.60", "1.22"]],
-    ["September 20, 2026 · 16:15 CEST", "Atlético Madrid", "Real Madrid", ["3.96", "3.92", "1.83"]],
-    ["September 20, 2026 · 21:00 CEST", "Valencia CF", "Real Sociedad", ["2.744", "3.46", "2.50"]]
+    ["October 9, 2026 · 21:00 CEST", "Málaga CF", "Espanyol", ["2.486", "3.39", "3.14"]],
+    ["October 10, 2026 · 14:00 CEST", "Rayo Vallecano", "Athletic Club", ["3.265", "3.515", "2.354"]],
+    ["October 10, 2026 · 16:15 CEST", "Deportivo Alavés", "Atlético Madrid", ["3.85", "3.78", "2.035"]],
+    ["October 10, 2026 · 18:30 CEST", "FC Barcelona", "Getafe CF", ["1.057", "21.00", "42.00"]],
+    ["October 10, 2026 · 21:00 CEST", "Real Madrid", "Villarreal CF", ["1.275", "7.24", "10.70"]]
 ];
 
 function getLaLigaSeptemberTeam(teamName) {
@@ -188,6 +200,8 @@ function getLaLigaSeptemberTeam(teamName) {
 function renderLaLigaSeptemberMatches() {
     const list = document.getElementById("prediction-live-laliga-list");
     if (!list) return;
+    const heading = document.querySelector("#prediction-live-view .prediction-live-match-head span");
+    if (heading) heading.textContent = "LaLiga · Upcoming after September 25, 2026";
 
     const upcomingMatches = LALIGA_SEPTEMBER_2026_MATCHES.filter(([kickoff]) => {
         const kickoffTimestamp = Date.parse(kickoff.replace(" · ", " ").replace(" CEST", " GMT+0200"));
@@ -195,7 +209,7 @@ function renderLaLigaSeptemberMatches() {
     });
 
     if (!upcomingMatches.length) {
-        list.innerHTML = `<div class="prediction-live-history-empty">No upcoming September fixtures.</div>`;
+        list.innerHTML = `<div class="prediction-live-history-empty">No upcoming fixtures.</div>`;
         return;
     }
 
@@ -241,34 +255,37 @@ function renderLaLigaSeptemberMatches() {
 }
 
 const PREMIER_LEAGUE_SEPTEMBER_2026_MATCHES = [
-    ["September 18, 2026 · 20:00 BST", "Brentford", "Chelsea", ["2.88", "3.82", "2.255"]],
-    ["September 19, 2026 · 12:30 BST", "Tottenham Hotspur", "Aston Villa", ["1.99", "3.64", "3.62"]],
-    ["September 19, 2026 · 15:00 BST", "Brighton", "Arsenal", ["4.60", "3.90", "1.725"]],
-    ["September 20, 2026 · 14:00 BST", "AFC Bournemouth", "Liverpool", ["3.22", "3.80", "2.08"]],
-    ["September 20, 2026 · 16:30 BST", "Fulham", "Manchester United", ["3.50", "3.74", "2.00"]]
+    ["October 10, 2026 · 12:30 BST", "Arsenal", "Leeds United", ["1.363", "5.43", "10.20"]],
+    ["October 10, 2026 · 15:00 BST", "Aston Villa", "Brentford", ["2.59", "3.595", "2.847"]],
+    ["October 10, 2026 · 15:00 BST", "Chelsea", "AFC Bournemouth", ["1.881", "4.16", "4.11"]],
+    ["October 10, 2026 · 15:00 BST", "Ipswich Town", "Fulham", ["2.786", "3.615", "2.632"]],
+    ["October 10, 2026 · 15:00 BST", "Sunderland", "Brighton & Hove Albion", ["2.929", "3.47", "2.59"]]
 ];
 
 const BUNDESLIGA_SEPTEMBER_2026_MATCHES = [
-    ["September 18, 2026 · 20:30 CEST", "Bayern Munich", "Union Berlin", ["1.075", "12.00", "23.00"]],
-    ["September 19, 2026 · 15:30 CEST", "Eintracht Frankfurt", "Freiburg", ["2.344", "3.80", "2.755"]],
-    ["September 19, 2026 · 15:30 CEST", "Borussia Mönchengladbach", "Mainz", ["2.98", "3.70", "2.23"]],
-    ["September 19, 2026 · 18:30 CEST", "Stuttgart", "Borussia Dortmund", ["2.29", "3.76", "2.85"]],
-    ["September 20, 2026 · 15:30 CEST", "Bayer Leverkusen", "RB Leipzig", ["1.94", "4.06", "3.42"]]
+    ["October 9, 2026 · 20:30 CEST", "Borussia Dortmund", "Werder Bremen", ["1.396", "5.80", "7.90"]],
+    ["October 10, 2026 · 15:30 CEST", "Augsburg", "Bayern Munich", ["10.50", "8.15", "1.253"]],
+    ["October 10, 2026 · 15:30 CEST", "Mainz 05", "Bayer Leverkusen", ["2.865", "3.94", "2.423"]],
+    ["October 10, 2026 · 15:30 CEST", "Paderborn 07", "Stuttgart", ["4.83", "4.725", "1.676"]],
+    ["October 10, 2026 · 15:30 CEST", "Union Berlin", "Elversberg", ["2.354", "3.885", "3.00"]]
 ];
 
 const SERIE_A_SEPTEMBER_2026_MATCHES = [
-    ["September 19, 2026 · 15:00 CEST", "Bologna", "Torino", ["1.99", "3.66", "4.20"]],
-    ["September 19, 2026 · 18:00 CEST", "Roma", "Inter", ["2.67", "3.42", "2.87"]],
-    ["September 20, 2026 · 12:30 CEST", "Fiorentina", "Napoli", ["3.48", "3.50", "2.26"]],
-    ["September 20, 2026 · 18:00 CEST", "Juventus", "Atalanta", ["1.77", "4.00", "4.99"]],
-    ["September 20, 2026 · 20:45 CEST", "AC Milan", "Lecce", ["1.31", "5.78", "12.30"]]
+    ["October 10, 2026 · 15:00 CEST", "Genoa", "Fiorentina", ["3.28", "3.45", "2.38"]],
+    ["October 10, 2026 · 18:00 CEST", "Inter", "Parma", ["1.15", "10.10", "22.00"]],
+    ["October 10, 2026 · 20:45 CEST", "Napoli", "Frosinone", ["1.49", "4.94", "7.10"]],
+    ["October 11, 2026 · 12:30 CEST", "Como", "Roma", ["2.65", "3.63", "2.76"]],
+    ["October 11, 2026 · 15:00 CEST", "Lazio", "Monza", ["1.76", "3.86", "5.30"]]
 ];
 
 const PREDICTION_LEAGUE_LOGO_ALIASES = {
     "Tottenham Hotspur": "Tottenham",
     "Newcastle United": "Newcastle",
     "Roma": "AS Roma",
-    "RB Leipzig": "Leipzig"
+    "RB Leipzig": "Leipzig",
+    "Brighton & Hove Albion": "Brighton",
+    "Mainz 05": "Mainz",
+    "Bayer Leverkusen": "Bayer Leverkusen"
 };
 
 function predictionLeagueLogo(teamName) {
@@ -294,14 +311,14 @@ function renderSeptemberLeagueMatches(viewId, title, matches) {
     const list = view?.querySelector(".prediction-live-match-list");
     const heading = view?.querySelector(".prediction-live-match-head span");
     if (!view || !list) return;
-    if (heading) heading.textContent = `${title} · September 2026`;
+    if (heading) heading.textContent = `${title} · Upcoming after September 25, 2026`;
 
     const upcomingMatches = matches.filter(([kickoff]) => {
         const timestamp = predictionLiveKickoffTimestamp(kickoff);
         return Number.isNaN(timestamp) || Date.now() < timestamp;
     });
     if (!upcomingMatches.length) {
-        list.innerHTML = `<div class="prediction-live-history-empty">No upcoming September fixtures.</div>`;
+        list.innerHTML = `<div class="prediction-live-history-empty">No upcoming fixtures.</div>`;
         return;
     }
 

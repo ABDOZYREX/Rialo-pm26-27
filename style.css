@@ -7632,6 +7632,60 @@ body.market-mode .made-by-section {
     box-shadow: 0 8px 20px rgba(126, 69, 185, 0.25);
 }
 
+/* Compact conversation density: keep long public chats readable without
+   letting each message consume too much vertical space. */
+.community-chat-messages {
+    gap: 6px;
+}
+
+.community-chat-message {
+    padding: 8px 9px;
+    border-radius: 12px;
+}
+
+.community-chat-message-head {
+    gap: 7px;
+    margin-bottom: 3px;
+}
+
+.community-chat-username {
+    padding: 2px 7px;
+    font-size: 9.5px;
+}
+
+.community-chat-message-head time {
+    font-size: 8px;
+}
+
+.community-chat-message p {
+    font-size: 10.5px;
+    line-height: 1.38;
+}
+
+.community-chat-message-actions {
+    gap: 5px;
+}
+
+.community-chat-message-actions .community-chat-reply-button {
+    width: 22px;
+    height: 22px;
+}
+
+.community-chat-reply-button svg {
+    width: 12px;
+    height: 12px;
+}
+
+.community-chat-quoted-reply {
+    margin-bottom: 5px;
+    padding: 5px 7px;
+}
+
+.community-chat-quoted-reply strong,
+.community-chat-quoted-reply span {
+    font-size: 9px;
+}
+
 @media (max-width: 900px) {
     .community-chat-shell {
         right: 14px;
@@ -8659,6 +8713,65 @@ body:has(#bracket-view.active) .bracket-winner-options .bracket-club-logo img {
     width: 18px !important;
     height: 18px !important;
     flex: 0 0 18px !important;
+}
+
+/* Prediction Live: keep every club crest optically balanced, regardless of
+   whether the source artwork is wide, tall or circular. */
+.prediction-live-match-teams {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) !important;
+    align-items: center !important;
+    column-gap: 12px !important;
+}
+
+.prediction-live-team,
+.prediction-live-team.right {
+    width: 100% !important;
+    min-width: 0 !important;
+}
+
+.prediction-live-team-logo {
+    width: 42px !important;
+    height: 42px !important;
+    flex: 0 0 42px !important;
+    padding: 3px !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+.prediction-live-team-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 36px !important;
+    max-height: 36px !important;
+    object-fit: contain !important;
+    object-position: center !important;
+    padding: 0 !important;
+    margin: auto !important;
+}
+
+.prediction-live-team-name {
+    min-width: 0 !important;
+    line-height: 1.25 !important;
+    overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 640px) {
+    .prediction-live-match-teams {
+        grid-template-columns: minmax(0, 1fr) 26px minmax(0, 1fr) !important;
+        column-gap: 7px !important;
+    }
+
+    .prediction-live-team-logo {
+        width: 36px !important;
+        height: 36px !important;
+        flex-basis: 36px !important;
+    }
+
+    .prediction-live-team-logo img {
+        max-width: 30px !important;
+        max-height: 30px !important;
+    }
 }
 
 /* Unified RLO pricing: Meme Market follows the same RLO/USDC rate as Swap. */
