@@ -2875,6 +2875,7 @@ function setupRialoMarketUi() {
         detailContractLink: document.getElementById("market-detail-contract-link"),
         detailLaunchLink: document.getElementById("market-detail-launch-link"),
         detailCreatorLink: document.getElementById("market-detail-creator-link"),
+        deleteTokenBtn: document.getElementById("market-delete-token-btn"),
         chartLabel: document.getElementById("market-chart-label"),
         chartCard: document.getElementById("market-chart-card"),
         chartPriceNow: document.getElementById("market-chart-price-now"),
@@ -2925,7 +2926,7 @@ function setupRialoMarketUi() {
         !refs.detailPrice || !refs.detailMcap || !refs.detailVolume ||
         !refs.detailHolders || !refs.detailSupply || !refs.detailWebsite || !refs.detailLiquidity ||
         !refs.detailPoolToken || !refs.detailFee || !refs.detailContract || !refs.detailCreator ||
-        !refs.detailContractLink || !refs.detailLaunchLink || !refs.detailCreatorLink ||
+        !refs.detailContractLink || !refs.detailLaunchLink || !refs.detailCreatorLink || !refs.deleteTokenBtn ||
         !refs.chartLabel || !refs.chartCard || !refs.chartPriceNow || !refs.chartPriceChange || !refs.chartLiveStatus || !refs.chartVisual || !refs.chartZoomOut || !refs.chartZoomIn || !refs.chartZoomReadout || !refs.tradeSymbol ||
         !refs.walletRloBalance || !refs.walletTokenBalance || !refs.walletBalanceNote ||
         !refs.tradeModeBuy || !refs.tradeModeSell || !refs.tradeAmount || !refs.buyPreviewRow || !refs.buyPreviewAmount || !refs.buyPreviewImpact || !refs.sellPreviewRow || !refs.sellPreviewAmount || !refs.sellPreviewImpact || !refs.previewMinLabel || !refs.previewMinReceived || !refs.previewExecutionPrice || !refs.previewSlippage || !refs.lastTxCard || !refs.lastTxLink || !refs.tradeStatus || !refs.feedCard || !refs.tradeFeed || !refs.myTradesCard || !refs.myTradesNote || !refs.myTradesFeed ||
@@ -4449,19 +4450,12 @@ function setupRialoMarketUi() {
     }
 
     function renderTrendingStrip() {
-        const swapRateChip = `
-            <div class="market-trending-chip market-swap-rate-chip">
-                <span>SWAP RATE</span>
-                <strong>1 RLO = ${escapeHTML(formatCompact(RLO_REFERENCE_USD_PRICE, 2))} USDC</strong>
-                <small>Unified Rialo price</small>
-            </div>
-        `;
         const latest = [...state.tokens]
             .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
             .slice(0, 8);
 
         if (!latest.length) {
-            refs.strip.innerHTML = swapRateChip + `
+            refs.strip.innerHTML = `
                 <div class="market-trending-chip">
                     <span>RLO</span>
                     <strong>COMMUNITY</strong>
@@ -4471,7 +4465,7 @@ function setupRialoMarketUi() {
             return;
         }
 
-        refs.strip.innerHTML = swapRateChip + latest.map(token => `
+        refs.strip.innerHTML = latest.map(token => `
             <div class="market-trending-chip">
                 <span>LISTED</span>
                 <strong>${escapeHTML(token.symbol)}</strong>
@@ -4584,6 +4578,12 @@ function setupRialoMarketUi() {
         refs.detailFee.textContent = `${Number(token.pool?.feeBps || 0) / 100}%`;
         refs.detailContract.textContent = token.tokenAddress ? shortWallet(token.tokenAddress) : "Pending";
         refs.detailCreator.textContent = token.creatorAddress ? shortWallet(token.creatorAddress) : "Wallet";
+        const isTokenCreator = Boolean(
+            connectedWalletAddress &&
+            token.creatorAddress &&
+            String(connectedWalletAddress).toLowerCase() === String(token.creatorAddress).toLowerCase()
+        );
+        refs.deleteTokenBtn.hidden = !isTokenCreator;
         refs.chartLabel.textContent = `${token.symbol} Activity`;
         refs.tradeSymbol.textContent = token.symbol;
         refs.tradeAmount.placeholder = `Buy: amount in RLO | Sell: amount in ${token.symbol}`;
@@ -4691,6 +4691,7 @@ function setupRialoMarketUi() {
         refs.detailFee.textContent = "0%";
         refs.detailContract.textContent = "Pending";
         refs.detailCreator.textContent = "Wallet";
+        refs.deleteTokenBtn.hidden = true;
         setMarketLink(refs.detailContractLink, "", "View Contract");
         setMarketLink(refs.detailLaunchLink, "", "Launch Tx");
         setMarketLink(refs.detailCreatorLink, "", "Creator Wallet");
@@ -4879,6 +4880,63 @@ function setupRialoMarketUi() {
         await loadTokens();
         await loadPortfolio();
         fillTokenScreen(data.token, data.candles || []);
+    }
+
+    async function deleteActiveMarketToken() {
+        const token = state.activeToken;
+        if (!token || !state.activeTokenId) {
+            return;
+        }
+
+        const isTokenCreator = Boolean(
+            connectedWalletAddress &&
+            token.creatorAddress &&
+            String(connectedWalletAddress).toLowerCase() === String(token.creatorAddress).toLowerCase()
+        );
+        if (!isTokenCreator) {
+            refs.tradeStatus.textContent = "Only the wallet that created this token can delete it.";
+            return;
+        }
+
+        const accepted = window.confirm(
+            `Delete ${token.name} ($${token.symbol}) from Rialo Meme Market?\n\nThis removes its market listing, trades, and portfolio balances. The deployed blockchain contract cannot be deleted.`
+        );
+        if (!accepted) {
+            return;
+        }
+
+        refs.deleteTokenBtn.disabled = true;
+        refs.deleteTokenBtn.textContent = "Confirm in Wallet...";
+
+        try {
+            const confirmation = await confirmMarketWalletAction(
+                "DELETE_MEME_TOKEN",
+                [
+                    `Token: ${token.name} ($${token.symbol})`,
+                    `Token ID: ${state.activeTokenId}`,
+                    "Remove this token from Rialo Meme Market."
+                ]
+            );
+
+            refs.deleteTokenBtn.textContent = "Deleting...";
+            await apiFetch(`/api/tokens/${encodeURIComponent(state.activeTokenId)}/delete`, {
+                method: "POST",
+                body: JSON.stringify({
+                    creatorAddress: confirmation.address,
+                    creatorSignature: confirmation.signature,
+                    signedMessage: confirmation.message
+                })
+            });
+
+            resetMarketView();
+            await Promise.all([loadTokens(), loadPortfolio()]);
+            window.alert(`${token.name} was removed from Rialo Meme Market.`);
+        } catch (error) {
+            refs.tradeStatus.textContent = error.message;
+        } finally {
+            refs.deleteTokenBtn.disabled = false;
+            refs.deleteTokenBtn.textContent = "Delete Token";
+        }
     }
 
     async function submitTrade(side) {
@@ -5105,6 +5163,7 @@ function setupRialoMarketUi() {
     refs.openSide.addEventListener("click", openCreateModal);
     refs.closeModal.addEventListener("click", closeCreateModal);
     refs.backBtn.addEventListener("click", resetMarketView);
+    refs.deleteTokenBtn.addEventListener("click", deleteActiveMarketToken);
     refs.tradeModeBuy.addEventListener("click", () => setTradeMode("buy"));
     refs.tradeModeSell.addEventListener("click", () => setTradeMode("sell"));
     refs.chartZoomOut.addEventListener("click", () => changeChartZoom(-1));

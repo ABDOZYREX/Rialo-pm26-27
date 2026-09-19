@@ -11298,6 +11298,32 @@ body.market-create-open #market-view .market-create-modal {
     white-space: nowrap !important;
 }
 
+#market-view .market-delete-token-btn {
+    border: 1px solid rgba(248, 113, 113, 0.45);
+    border-radius: 999px;
+    padding: 9px 14px;
+    background: rgba(127, 29, 29, 0.18);
+    color: #fecaca;
+    font: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+}
+
+#market-view .market-delete-token-btn:hover {
+    background: rgba(185, 28, 28, 0.35);
+    border-color: rgba(248, 113, 113, 0.8);
+    transform: translateY(-1px);
+}
+
+#market-view .market-delete-token-btn:disabled {
+    opacity: 0.65;
+    cursor: wait;
+    transform: none;
+}
+
 #market-view .market-token-summary,
 #market-view .market-detail-card {
     overflow: visible !important;

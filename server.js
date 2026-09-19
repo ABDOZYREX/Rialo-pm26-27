@@ -2655,6 +2655,44 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  const tokenDeleteMatch = pathname.match(/^\/api\/tokens\/([^/]+)\/delete$/);
+  if (req.method === "POST" && tokenDeleteMatch) {
+    try {
+      const body = await parseBody(req);
+      const market = readMarket();
+      const tokenId = tokenDeleteMatch[1];
+      const tokenIndex = market.tokens.findIndex(item => item.id === tokenId);
+      if (tokenIndex === -1) {
+        notFound(res);
+        return;
+      }
+
+      const creatorAddress = sanitizeAddress(body.creatorAddress || "");
+      const token = market.tokens[tokenIndex];
+      if (!creatorAddress || !token.creatorAddress || creatorAddress.toLowerCase() !== token.creatorAddress.toLowerCase()) {
+        sendJson(res, 403, { error: "Only the token creator can delete this token." });
+        return;
+      }
+      if (!sanitizeString(body.creatorSignature || "", 400)) {
+        sendJson(res, 400, { error: "Wallet confirmation is required to delete this token." });
+        return;
+      }
+
+      market.tokens.splice(tokenIndex, 1);
+      Object.values(market.wallets || {}).forEach(wallet => {
+        if (wallet && wallet.tokenBalances) {
+          delete wallet.tokenBalances[tokenId];
+        }
+      });
+      writeMarket(market);
+      sendJson(res, 200, { ok: true, deletedTokenId: tokenId });
+      return;
+    } catch (error) {
+      sendJson(res, error.statusCode || 400, { error: error.message });
+      return;
+    }
+  }
+
   const tokenTradeMatch = pathname.match(/^\/api\/tokens\/([^/]+)\/trades$/);
   if (req.method === "POST" && tokenTradeMatch) {
     try {
