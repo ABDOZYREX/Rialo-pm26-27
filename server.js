@@ -19,7 +19,8 @@ const DATA_FILE = path.join(DATA_DIR, "market.json");
 const DB_FILE = path.join(DATA_DIR, "market.db");
 const LOCAL_AI_CONFIG_FILE = path.join(DATA_DIR, "rialo-ai.config.json");
 const DEFAULT_WALLET_RLO_BALANCE = 250000;
-const DEFAULT_FEE_BPS = 30;
+// Keep server-side previews aligned with RialoMarketFactory.DEFAULT_FEE_BPS.
+const DEFAULT_FEE_BPS = 100;
 const DEFAULT_CREATOR_SHARE = 0.2;
 const RIALO_RPC_URL = process.env.RIALO_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
 const RIALO_CHAIN_ID = "0xaa36a7";
@@ -198,6 +199,15 @@ function decodeTopicBool(topic) {
   return hexToBigInt(topic) !== 0n;
 }
 
+function decodeWordAddress(word) {
+  const safe = String(word || "").replace(/^0x/, "").toLowerCase();
+  if (safe.length !== 64) {
+    return "";
+  }
+
+  return sanitizeAddress(`0x${safe.slice(-40)}`).toLowerCase();
+}
+
 function encodeAddressCall(selector, address) {
   const normalized = sanitizeAddress(address).replace(/^0x/, "").toLowerCase();
   if (normalized.length !== 40) {
@@ -209,6 +219,90 @@ function encodeAddressCall(selector, address) {
 
 function toRpcHex(numberValue) {
   return `0x${Math.max(0, Number(numberValue || 0)).toString(16)}`;
+}
+
+function isLocalRequest(req) {
+  const host = String(req?.headers?.host || "").toLowerCase();
+  return host.startsWith("localhost:")
+    || host.startsWith("127.0.0.1:")
+    || host.startsWith("[::1]:");
+}
+
+function normalizeClientChainReceipt(value, expectedHash) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const transactionHash = String(value.transactionHash || value.hash || "").trim();
+  if (transactionHash.toLowerCase() !== String(expectedHash || "").toLowerCase()) {
+    return null;
+  }
+
+  const status = value.status === 1 || value.status === "1" || value.status === "0x1"
+    ? "0x1"
+    : "0x0";
+  const logs = (Array.isArray(value.logs) ? value.logs : []).slice(0, 64).map(log => ({
+    address: sanitizeAddress(log?.address),
+    topics: (Array.isArray(log?.topics) ? log.topics : []).slice(0, 4).map(topic => sanitizeString(topic, 80)),
+    data: sanitizeString(log?.data || "0x", 4096),
+    transactionHash,
+    blockNumber: value.blockNumber || log?.blockNumber || ""
+  }));
+
+  return {
+    transactionHash,
+    status,
+    from: sanitizeAddress(value.from),
+    to: sanitizeAddress(value.to),
+    blockNumber: value.blockNumber || "",
+    logs
+  };
+}
+
+async function resolveConfirmedReceipt(txHash, clientReceipt, allowClientReceipt = false) {
+  try {
+    return {
+      receipt: await rpcCall("eth_getTransactionReceipt", [txHash]),
+      fromClient: false
+    };
+  } catch (error) {
+    if (!allowClientReceipt) {
+      throw error;
+    }
+
+    const receipt = normalizeClientChainReceipt(clientReceipt, txHash);
+    if (!receipt) {
+      throw new Error("The RPC is unavailable and no valid wallet receipt was provided.");
+    }
+
+    return { receipt, fromClient: true };
+  }
+}
+
+async function verifyConfirmedWalletCancellation(txHash, clientReceipt, expectedAddress, allowClientReceipt = false) {
+  const normalizedHash = String(txHash || "").trim();
+  const walletAddress = sanitizeAddress(expectedAddress).toLowerCase();
+
+  if (!/^0x[a-fA-F0-9]{64}$/.test(normalizedHash)) {
+    throw new Error("A confirmed wallet transaction is required to cancel this meme.");
+  }
+  if (!walletAddress) {
+    throw new Error("The creator wallet is invalid.");
+  }
+
+  const resolvedReceipt = await resolveConfirmedReceipt(normalizedHash, clientReceipt, allowClientReceipt);
+  const receipt = resolvedReceipt.receipt;
+  if (!receipt || receipt.status !== "0x1") {
+    throw new Error("The cancellation transaction is not confirmed yet.");
+  }
+  if (
+    String(receipt.from || "").toLowerCase() !== walletAddress ||
+    String(receipt.to || "").toLowerCase() !== walletAddress
+  ) {
+    throw new Error("The cancellation transaction does not match the creator wallet.");
+  }
+
+  return normalizedHash;
 }
 
 function ensureDataPaths() {
@@ -678,6 +772,123 @@ async function getBlockTimestampMemo(blockHex, cache) {
     : new Date().toISOString();
   cache.set(blockHex, timestamp);
   return timestamp;
+}
+
+async function getConfirmedMarketTrade(txHash, token, expectedTrader, expectedSide, clientReceipt = null, allowClientReceipt = false) {
+  const normalizedHash = String(txHash || "").trim();
+  if (!/^0x[a-fA-F0-9]{64}$/.test(normalizedHash)) {
+    throw new Error("A confirmed blockchain transaction is required for this trade.");
+  }
+
+  const resolvedReceipt = await resolveConfirmedReceipt(normalizedHash, clientReceipt, allowClientReceipt);
+  const receipt = resolvedReceipt.receipt;
+  if (!receipt || receipt.status !== "0x1") {
+    throw new Error("The market transaction is not confirmed yet.");
+  }
+
+  const factoryAddress = sanitizeAddress(token?.factoryAddress).toLowerCase();
+  const tokenAddress = sanitizeAddress(token?.tokenAddress).toLowerCase();
+  const traderAddress = sanitizeAddress(expectedTrader).toLowerCase();
+  const normalizedSide = sanitizeString(expectedSide, 4).toUpperCase();
+
+  if (!factoryAddress || !tokenAddress || !traderAddress) {
+    throw new Error("The token market addresses are invalid.");
+  }
+
+  const tradeLog = (Array.isArray(receipt.logs) ? receipt.logs : []).find(log => {
+    const topics = Array.isArray(log?.topics) ? log.topics : [];
+    return String(log?.address || "").toLowerCase() === factoryAddress
+      && String(topics[0] || "").toLowerCase() === TRADE_EXECUTED_TOPIC
+      && decodeTopicAddress(topics[1]).toLowerCase() === traderAddress
+      && decodeTopicAddress(topics[2]).toLowerCase() === tokenAddress
+      && (decodeTopicBool(topics[3]) ? "BUY" : "SELL") === normalizedSide;
+  });
+
+  if (!tradeLog) {
+    throw new Error("This transaction does not contain the expected Rialo market trade.");
+  }
+
+  const words = decodeStaticWords(tradeLog.data);
+  if (words.length < 6) {
+    throw new Error("The confirmed trade data is incomplete.");
+  }
+
+  return {
+    side: normalizedSide,
+    traderAddress,
+    amountRlo: hexWordToNumber(words[0]),
+    amountToken: hexWordToNumber(words[1]),
+    executionPrice: hexWordToNumber(words[2]),
+    actualRloReserve: hexWordToNumber(words[3]),
+    virtualRloReserve: hexWordToNumber(words[4]),
+    virtualTokenReserve: hexWordToNumber(words[5]),
+    txHash: normalizedHash,
+    timestamp: resolvedReceipt.fromClient
+      ? new Date().toISOString()
+      : await getBlockTimestampMemo(receipt.blockNumber, new Map())
+  };
+}
+
+async function verifyConfirmedTokenCreation(payload, allowClientReceipt = false) {
+  const txHash = String(payload?.creationTxHash || "").trim();
+  if (!/^0x[a-fA-F0-9]{64}$/.test(txHash)) {
+    throw new Error("A confirmed token creation transaction is required.");
+  }
+
+  const creatorAddress = sanitizeAddress(payload?.creatorAddress).toLowerCase();
+  const tokenAddress = sanitizeAddress(payload?.tokenAddress).toLowerCase();
+  const factoryAddress = sanitizeAddress(payload?.factoryAddress).toLowerCase();
+  const resolvedReceipt = await resolveConfirmedReceipt(txHash, payload?.chainReceipt, allowClientReceipt);
+  const receipt = resolvedReceipt.receipt;
+
+  if (!receipt || receipt.status !== "0x1") {
+    throw new Error("The token creation transaction is not confirmed yet.");
+  }
+
+  if (
+    !creatorAddress ||
+    !tokenAddress ||
+    !factoryAddress ||
+    String(receipt.from || "").toLowerCase() !== creatorAddress ||
+    String(receipt.to || "").toLowerCase() !== factoryAddress
+  ) {
+    throw new Error("The token creation transaction does not match this wallet and factory.");
+  }
+
+  const creationLog = (Array.isArray(receipt.logs) ? receipt.logs : []).find(log => {
+    const topics = Array.isArray(log?.topics) ? log.topics : [];
+    return String(log?.address || "").toLowerCase() === factoryAddress
+      && topics.length === 3
+      && decodeTopicAddress(topics[1]).toLowerCase() === creatorAddress
+      && decodeTopicAddress(topics[2]).toLowerCase() === tokenAddress;
+  });
+
+  if (!creationLog) {
+    throw new Error("The confirmed transaction did not create this Rialo token.");
+  }
+
+  if (!resolvedReceipt.fromClient) {
+    const tokenCode = await rpcCall("eth_getCode", [tokenAddress, "latest"]);
+    if (!tokenCode || tokenCode === "0x") {
+      throw new Error("The created token contract was not found on-chain.");
+    }
+
+    const poolData = await rpcCall("eth_call", [{
+      to: factoryAddress,
+      data: encodeAddressCall(GET_POOL_SELECTOR, tokenAddress)
+    }, "latest"]);
+    const poolWords = decodeStaticWords(poolData);
+    if (
+      poolWords.length < 6 ||
+      decodeWordAddress(poolWords[0]) !== creatorAddress ||
+      hexToBigInt(poolWords[2]) <= 0n ||
+      hexToBigInt(poolWords[3]) <= 0n
+    ) {
+      throw new Error("The created token pool is not valid.");
+    }
+  }
+
+  return true;
 }
 
 async function resolveFactoryStartBlock(factoryAddress, tokens) {
@@ -2128,7 +2339,17 @@ function buildCandles(token, points = 32) {
     price: token.price,
     timestamp: new Date().toISOString()
   }]).map(item => ({
-    price: Number(item.price || token.price || 0.0001),
+    // A trade candle must follow the real fill price paid by the wallet.
+    // `price` is the post-trade pool spot price and can look unchanged after
+    // small fills, while `executionPrice` is the confirmed trade price.
+    price: Number(
+      String(item.side || "").toUpperCase() === "LIST"
+        ? (item.price || token.price || 0.0001)
+        : (item.executionPrice || item.price || token.price || 0.0001)
+    ),
+    volumeRlo: Number(item.amountRlo || 0),
+    volumeToken: Number(item.amountToken || 0),
+    side: sanitizeString(item.side || "BUY", 8).toUpperCase(),
     timestamp: item.timestamp || new Date().toISOString()
   }));
 
@@ -2143,6 +2364,10 @@ function buildCandles(token, points = 32) {
     const high = Math.max(...prices);
     const low = Math.min(...prices);
     const timestamp = chunk[chunk.length - 1].timestamp;
+    const volumeRlo = chunk.reduce((sum, item) => sum + Number(item.volumeRlo || 0), 0);
+    const volumeToken = chunk.reduce((sum, item) => sum + Number(item.volumeToken || 0), 0);
+    const trades = chunk.filter(item => item.side !== "LIST").length;
+    const lastTrade = [...chunk].reverse().find(item => item.side !== "LIST");
 
     buckets.push({
       open,
@@ -2150,7 +2375,11 @@ function buildCandles(token, points = 32) {
       low,
       close,
       timestamp,
-      samples: chunk.length
+      samples: chunk.length,
+      volumeRlo,
+      volumeToken,
+      trades,
+      side: lastTrade?.side || "LIST"
     });
   }
 
@@ -2178,6 +2407,10 @@ function buildCandles(token, points = 32) {
       high,
       low,
       close,
+      volumeRlo: Number((candle.volumeRlo || 0).toFixed(6)),
+      volumeToken: Number((candle.volumeToken || 0).toFixed(6)),
+      trades: Number(candle.trades || 0),
+      side: candle.side || "LIST",
       timestamp: candle.timestamp,
       direction: close >= open ? "up" : "down"
     };
@@ -2626,6 +2859,14 @@ const server = http.createServer(async (req, res) => {
         return;
       }
 
+      try {
+        payload.chainReceipt = body.chainReceipt;
+        await verifyConfirmedTokenCreation(payload, isLocalRequest(req));
+      } catch (error) {
+        sendJson(res, 400, { error: error.message });
+        return;
+      }
+
       const market = readMarket();
       const result = createTokenInMarket(market, payload);
       if (result.error) {
@@ -2681,10 +2922,13 @@ const server = http.createServer(async (req, res) => {
         sendJson(res, 403, { error: "Only the meme creator can cancel this meme." });
         return;
       }
-      if (!sanitizeString(body.creatorSignature || "", 400)) {
-        sendJson(res, 400, { error: "Wallet confirmation is required to cancel this meme." });
-        return;
-      }
+
+      const cancelTxHash = await verifyConfirmedWalletCancellation(
+        body.cancelTxHash,
+        body.chainReceipt,
+        creatorAddress,
+        isLocalRequest(req)
+      );
 
       market.tokens.splice(tokenIndex, 1);
       Object.values(market.wallets || {}).forEach(wallet => {
@@ -2693,7 +2937,7 @@ const server = http.createServer(async (req, res) => {
         }
       });
       writeMarket(market);
-      sendJson(res, 200, { ok: true, cancelledTokenId: tokenId, deletedTokenId: tokenId });
+      sendJson(res, 200, { ok: true, cancelledTokenId: tokenId, deletedTokenId: tokenId, cancelTxHash });
       return;
     } catch (error) {
       sendJson(res, error.statusCode || 400, { error: error.message });
@@ -2719,22 +2963,40 @@ const server = http.createServer(async (req, res) => {
         ? Number(body.amountToken || body.amount || 0)
         : Number(body.amountRlo || body.amount || 0);
 
-      if (body.virtualTrade === true && token.pool) {
-        token.pool.mode = "virtual";
-      }
+      if (isCommunityLaunchedToken(token)) {
+        let confirmedTrade;
+        try {
+          confirmedTrade = await getConfirmedMarketTrade(
+            body.txHash,
+            token,
+            body.traderAddress,
+            normalizedSide,
+            body.chainReceipt,
+            isLocalRequest(req)
+          );
+        } catch (error) {
+          sendJson(res, 400, { error: error.message });
+          return;
+        }
 
-      const result = applyTrade(
-        market,
-        token,
-        normalizedSide,
-        shadowTradeAmount,
-        body.traderAddress,
-        body.walletRloBalance,
-        body.txHash
-      );
-      if (result.error) {
-        sendJson(res, 400, result);
-        return;
+        if (token.pool) {
+          token.pool.mode = "onchain";
+        }
+        applySyncedTradeToMarket(market, token, confirmedTrade);
+      } else {
+        const result = applyTrade(
+          market,
+          token,
+          normalizedSide,
+          shadowTradeAmount,
+          body.traderAddress,
+          body.walletRloBalance,
+          body.txHash
+        );
+        if (result.error) {
+          sendJson(res, 400, result);
+          return;
+        }
       }
 
       writeMarket(market);

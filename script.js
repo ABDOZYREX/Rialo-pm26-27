@@ -301,6 +301,10 @@ function predictionLiveAbbreviation(teamName) {
     return teamName.split(/\s+/).map(part => part[0]).join("").slice(0, 3).toUpperCase();
 }
 
+function predictionLiveLogoClass(teamName) {
+    return teamName === "Espanyol" ? " prediction-live-team-logo-espanyol" : "";
+}
+
 function predictionLiveKickoffTimestamp(kickoff) {
     return Date.parse(kickoff.replace(" · ", " ")
         .replace(" CEST", " GMT+0200").replace(" BST", " GMT+0100"));
@@ -327,12 +331,12 @@ function renderSeptemberLeagueMatches(viewId, title, matches) {
             <div class="prediction-live-match-time">${kickoff}</div>
             <div class="prediction-live-match-teams">
                 <div class="prediction-live-team">
-                    <div class="prediction-live-team-logo"><img src="${predictionLeagueLogo(homeName)}" alt="${homeName} logo" loading="lazy"><span class="prediction-live-team-logo-fallback" aria-hidden="true">${predictionLiveAbbreviation(homeName)}</span></div>
+                    <div class="prediction-live-team-logo${predictionLiveLogoClass(homeName)}"><img src="${predictionLeagueLogo(homeName)}" alt="${homeName} logo" loading="lazy"><span class="prediction-live-team-logo-fallback" aria-hidden="true">${predictionLiveAbbreviation(homeName)}</span></div>
                     <div class="prediction-live-team-name">${homeName}</div>
                 </div>
                 <div class="prediction-live-vs">VS</div>
                 <div class="prediction-live-team right">
-                    <div class="prediction-live-team-logo"><img src="${predictionLeagueLogo(awayName)}" alt="${awayName} logo" loading="lazy"><span class="prediction-live-team-logo-fallback" aria-hidden="true">${predictionLiveAbbreviation(awayName)}</span></div>
+                    <div class="prediction-live-team-logo${predictionLiveLogoClass(awayName)}"><img src="${predictionLeagueLogo(awayName)}" alt="${awayName} logo" loading="lazy"><span class="prediction-live-team-logo-fallback" aria-hidden="true">${predictionLiveAbbreviation(awayName)}</span></div>
                     <div class="prediction-live-team-name">${awayName}</div>
                 </div>
             </div>
@@ -457,13 +461,82 @@ const CREATE_IMAGE_MAX_DATA_URL_LENGTH = 700_000;
 const RLO_REFERENCE_USD_PRICE = 0.5;
 const USDC_REFERENCE_USD_PRICE = 1;
 const USDT_REFERENCE_USD_PRICE = 1;
-const RIALO_MARKET_VIRTUAL_TRADES = true;
+// Community meme trades must settle through the factory contract. The server
+// only indexes confirmed transactions; it is not the owner of wallet balances.
+const RIALO_MARKET_VIRTUAL_TRADES = false;
 const SWAP_TEST_STABLE_TX_AMOUNT = "0.001";
+
+function serializeWalletConfirmationReceipt(receipt) {
+    if (!receipt) return null;
+
+    return {
+        transactionHash: receipt.hash || receipt.transactionHash || "",
+        status: receipt.status,
+        from: receipt.from || "",
+        to: receipt.to || "",
+        blockNumber: receipt.blockNumber || "",
+        logs: (Array.isArray(receipt.logs) ? receipt.logs : []).map(log => ({
+            address: log.address || "",
+            topics: Array.isArray(log.topics) ? log.topics : [],
+            data: log.data || "0x",
+            blockNumber: log.blockNumber || receipt.blockNumber || ""
+        }))
+    };
+}
+
+async function confirmCancellationTransaction(actionLabel, expectedWallet = "") {
+    if (!window.ethereum || typeof ethers === "undefined") {
+        throw new Error("MetaMask is required to confirm this cancellation.");
+    }
+
+    const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
+    if (!accounts || !accounts.length) {
+        throw new Error("No wallet account found.");
+    }
+
+    const switched = await ensureRialoTestnetForTransaction();
+    if (!switched) {
+        throw new Error("Switch to Ethereum Sepolia first.");
+    }
+
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const address = await signer.getAddress();
+    if (expectedWallet && address.toLowerCase() !== String(expectedWallet).toLowerCase()) {
+        throw new Error("Use the same wallet that created this item.");
+    }
+
+    connectedWalletAddress = address;
+    walletConnected = true;
+
+    const memo = ethers.hexlify(ethers.toUtf8Bytes(`Rialo ${actionLabel} ${Date.now()}`));
+    const transaction = await signer.sendTransaction({
+        from: address,
+        to: address,
+        value: 0n,
+        data: memo
+    });
+    const receipt = await transaction.wait();
+
+    if (!receipt || Number(receipt.status) !== 1) {
+        throw new Error("The wallet cancellation transaction was not confirmed.");
+    }
+
+    return {
+        address,
+        txHash: receipt.hash || transaction.hash || "",
+        chainReceipt: serializeWalletConfirmationReceipt(receipt)
+    };
+}
+
 const ERC20_MINIMAL_ABI = [
     "function approve(address spender, uint256 value) returns (bool)",
     "function allowance(address owner, address spender) view returns (uint256)",
     "function balanceOf(address owner) view returns (uint256)",
-    "function decimals() view returns (uint8)"
+    "function decimals() view returns (uint8)",
+    "function name() view returns (string)",
+    "function symbol() view returns (string)",
+    "function totalSupply() view returns (uint256)"
 ];
 
 const NFT_CONTRACT_ADDRESS = "0xAb76b45C6eCDCC31cCe38FbC5a71BD8C442c5AF4";
@@ -2312,11 +2385,8 @@ function setupRialoWorldCupNftPage() {
                         return;
                     }
 
-                    if (!txResult.alreadyConfirmed) {
-                        addPredictionLiveHistoryEntry(card, betInput.value, txResult.txHash);
-                    }
-
-                    refreshPredictionLiveConfirmedStates(connectedWalletAddress);
+                    addPredictionLiveHistoryEntry(card, betInput.value, txResult.txHash);
+                    resetPredictionLiveCardForNextEntry(card);
                 } catch (error) {
                     console.error("Prediction live wallet confirmation failed:", error);
                     confirmButton.disabled = false;
@@ -2895,6 +2965,7 @@ function setupRialoMarketUi() {
         detailContractLink: document.getElementById("market-detail-contract-link"),
         detailLaunchLink: document.getElementById("market-detail-launch-link"),
         detailCreatorLink: document.getElementById("market-detail-creator-link"),
+        addTokenToWalletBtn: document.getElementById("market-add-token-wallet-btn"),
         deleteTokenBtn: document.getElementById("market-delete-token-btn"),
         chartLabel: document.getElementById("market-chart-label"),
         chartCard: document.getElementById("market-chart-card"),
@@ -2946,7 +3017,7 @@ function setupRialoMarketUi() {
         !refs.detailPrice || !refs.detailMcap || !refs.detailVolume ||
         !refs.detailHolders || !refs.detailSupply || !refs.detailWebsite || !refs.detailLiquidity ||
         !refs.detailPoolToken || !refs.detailFee || !refs.detailContract || !refs.detailCreator ||
-        !refs.detailContractLink || !refs.detailLaunchLink || !refs.detailCreatorLink || !refs.deleteTokenBtn ||
+        !refs.detailContractLink || !refs.detailLaunchLink || !refs.detailCreatorLink || !refs.addTokenToWalletBtn || !refs.deleteTokenBtn ||
         !refs.chartLabel || !refs.chartCard || !refs.chartPriceNow || !refs.chartPriceChange || !refs.chartLiveStatus || !refs.chartVisual || !refs.chartZoomOut || !refs.chartZoomIn || !refs.chartZoomReadout || !refs.tradeSymbol ||
         !refs.walletRloBalance || !refs.walletTokenBalance || !refs.walletBalanceNote ||
         !refs.tradeModeBuy || !refs.tradeModeSell || !refs.tradeAmount || !refs.buyPreviewRow || !refs.buyPreviewAmount || !refs.buyPreviewImpact || !refs.sellPreviewRow || !refs.sellPreviewAmount || !refs.sellPreviewImpact || !refs.previewMinLabel || !refs.previewMinReceived || !refs.previewExecutionPrice || !refs.previewSlippage || !refs.lastTxCard || !refs.lastTxLink || !refs.tradeStatus || !refs.feedCard || !refs.tradeFeed || !refs.myTradesCard || !refs.myTradesNote || !refs.myTradesFeed ||
@@ -3284,6 +3355,10 @@ function setupRialoMarketUi() {
                     high: Number(candle.high || candle.close || 0),
                     low: Number(candle.low || candle.close || 0),
                     close: Number(candle.close || candle.open || 0),
+                    volumeRlo: Number(candle.volumeRlo || 0),
+                    volumeToken: Number(candle.volumeToken || 0),
+                    trades: Number(candle.trades || 0),
+                    side: candle.side || "LIST",
                     timestamp: candle.timestamp
                 });
                 return;
@@ -3292,6 +3367,10 @@ function setupRialoMarketUi() {
             lastBucket.high = Math.max(lastBucket.high, Number(candle.high || candle.close || 0));
             lastBucket.low = Math.min(lastBucket.low, Number(candle.low || candle.close || 0));
             lastBucket.close = Number(candle.close || lastBucket.close || 0);
+            lastBucket.volumeRlo += Number(candle.volumeRlo || 0);
+            lastBucket.volumeToken += Number(candle.volumeToken || 0);
+            lastBucket.trades += Number(candle.trades || 0);
+            if (candle.side && candle.side !== "LIST") lastBucket.side = candle.side;
             lastBucket.timestamp = candle.timestamp;
         });
 
@@ -3301,6 +3380,10 @@ function setupRialoMarketUi() {
             high: Number(candle.high.toFixed(6)),
             low: Number(candle.low.toFixed(6)),
             close: Number(candle.close.toFixed(6)),
+            volumeRlo: Number(candle.volumeRlo.toFixed(6)),
+            volumeToken: Number(candle.volumeToken.toFixed(6)),
+            trades: Number(candle.trades || 0),
+            side: candle.side || "LIST",
             timestamp: candle.timestamp,
             direction: candle.close >= (index > 0 ? arr[index - 1].close : candle.open) ? "up" : "down"
         }));
@@ -3984,6 +4067,26 @@ function setupRialoMarketUi() {
         return null;
     }
 
+    function serializeChainReceipt(receipt) {
+        if (!receipt) {
+            return null;
+        }
+
+        return {
+            transactionHash: receipt.hash || receipt.transactionHash || "",
+            status: receipt.status,
+            from: receipt.from || "",
+            to: receipt.to || "",
+            blockNumber: receipt.blockNumber || "",
+            logs: (Array.isArray(receipt.logs) ? receipt.logs : []).map(log => ({
+                address: log.address || "",
+                topics: Array.isArray(log.topics) ? log.topics : [],
+                data: log.data || "0x",
+                blockNumber: log.blockNumber || receipt.blockNumber || ""
+            }))
+        };
+    }
+
     async function loadOnChainTokenBalance(tokenAddress, holderAddress = connectedWalletAddress) {
         if (!tokenAddress || !holderAddress || !window.ethereum || typeof ethers === "undefined") {
             return null;
@@ -3997,6 +4100,36 @@ function setupRialoMarketUi() {
         } catch {
             return null;
         }
+    }
+
+    async function addTokenToWallet(token = state.activeToken, options = {}) {
+        if (!token?.tokenAddress) {
+            throw new Error("This token does not have a blockchain address yet.");
+        }
+
+        if (!window.ethereum) {
+            throw new Error("MetaMask is not installed.");
+        }
+
+        const wasAdded = await window.ethereum.request({
+            method: "wallet_watchAsset",
+            params: {
+                type: "ERC20",
+                options: {
+                    address: token.tokenAddress,
+                    symbol: String(token.symbol || "TOKEN").slice(0, 10),
+                    decimals: 18
+                }
+            }
+        });
+
+        if (!options.silent) {
+            refs.tradeStatus.textContent = wasAdded
+                ? `${token.symbol} was added to your wallet.`
+                : `${token.symbol} is real and in your wallet, but its display request was not accepted.`;
+        }
+
+        return Boolean(wasAdded);
     }
 
     async function hydrateOnChainViewerBalances(token, options = {}) {
@@ -4025,7 +4158,11 @@ function setupRialoMarketUi() {
         token.viewer = {
             address: connectedWalletAddress,
             rloBalance: Math.max(0, spendableRloBalance),
-            tokenBalance: Math.max(recordedTokenBalance, Number(tokenBalance ?? 0))
+            // The blockchain is the source of truth in real-trade mode. This
+            // avoids showing tokens that were already sold from the wallet.
+            tokenBalance: Math.max(0, RIALO_MARKET_VIRTUAL_TRADES
+                ? Math.max(recordedTokenBalance, Number(tokenBalance ?? 0))
+                : Number(tokenBalance ?? recordedTokenBalance))
         };
 
         return token;
@@ -4162,6 +4299,54 @@ function setupRialoMarketUi() {
         const query = params.toString() ? `?${params.toString()}` : "";
         const data = await apiFetch(`/api/portfolio${query}`);
         state.portfolio = data.portfolio || null;
+
+        if (
+            !RIALO_MARKET_VIRTUAL_TRADES &&
+            connectedWalletAddress &&
+            state.portfolio &&
+            Array.isArray(state.portfolio.positions)
+        ) {
+            const hydratedPositions = await Promise.all(state.portfolio.positions.map(async position => {
+                if (!position.tokenAddress) {
+                    return null;
+                }
+
+                const chainBalance = await loadOnChainTokenBalance(position.tokenAddress, connectedWalletAddress);
+                if (chainBalance === null || chainBalance <= 0) {
+                    return null;
+                }
+
+                const balance = Number(chainBalance);
+                const priceRlo = Number(position.priceRlo || 0);
+                const valueRlo = Number((balance * priceRlo).toFixed(6));
+                const averageEntryRlo = Number(position.averageEntryRlo || priceRlo || 0);
+                const costBasisRlo = Number((balance * averageEntryRlo).toFixed(6));
+
+                return {
+                    ...position,
+                    balance,
+                    valueRlo,
+                    costBasisRlo,
+                    unrealizedPnlRlo: Number((valueRlo - costBasisRlo).toFixed(6))
+                };
+            }));
+
+            state.portfolio.positions = hydratedPositions.filter(Boolean);
+            state.portfolio.walletRloBalance = Number(state.chainRloBalance ?? state.portfolio.walletRloBalance ?? 0);
+            state.portfolio.totalTokenValueRlo = Number(state.portfolio.positions.reduce(
+                (sum, position) => sum + Number(position.valueRlo || 0),
+                0
+            ).toFixed(6));
+            state.portfolio.unrealizedPnlRlo = Number(state.portfolio.positions.reduce(
+                (sum, position) => sum + Number(position.unrealizedPnlRlo || 0),
+                0
+            ).toFixed(6));
+            state.portfolio.positionsCount = state.portfolio.positions.length;
+            state.portfolio.totalPortfolioValueRlo = Number((
+                state.portfolio.walletRloBalance + state.portfolio.totalTokenValueRlo
+            ).toFixed(6));
+        }
+
         renderPortfolio();
     }
 
@@ -4281,87 +4466,76 @@ function setupRialoMarketUi() {
 
         if (!visibleCandles.length) {
             refs.chartVisual.innerHTML = `
-                <div class="market-feed-row">
-                    <strong>No chart data yet</strong>
-                    <span>Waiting for trades</span>
+                <div class="market-chart-empty">
+                    <span>LIVE ON-CHAIN CHART</span>
+                    <strong>Waiting for the first confirmed trade</strong>
+                    <small>Candles and volume will appear from real transactions only.</small>
                 </div>
             `;
             return;
         }
 
         const zoom = Number(state.chartZoom || 1);
-        const width = Math.max(1280, Math.round(1280 * zoom));
-        const height = 520;
-        const padding = { top: 22, right: 176, bottom: 58, left: 24 };
+        const width = Math.max(1040, Math.round(1040 * zoom));
+        const height = 500;
+        const padding = { top: 34, right: 104, bottom: 42, left: 18 };
+        const volumeHeight = 82;
+        const sectionGap = 20;
         const chartWidth = width - padding.left - padding.right;
-        const chartHeight = height - padding.top - padding.bottom;
+        const priceBottom = height - padding.bottom - volumeHeight - sectionGap;
+        const chartHeight = priceBottom - padding.top;
+        const volumeTop = priceBottom + sectionGap;
         const allHighs = visibleCandles.map(candle => Number(candle.high || candle.close || 0));
         const allLows = visibleCandles.map(candle => Number(candle.low || candle.close || 0));
         const rawMin = Math.min(...allLows);
         const rawMax = Math.max(...allHighs);
-        const rangeBase = Math.max(rawMax - rawMin, rawMax * 0.02, 0.0001);
-        const minPrice = Math.max(0, rawMin - rangeBase * 0.18);
-        const maxPrice = rawMax + rangeBase * 0.18;
-        const priceRange = Math.max(maxPrice - minPrice, 0.0001);
-        const preferredSlot = Math.max(8, 11 * zoom);
-        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, Math.min(chartWidth * 0.82, visibleCandles.length * 12 * zoom)));
+        const rangeBase = Math.max(rawMax - rawMin, rawMax * 0.003, 0.00000001);
+        const minPrice = Math.max(0, rawMin - rangeBase * 0.16);
+        const maxPrice = rawMax + rangeBase * 0.16;
+        const priceRange = Math.max(maxPrice - minPrice, 0.00000001);
+        const preferredSlot = Math.max(12, 17 * zoom);
+        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, chartWidth * 0.2));
         const startX = Math.max(padding.left, width - padding.right - usedWidth);
         const slotWidth = usedWidth / Math.max(visibleCandles.length, 1);
-        const candleWidth = Math.max(3, Math.min(8, slotWidth * 0.55));
+        const candleWidth = Math.max(4, Math.min(12, slotWidth * 0.62));
+        const maxVolume = Math.max(...visibleCandles.map(candle => Number(candle.volumeRlo || 0)), 0.00000001);
 
         const yForPrice = price => {
             const normalized = (Number(price || 0) - minPrice) / priceRange;
             return padding.top + (1 - normalized) * chartHeight;
         };
 
-        const horizontalGrid = Array.from({ length: 5 }, (_, index) => {
-            const ratio = index / 4;
+        const horizontalGrid = Array.from({ length: 6 }, (_, index) => {
+            const ratio = index / 5;
             const price = maxPrice - ratio * priceRange;
             const y = padding.top + ratio * chartHeight;
 
             return `
                 <line class="market-chart-grid-line" x1="${padding.left}" y1="${y}" x2="${width - padding.right}" y2="${y}"></line>
-                <text class="market-chart-axis-text" x="${width - 34}" y="${y + 4}" text-anchor="end">${escapeHTML(formatChartNumber(price))}</text>
+                <text class="market-chart-axis-text" x="${width - 12}" y="${y + 4}" text-anchor="end">${escapeHTML(formatChartNumber(price))}</text>
             `;
         }).join("");
 
         const showDateOnXAxis = chartSpansMultipleDays(visibleCandles);
-
-        const timeLabelCandidates = [
-            0,
-            Math.max(0, Math.floor((visibleCandles.length - 1) * 0.33)),
-            Math.max(0, Math.floor((visibleCandles.length - 1) * 0.66)),
-            visibleCandles.length - 1
-        ];
-        const timeLabelPoints = [];
-        const usedTimeLabels = new Set();
-        const minTimeLabelGap = 132;
-
-        [...new Set(timeLabelCandidates)].reverse().forEach(index => {
-            const candle = visibleCandles[index];
-            if (!candle) return;
-
-            const x = startX + slotWidth * index + slotWidth / 2;
-            const labelX = Math.max(padding.left + 58, Math.min(width - padding.right - 58, x));
-            const timeLabel = formatChartTimeLabel(candle.timestamp, { includeDate: showDateOnXAxis });
-
-            if (!timeLabel || usedTimeLabels.has(timeLabel)) return;
-            if (timeLabelPoints.some(point => Math.abs(point.x - labelX) < minTimeLabelGap)) return;
-
-            usedTimeLabels.add(timeLabel);
-            timeLabelPoints.push({ index, x: labelX, label: timeLabel });
-        });
-
-        const timeLabelMap = new Map(timeLabelPoints.map(point => [point.index, point]));
-
-        const verticalGrid = visibleCandles.map((candle, index) => {
-            const x = startX + slotWidth * index + slotWidth / 2;
-            const labelPoint = timeLabelMap.get(index);
-
+        const verticalGrid = Array.from({ length: 7 }, (_, index) => {
+            const ratio = index / 6;
+            const x = padding.left + ratio * chartWidth;
+            const candleIndex = Math.max(0, Math.min(visibleCandles.length - 1, Math.round(ratio * (visibleCandles.length - 1))));
+            const candle = visibleCandles[candleIndex];
+            const label = candle ? formatChartTimeLabel(candle.timestamp, { includeDate: showDateOnXAxis }) : "";
             return `
                 <line class="market-chart-grid-line vertical" x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}"></line>
-                ${labelPoint ? `<text class="market-chart-time-text" x="${labelPoint.x}" y="${height - 16}" text-anchor="middle">${escapeHTML(labelPoint.label)}</text>` : ""}
+                ${label ? `<text class="market-chart-time-text" x="${x}" y="${height - 12}" text-anchor="middle">${escapeHTML(label)}</text>` : ""}
             `;
+        }).join("");
+
+        const volumeSvg = visibleCandles.map((candle, index) => {
+            const x = startX + slotWidth * index + slotWidth / 2;
+            const value = Number(candle.volumeRlo || 0);
+            const barHeight = value > 0 ? Math.max(2, (value / maxVolume) * volumeHeight) : 0;
+            const y = volumeTop + volumeHeight - barHeight;
+            const directionClass = candle.side === "SELL" || candle.direction === "down" ? "down" : "up";
+            return `<rect class="market-volume-bar ${directionClass}" x="${x - candleWidth / 2}" y="${y}" width="${candleWidth}" height="${barHeight}" rx="1"></rect>`;
         }).join("");
 
         const candleSvg = visibleCandles.map((candle, index) => {
@@ -4388,21 +4562,78 @@ function setupRialoMarketUi() {
         const lastCandle = visibleCandles[visibleCandles.length - 1];
         const currentPrice = Number(lastCandle.close || 0);
         const currentY = yForPrice(currentPrice);
+        const confirmedTrades = visibleCandles.reduce((sum, candle) => sum + Number(candle.trades || 0), 0);
 
         refs.chartVisual.innerHTML = `
             <div class="market-candle-chart-shell">
+                <div class="market-chart-ohlc" id="market-chart-ohlc">
+                    <span>O <b>${escapeHTML(formatChartNumber(lastCandle.open))}</b></span>
+                    <span>H <b>${escapeHTML(formatChartNumber(lastCandle.high))}</b></span>
+                    <span>L <b>${escapeHTML(formatChartNumber(lastCandle.low))}</b></span>
+                    <span>C <b>${escapeHTML(formatChartNumber(lastCandle.close))}</b></span>
+                    <span>VOL <b>${escapeHTML(formatCompact(lastCandle.volumeRlo || 0, 6))} RLO</b></span>
+                </div>
+                <div class="market-chart-source">ON-CHAIN · ${confirmedTrades} CONFIRMED ${confirmedTrades === 1 ? "TRADE" : "TRADES"}</div>
                 <svg class="market-candle-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Candlestick chart">
-                    <rect class="market-chart-bg" x="0" y="0" width="${width}" height="${height}" rx="18"></rect>
-                    <rect class="market-chart-axis-panel" x="${width - padding.right}" y="0" width="${padding.right}" height="${height}" rx="18"></rect>
+                    <rect class="market-chart-bg" x="0" y="0" width="${width}" height="${height}"></rect>
+                    <rect class="market-chart-axis-panel" x="${width - padding.right}" y="0" width="${padding.right}" height="${height}"></rect>
                     <line class="market-chart-axis-border" x1="${width - padding.right}" y1="${padding.top}" x2="${width - padding.right}" y2="${height - padding.bottom}"></line>
                     ${horizontalGrid}
                     ${verticalGrid}
+                    <line class="market-volume-divider" x1="${padding.left}" y1="${volumeTop - 8}" x2="${width - padding.right}" y2="${volumeTop - 8}"></line>
+                    <text class="market-volume-label" x="${padding.left + 4}" y="${volumeTop + 10}">VOLUME · RLO</text>
+                    ${volumeSvg}
                     <line class="market-price-line" x1="${padding.left}" y1="${currentY}" x2="${width - padding.right}" y2="${currentY}"></line>
-                    <text class="market-price-tag" x="${width - 34}" y="${Math.max(padding.top + 14, Math.min(height - padding.bottom - 8, currentY - 7))}" text-anchor="end">${escapeHTML(formatChartNumber(currentPrice))}</text>
+                    <rect class="market-price-tag-bg" x="${width - padding.right}" y="${Math.max(padding.top, Math.min(priceBottom - 24, currentY - 12))}" width="${padding.right}" height="24"></rect>
+                    <text class="market-price-tag" x="${width - 10}" y="${Math.max(padding.top + 16, Math.min(priceBottom - 8, currentY + 4))}" text-anchor="end">${escapeHTML(formatChartNumber(currentPrice))}</text>
                     ${candleSvg}
+                    <g class="market-chart-crosshair" id="market-chart-crosshair">
+                        <line class="market-crosshair-line market-crosshair-x" x1="0" y1="${padding.top}" x2="0" y2="${height - padding.bottom}"></line>
+                        <line class="market-crosshair-line market-crosshair-y" x1="${padding.left}" y1="0" x2="${width - padding.right}" y2="0"></line>
+                        <circle class="market-crosshair-dot" cx="0" cy="0" r="4"></circle>
+                    </g>
+                    <rect class="market-chart-hit-area" x="${padding.left}" y="${padding.top}" width="${chartWidth}" height="${height - padding.top - padding.bottom}"></rect>
                 </svg>
             </div>
         `;
+
+        const svg = refs.chartVisual.querySelector(".market-candle-svg");
+        const hitArea = refs.chartVisual.querySelector(".market-chart-hit-area");
+        const crosshair = refs.chartVisual.querySelector("#market-chart-crosshair");
+        const crossX = refs.chartVisual.querySelector(".market-crosshair-x");
+        const crossY = refs.chartVisual.querySelector(".market-crosshair-y");
+        const crossDot = refs.chartVisual.querySelector(".market-crosshair-dot");
+        const ohlc = refs.chartVisual.querySelector("#market-chart-ohlc");
+
+        const showCandleAt = (event) => {
+            const bounds = svg.getBoundingClientRect();
+            if (!bounds.width || !bounds.height) return;
+            const viewX = ((event.clientX - bounds.left) / bounds.width) * width;
+            const rawIndex = Math.floor((viewX - startX) / slotWidth);
+            const index = Math.max(0, Math.min(visibleCandles.length - 1, rawIndex));
+            const candle = visibleCandles[index];
+            const x = startX + slotWidth * index + slotWidth / 2;
+            const y = yForPrice(candle.close);
+
+            crosshair.classList.add("visible");
+            crossX.setAttribute("x1", String(x));
+            crossX.setAttribute("x2", String(x));
+            crossY.setAttribute("y1", String(y));
+            crossY.setAttribute("y2", String(y));
+            crossDot.setAttribute("cx", String(x));
+            crossDot.setAttribute("cy", String(y));
+            ohlc.innerHTML = `
+                <span>O <b>${escapeHTML(formatChartNumber(candle.open))}</b></span>
+                <span>H <b>${escapeHTML(formatChartNumber(candle.high))}</b></span>
+                <span>L <b>${escapeHTML(formatChartNumber(candle.low))}</b></span>
+                <span>C <b>${escapeHTML(formatChartNumber(candle.close))}</b></span>
+                <span>VOL <b>${escapeHTML(formatCompact(candle.volumeRlo || 0, 6))} RLO</b></span>
+                <span>${escapeHTML(formatChartTimeLabel(candle.timestamp, { includeDate: true }))}</span>
+            `;
+        };
+
+        hitArea.addEventListener("pointermove", showCandleAt);
+        hitArea.addEventListener("pointerleave", () => crosshair.classList.remove("visible"));
 
         requestAnimationFrame(() => {
             refs.chartVisual.scrollLeft = refs.chartVisual.scrollWidth;
@@ -4623,6 +4854,7 @@ function setupRialoMarketUi() {
             String(connectedWalletAddress).toLowerCase() === String(token.creatorAddress).toLowerCase()
         );
         refs.deleteTokenBtn.hidden = !isTokenCreator;
+        refs.addTokenToWalletBtn.hidden = !token.tokenAddress;
         refs.chartLabel.textContent = `${token.symbol} Activity`;
         refs.tradeSymbol.textContent = token.symbol;
         refs.tradeAmount.placeholder = `Buy: amount in RLO | Sell: amount in ${token.symbol}`;
@@ -4729,6 +4961,7 @@ function setupRialoMarketUi() {
         refs.detailContract.textContent = "Pending";
         refs.detailCreator.textContent = "Wallet";
         refs.deleteTokenBtn.hidden = true;
+        refs.addTokenToWalletBtn.hidden = true;
         setMarketLink(refs.detailContractLink, "", "View Contract");
         setMarketLink(refs.detailLaunchLink, "", "Launch Tx");
         setMarketLink(refs.detailCreatorLink, "", "Creator Wallet");
@@ -4794,6 +5027,94 @@ function setupRialoMarketUi() {
         resetCreateImageState();
     }
 
+    async function findRecentUnlistedToken(factory, provider, walletAddress, payload) {
+        const createdTokens = Array.from(await factory.getCreatorTokens(walletAddress));
+        const listedAddresses = new Set(state.tokens
+            .map(token => String(token.tokenAddress || "").toLowerCase())
+            .filter(Boolean));
+        const latestBlock = await provider.getBlockNumber();
+        const fromBlock = Math.max(0, latestBlock - 5000);
+
+        for (const tokenAddress of createdTokens.slice(-5).reverse()) {
+            if (listedAddresses.has(String(tokenAddress).toLowerCase())) {
+                continue;
+            }
+
+            const tokenContract = new ethers.Contract(tokenAddress, ERC20_MINIMAL_ABI, provider);
+            const [name, symbol, totalSupply] = await Promise.all([
+                tokenContract.name(),
+                tokenContract.symbol(),
+                tokenContract.totalSupply()
+            ]);
+
+            if (
+                String(name).trim() !== payload.name ||
+                String(symbol).trim().toUpperCase() !== payload.symbol
+            ) {
+                continue;
+            }
+
+            const filter = factory.filters.TokenCreated(walletAddress, tokenAddress);
+            const events = await factory.queryFilter(filter, fromBlock, latestBlock);
+            const creationEvent = events[events.length - 1];
+            if (!creationEvent) {
+                throw new Error("A matching token already exists on-chain, but its creation receipt is still loading. Wait a few seconds and click Launch Token again; no second transaction will be sent.");
+            }
+
+            const block = await provider.getBlock(creationEvent.blockNumber);
+            if (!block || (Date.now() / 1000) - Number(block.timestamp || 0) > 6 * 60 * 60) {
+                continue;
+            }
+
+            const receipt = await provider.getTransactionReceipt(creationEvent.transactionHash);
+            if (!receipt || Number(receipt.status) !== 1) {
+                throw new Error("The existing token transaction is still loading. Wait a few seconds and retry; no second transaction will be sent.");
+            }
+
+            return {
+                tokenAddress,
+                totalSupply: totalSupply.toString(),
+                receipt
+            };
+        }
+
+        return null;
+    }
+
+    async function registerCreatedToken(payload, walletAddress, factoryAddress, tokenAddress, onChainSupply, receipt) {
+        return apiFetch("/api/tokens", {
+            method: "POST",
+            body: JSON.stringify({
+                ...payload,
+                creatorAddress: walletAddress,
+                walletRloBalance: state.chainRloBalance,
+                creatorSignature: receipt.hash || receipt.transactionHash || "",
+                signedMessage: "CREATE_TOKEN_ONCHAIN",
+                tokenAddress,
+                factoryAddress,
+                creationTxHash: receipt.hash || receipt.transactionHash || "",
+                chainReceipt: serializeChainReceipt(receipt),
+                onChainSupply
+            })
+        });
+    }
+
+    async function finishCreatedToken(data, tokenAddress, recovered = false) {
+        refs.status.textContent = recovered
+            ? `Recovered and listed on-chain token: ${shortWallet(tokenAddress)}.`
+            : `Token created on-chain: ${shortWallet(tokenAddress)}.`;
+        state.filter = "latest";
+
+        document.querySelectorAll("[data-market-filter]").forEach(button => {
+            button.classList.toggle("active", (button.dataset.marketFilter || "") === "latest");
+        });
+
+        await loadTokens();
+        await loadPortfolio();
+        closeCreateModal();
+        await loadTokenDetail(data.token.id);
+    }
+
     async function createToken(event) {
         event.preventDefault();
 
@@ -4821,6 +5142,24 @@ function setupRialoMarketUi() {
             const signer = await provider.getSigner();
             const factoryArtifact = await getMarketFactoryArtifact();
             const factory = await ensureOnChainMarketFactory(signer);
+            const factoryAddress = await factory.getAddress();
+
+            refs.status.textContent = "Checking for a recently confirmed token...";
+            const recovered = await findRecentUnlistedToken(factory, provider, walletAddress, payload);
+            if (recovered) {
+                refs.status.textContent = "Token already exists on-chain. Restoring it in Rialo Market without a second transaction...";
+                const recoveredData = await registerCreatedToken(
+                    payload,
+                    walletAddress,
+                    factoryAddress,
+                    recovered.tokenAddress,
+                    recovered.totalSupply,
+                    recovered.receipt
+                );
+                await finishCreatedToken(recoveredData, recovered.tokenAddress, true);
+                return;
+            }
+
             const onChainSupply = ethers.parseUnits(String(Math.round(payload.supply)), 18);
             const initialPriceWad = ethers.parseUnits(String(payload.price), 18);
             const seedLiquidityWei = ethers.parseEther(String(payload.seedLiquidityRlo));
@@ -4838,7 +5177,6 @@ function setupRialoMarketUi() {
 
             const receipt = await tx.wait();
             const parsedEvent = parseTokenCreatedFromReceipt(receipt, factoryArtifact.abi);
-            const factoryAddress = await factory.getAddress();
 
             if (!parsedEvent || !parsedEvent.tokenAddress) {
                 throw new Error("Token was deployed, but its address could not be read from the chain.");
@@ -4846,32 +5184,15 @@ function setupRialoMarketUi() {
 
             await loadMarketChainRloBalance(walletAddress);
 
-            const data = await apiFetch("/api/tokens", {
-                method: "POST",
-                body: JSON.stringify({
-                    ...payload,
-                    creatorAddress: walletAddress,
-                    walletRloBalance: state.chainRloBalance,
-                    creatorSignature: tx.hash,
-                    signedMessage: "CREATE_TOKEN_ONCHAIN",
-                    tokenAddress: parsedEvent.tokenAddress,
-                    factoryAddress,
-                    creationTxHash: receipt.hash || tx.hash,
-                    onChainSupply: onChainSupply.toString()
-                })
-            });
-
-            refs.status.textContent = `Token created on-chain: ${shortWallet(parsedEvent.tokenAddress)}.`;
-            state.filter = "latest";
-
-            document.querySelectorAll("[data-market-filter]").forEach(button => {
-                button.classList.toggle("active", (button.dataset.marketFilter || "") === "latest");
-            });
-
-            await loadTokens();
-            await loadPortfolio();
-            closeCreateModal();
-            await loadTokenDetail(data.token.id);
+            const data = await registerCreatedToken(
+                payload,
+                walletAddress,
+                factoryAddress,
+                parsedEvent.tokenAddress,
+                onChainSupply.toString(),
+                receipt
+            );
+            await finishCreatedToken(data, parsedEvent.tokenAddress);
         } catch (error) {
             refs.status.textContent = error.message;
         }
@@ -4943,25 +5264,23 @@ function setupRialoMarketUi() {
         }
 
         refs.deleteTokenBtn.disabled = true;
-        refs.deleteTokenBtn.textContent = "Confirm Cancel...";
+        refs.deleteTokenBtn.textContent = "Confirm in Wallet...";
 
         try {
-            const confirmation = await confirmMarketWalletAction(
-                "DELETE_MEME_TOKEN",
-                [
-                    `Token: ${token.name} ($${token.symbol})`,
-                    `Token ID: ${state.activeTokenId}`,
-                    "Remove this token from Rialo Meme Market."
-                ]
+            refs.tradeStatus.textContent = "Confirm the Cancel Meme transaction in your wallet...";
+            const confirmation = await confirmCancellationTransaction(
+                `Cancel Meme ${token.symbol}`,
+                token.creatorAddress
             );
 
-            refs.deleteTokenBtn.textContent = "Cancelling...";
+            refs.deleteTokenBtn.textContent = "Waiting for Confirmation...";
+            refs.tradeStatus.textContent = "Wallet confirmed. Removing the meme from Rialo Market...";
             await apiFetch(`/api/tokens/${encodeURIComponent(state.activeTokenId)}/delete`, {
                 method: "POST",
                 body: JSON.stringify({
                     creatorAddress: confirmation.address,
-                    creatorSignature: confirmation.signature,
-                    signedMessage: confirmation.message
+                    cancelTxHash: confirmation.txHash,
+                    chainReceipt: confirmation.chainReceipt
                 })
             });
 
@@ -5139,6 +5458,7 @@ function setupRialoMarketUi() {
                     traderAddress: walletAddress,
                     walletRloBalance: preTradeRloBalance,
                     txHash: receipt.hash || "",
+                    chainReceipt: serializeChainReceipt(receipt),
                     traderSignature: receipt.hash || "",
                     signedMessage: side === "BUY" ? "BUY_ONCHAIN" : "SELL_ONCHAIN"
                 })
@@ -5151,6 +5471,16 @@ function setupRialoMarketUi() {
             refs.tradeStatus.textContent = side === "BUY"
                 ? `BUY executed on-chain: ${formatCompact(displayTrade.amountRlo)} RLO -> ${formatCompact(displayTrade.amountToken)} ${tokenSymbol}.`
                 : `SELL executed on-chain: ${formatCompact(displayTrade.amountToken)} ${tokenSymbol} -> ${formatCompact(displayTrade.amountRlo)} RLO.`;
+
+            if (side === "BUY") {
+                try {
+                    await addTokenToWallet(data.token, { silent: true });
+                } catch {
+                    // The balance is already real on-chain. If the display
+                    // prompt is rejected, the user can add it later manually.
+                }
+            }
+
             await loadTokens();
             await loadPortfolio();
             await hydrateOnChainViewerBalances(data.token, { force: true });
@@ -5219,6 +5549,11 @@ function setupRialoMarketUi() {
     refs.closeModal.addEventListener("click", closeCreateModal);
     refs.backBtn.addEventListener("click", resetMarketView);
     refs.deleteTokenBtn.addEventListener("click", deleteActiveMarketToken);
+    refs.addTokenToWalletBtn.addEventListener("click", () => {
+        addTokenToWallet().catch(error => {
+            refs.tradeStatus.textContent = error.message || "The token could not be added to your wallet display.";
+        });
+    });
     refs.tradeModeBuy.addEventListener("click", () => setTradeMode("buy"));
     refs.tradeModeSell.addEventListener("click", () => setTradeMode("sell"));
     refs.chartZoomOut.addEventListener("click", () => changeChartZoom(-1));
@@ -7719,14 +8054,19 @@ try {
 function getPredictionLiveHistory() {
     try {
         const savedHistory = JSON.parse(localStorage.getItem(PREDICTION_LIVE_HISTORY_STORAGE_KEY) || "[]");
-        return Array.isArray(savedHistory) ? savedHistory : [];
+        return Array.isArray(savedHistory)
+            ? savedHistory.map((entry, index) => ({
+                ...entry,
+                id: entry.id || `prediction-${entry.wallet || "wallet"}-${entry.time || index}-${index}`
+            }))
+            : [];
     } catch (error) {
         return [];
     }
 }
 
 function savePredictionLiveHistory(history) {
-    localStorage.setItem(PREDICTION_LIVE_HISTORY_STORAGE_KEY, JSON.stringify(history.slice(0, 30)));
+    localStorage.setItem(PREDICTION_LIVE_HISTORY_STORAGE_KEY, JSON.stringify(history));
 }
 
 function formatPredictionLiveHistoryTime(timestamp) {
@@ -7797,69 +8137,43 @@ function getPredictionLiveEntrySelection(entry) {
     return card ? getPredictionLiveSelection(card, entry.odd) : { type: "", label: "", logo: "" };
 }
 
-function hasPredictionLiveEntryForWallet(card, walletAddress) {
-    const wallet = String(walletAddress || "").toLowerCase();
-    if (!wallet) return false;
-
-    const matchKey = getPredictionLiveMatchKey(card);
-    return getPredictionLiveHistory().some(entry => {
-        const entryWallet = String(entry.wallet || "").toLowerCase();
-        const entryMatchKey = String(entry.matchKey || entry.match || "")
-            .toLowerCase()
-            .replace(/\s+/g, " ")
-            .trim();
-
-        return entryWallet === wallet && entryMatchKey === matchKey;
-    });
-}
-
-function setPredictionLiveCardConfirmedState(card, entry = null) {
+function setPredictionLiveCardConfirmedState(card) {
     const confirmButton = card.querySelector(".prediction-live-confirm-btn");
     const betInput = card.querySelector(".prediction-live-bet-input input");
     const oddButtons = card.querySelectorAll(".prediction-live-odd-btn");
 
     if (!confirmButton) return;
 
-    const isConfirmed = !!entry;
-    confirmButton.dataset.confirmed = isConfirmed ? "1" : "0";
-    confirmButton.classList.toggle("confirmed", isConfirmed);
-    confirmButton.classList.remove("enabled");
-    confirmButton.textContent = isConfirmed ? "Confirmed" : "Confirm";
-    confirmButton.disabled = true;
+    confirmButton.dataset.confirmed = "0";
+    confirmButton.classList.remove("confirmed");
+    confirmButton.textContent = "Confirm";
 
     if (betInput) {
-        if (isConfirmed && entry.amount) {
-            betInput.value = entry.amount;
-        }
-        betInput.disabled = isConfirmed;
+        betInput.disabled = false;
     }
 
     oddButtons.forEach(button => {
-        button.disabled = isConfirmed;
-        button.classList.toggle("active", isConfirmed && String(button.dataset.odd || button.textContent.trim()) === String(entry?.odd || ""));
+        button.disabled = false;
     });
+
+    const hasValue = Boolean(betInput?.value.trim());
+    const hasOdd = Boolean(card.querySelector(".prediction-live-odd-btn.active"));
+    confirmButton.disabled = !hasValue || !hasOdd;
+    confirmButton.classList.toggle("enabled", hasValue && hasOdd);
 }
 
-function refreshPredictionLiveConfirmedStates(walletAddress = connectedWalletAddress) {
-    const wallet = String(walletAddress || "").toLowerCase();
-    const history = getPredictionLiveHistory();
-
+function refreshPredictionLiveConfirmedStates() {
     document.querySelectorAll(".prediction-live-match-card").forEach(card => {
-        const matchKey = getPredictionLiveMatchKey(card);
-        const confirmedEntry = wallet
-            ? history.find(entry => {
-                const entryWallet = String(entry.wallet || "").toLowerCase();
-                const entryMatchKey = String(entry.matchKey || entry.match || "")
-                    .toLowerCase()
-                    .replace(/\s+/g, " ")
-                    .trim();
-
-                return entryWallet === wallet && entryMatchKey === matchKey;
-            })
-            : null;
-
-        setPredictionLiveCardConfirmedState(card, confirmedEntry || null);
+        setPredictionLiveCardConfirmedState(card);
     });
+    renderPredictionLiveHistory();
+}
+
+function resetPredictionLiveCardForNextEntry(card) {
+    const betInput = card.querySelector(".prediction-live-bet-input input");
+    if (betInput) betInput.value = "";
+    card.querySelectorAll(".prediction-live-odd-btn").forEach(button => button.classList.remove("active"));
+    setPredictionLiveCardConfirmedState(card);
 }
 
 function renderPredictionLiveHistory() {
@@ -7877,11 +8191,14 @@ function renderPredictionLiveHistory() {
         return;
     }
 
+    const activeWallet = String(connectedWalletAddress || "").toLowerCase();
+
     list.innerHTML = history.map(entry => {
         const selection = getPredictionLiveEntrySelection(entry);
         const selectionHtml = selection.label
             ? `<span class="prediction-live-history-selection">${selection.logo ? `<img src="${selection.logo}" alt="" aria-hidden="true">` : ""}<span>(${selection.label})</span></span>`
             : "";
+        const canCancel = Boolean(activeWallet && String(entry.wallet || "").toLowerCase() === activeWallet);
 
         return `
         <div class="prediction-live-history-item">
@@ -7892,10 +8209,53 @@ function renderPredictionLiveHistory() {
             <div class="prediction-live-history-side">
                 <div class="prediction-live-history-odd">Odd ${entry.odd || "-"}</div>
                 <div class="prediction-live-history-amount">${entry.amount} RLO</div>
+                ${canCancel ? `<button class="prediction-live-history-cancel" type="button" data-cancel-prediction="${escapeHTML(entry.id)}">Cancel</button>` : ""}
             </div>
         </div>
     `;
     }).join("");
+
+    list.querySelectorAll("[data-cancel-prediction]").forEach(button => {
+        button.addEventListener("click", () => cancelPredictionLiveEntry(button.dataset.cancelPrediction || "", button));
+    });
+}
+
+async function cancelPredictionLiveEntry(entryId, button = null) {
+    const wallet = String(connectedWalletAddress || "").toLowerCase();
+    const history = getPredictionLiveHistory();
+    const entry = history.find(item => String(item.id) === String(entryId));
+
+    if (!entry || !wallet || String(entry.wallet || "").toLowerCase() !== wallet) {
+        alert("Only the wallet that created this prediction can cancel it.");
+        return;
+    }
+
+    if (!window.confirm(`Cancel your prediction for ${entry.match}?`)) {
+        return;
+    }
+
+    const originalText = button?.textContent || "Cancel";
+    if (button) {
+        button.disabled = true;
+        button.textContent = "Confirm in Wallet...";
+    }
+
+    try {
+        await confirmCancellationTransaction("Cancel Prediction Live", entry.wallet);
+        savePredictionLiveHistory(history.filter(item => String(item.id) !== String(entryId)));
+        refreshPredictionLiveConfirmedStates();
+    } catch (error) {
+        if (button && document.body.contains(button)) {
+            button.disabled = false;
+            button.textContent = originalText;
+        }
+
+        if (error && error.code === 4001) {
+            alert("Cancellation transaction rejected.");
+        } else {
+            alert(error?.message || "Prediction cancellation failed.");
+        }
+    }
 }
 
 function addPredictionLiveHistoryEntry(card, amount, txHash = "") {
@@ -7909,6 +8269,9 @@ function addPredictionLiveHistoryEntry(card, amount, txHash = "") {
     const selection = getPredictionLiveSelection(card, selectedOdd);
 
     history.unshift({
+        id: typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+            ? crypto.randomUUID()
+            : `prediction-${Date.now()}-${Math.random().toString(16).slice(2)}`,
         amount: cleanAmount,
         odd: selectedOdd,
         match: getPredictionLiveMatchTitle(card),
@@ -7941,11 +8304,6 @@ async function sendPredictionLiveTestTransaction(card) {
     connectedWalletAddress = account;
     walletConnected = true;
 
-    if (card && hasPredictionLiveEntryForWallet(card, account)) {
-        alert("This wallet already confirmed this match.");
-        return { alreadyConfirmed: true, txHash: "" };
-    }
-
     const switched = await ensureRialoTestnetForTransaction();
     if (!switched) {
         return null;
@@ -7965,7 +8323,7 @@ async function sendPredictionLiveTestTransaction(card) {
         ]
     });
 
-    return { alreadyConfirmed: false, txHash };
+    return { txHash };
 }
 
 function decimalAmountToWeiHex(amountText) {

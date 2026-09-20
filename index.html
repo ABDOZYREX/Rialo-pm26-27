@@ -9,7 +9,7 @@
     <link rel="shortcut icon" type="image/png" href="bracket-trophy.png.png?v=1">
     <link rel="apple-touch-icon" href="bracket-trophy.png.png?v=1">
 
-    <link rel="stylesheet" href="style.css?v=20260919-2">
+    <link rel="stylesheet" href="style.css?v=20260920-5">
 
     <style>
         .how-extra-flow {
@@ -2691,6 +2691,9 @@
                             <a class="market-detail-link" id="market-detail-creator-link" href="#" target="_blank" rel="noopener noreferrer">
                                 Creator Wallet
                             </a>
+                            <button class="market-add-token-wallet-btn" id="market-add-token-wallet-btn" type="button">
+                                Add Token to Wallet
+                            </button>
                             <button class="market-delete-token-btn" id="market-delete-token-btn" type="button" hidden>
                                 Cancel Meme
                             </button>
@@ -2700,7 +2703,8 @@
                     <section class="market-chart-card" id="market-chart-card">
                         <div class="market-chart-head">
                             <div class="market-chart-title-stack">
-                            <strong>Price Chart</strong>
+                                <small class="market-chart-kicker">LIVE MARKET DATA</small>
+                                <strong>Advanced Price Chart</strong>
                                 <div class="market-chart-price-stack">
                                     <span id="market-chart-price-now">0.0182 RLO</span>
                                     <small id="market-chart-price-change">0.00%</small>
@@ -2718,7 +2722,7 @@
                                     <button class="market-chart-timeframe-btn" data-market-timeframe="15m" type="button">15m</button>
                                     <button class="market-chart-timeframe-btn" data-market-timeframe="all" type="button">All</button>
                                 </div>
-                                <span id="market-chart-label">Price Action</span>
+                                <span id="market-chart-label">TOKEN / RLO</span>
                                 <button class="market-chart-zoom-btn" id="market-chart-zoom-out" type="button" aria-label="Zoom out chart">-</button>
                                 <button class="market-chart-zoom-readout" id="market-chart-zoom-readout" type="button">100%</button>
                                 <button class="market-chart-zoom-btn" id="market-chart-zoom-in" type="button" aria-label="Zoom in chart">+</button>
@@ -3370,12 +3374,6 @@
                 </div>
             </div>
 
-            <div class="ai-assistant-suggestions" id="ai-assistant-suggestions">
-                <button type="button" class="ai-suggestion-chip">How do I buy a listed NFT?</button>
-                <button type="button" class="ai-suggestion-chip">Explain slippage</button>
-                <button type="button" class="ai-suggestion-chip">How do I create a token?</button>
-            </div>
-
             <form class="ai-assistant-form" id="ai-assistant-form">
                 <textarea
                     id="ai-assistant-input"
@@ -3389,7 +3387,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-    <script src="script.js?v=20260919-3"></script>
+    <script src="script.js?v=20260920-5"></script>
     <script>
         const predictionTeamBadgeColors = {
             NU: ["#101820", "#41b6e6"],
