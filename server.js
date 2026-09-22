@@ -24,11 +24,17 @@ const DEFAULT_FEE_BPS = 100;
 const DEFAULT_CREATOR_SHARE = 0.2;
 const RIALO_RPC_URL = process.env.RIALO_RPC_URL || "https://ethereum-sepolia-rpc.publicnode.com";
 const RIALO_CHAIN_ID = "0xaa36a7";
+const RIALO_CANCELLATION_RECEIPT_ADDRESS = "0x000000000000000000000000000000000000dead";
 const INDEXER_POLL_MS = Number(process.env.RIALO_INDEXER_POLL_MS || 12000);
 const TRADE_EXECUTED_TOPIC = "0x9ce8a552d9a28a585b4d3bd87da383f1f7ee25a97365977f122cf1b2a1fcaa46";
 const GET_POOL_SELECTOR = "bbe4f6db";
 const LOCAL_AI_CONFIG = loadLocalAiConfig();
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const CONFIGURED_AI_PROVIDER = String(process.env.AI_PROVIDER || "").trim().toLowerCase();
+const LATCH_TOKEN = String(process.env.LATCH_TOKEN || "").trim();
+const CONFIGURED_AI_API_URL = String(process.env.AI_API_URL || "").trim();
+const USE_LATCH_PROXY = Boolean(LATCH_TOKEN && CONFIGURED_AI_API_URL);
+const USE_GROQ = !USE_LATCH_PROXY && CONFIGURED_AI_PROVIDER !== "gemini" && Boolean(GROQ_API_KEY);
 const GROQ_MODEL_ALIASES = Object.freeze({
   "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
   "llama-3.1-8b-instant": "openai/gpt-oss-20b"
@@ -37,18 +43,22 @@ const CONFIGURED_GROQ_MODEL = String(process.env.GROQ_MODEL || "").trim();
 const ACTIVE_GROQ_MODEL = GROQ_MODEL_ALIASES[CONFIGURED_GROQ_MODEL]
   || CONFIGURED_GROQ_MODEL
   || "openai/gpt-oss-120b";
-const AI_API_KEY = GROQ_API_KEY || process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "";
-const AI_MODEL = GROQ_API_KEY
+const AI_API_KEY = USE_LATCH_PROXY
+  ? LATCH_TOKEN
+  : USE_GROQ
+    ? GROQ_API_KEY
+    : process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "";
+const AI_MODEL = USE_GROQ
   ? ACTIVE_GROQ_MODEL
   : process.env.OPENAI_MODEL || LOCAL_AI_CONFIG.model || "gpt-4.1-mini";
-const AI_API_URL = GROQ_API_KEY
+const AI_API_URL = CONFIGURED_AI_API_URL || (USE_GROQ
   ? process.env.GROQ_API_URL || "https://api.groq.com/openai/v1/chat/completions"
-  : process.env.OPENAI_API_URL || LOCAL_AI_CONFIG.apiUrl || "https://api.openai.com/v1/responses";
-const AI_PROVIDER = GROQ_API_KEY
+  : process.env.OPENAI_API_URL || LOCAL_AI_CONFIG.apiUrl || "https://api.openai.com/v1/responses");
+const AI_PROVIDER = CONFIGURED_AI_PROVIDER || (USE_GROQ
   ? "groq"
   : /generativelanguage\.googleapis\.com/i.test(AI_API_URL)
     ? "gemini"
-    : "openai";
+    : "openai");
 let marketDb = null;
 const communityChatRateLimits = new Map();
 let indexerState = {
@@ -297,7 +307,7 @@ async function verifyConfirmedWalletCancellation(txHash, clientReceipt, expected
   }
   if (
     String(receipt.from || "").toLowerCase() !== walletAddress ||
-    String(receipt.to || "").toLowerCase() !== walletAddress
+    ![walletAddress, RIALO_CANCELLATION_RECEIPT_ADDRESS].includes(String(receipt.to || "").toLowerCase())
   ) {
     throw new Error("The cancellation transaction does not match the creator wallet.");
   }
@@ -1354,7 +1364,8 @@ async function requestAiChat(message, contextSummary) {
     `User message: ${message}`
   ].join("\n");
 
-  const usesGeminiGenerateContent = /generativelanguage\.googleapis\.com\/.*:generateContent/i.test(AI_API_URL);
+  const usesGeminiGenerateContent = AI_PROVIDER === "gemini"
+    || /generativelanguage\.googleapis\.com\/.*:generateContent/i.test(AI_API_URL);
   const usesChatCompletions = /\/chat\/completions\/?(?:\?|$)/i.test(AI_API_URL);
   const requestBody = usesGeminiGenerateContent
     ? {
@@ -1382,9 +1393,11 @@ async function requestAiChat(message, contextSummary) {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      ...(usesGeminiGenerateContent
-        ? { "x-goog-api-key": AI_API_KEY }
-        : { Authorization: `Bearer ${AI_API_KEY}` })
+      ...(USE_LATCH_PROXY
+        ? { Authorization: `Bearer ${LATCH_TOKEN}` }
+        : usesGeminiGenerateContent
+          ? { "x-goog-api-key": AI_API_KEY }
+          : { Authorization: `Bearer ${AI_API_KEY}` })
     },
     body: JSON.stringify(requestBody)
   });
@@ -1429,7 +1442,7 @@ function getSpotPrice(token) {
   if (token.pool && Number(token.pool.virtualTokenReserve || token.pool.tokenReserve || 0) > 0) {
     const rloReserve = Number(token.pool.virtualRloReserve || token.pool.rloReserve || 0);
     const tokenReserve = Number(token.pool.virtualTokenReserve || token.pool.tokenReserve || 1);
-    return Number((rloReserve / tokenReserve).toFixed(6));
+    return Number((rloReserve / tokenReserve).toFixed(12));
   }
 
   return Number(token.price || token.initialPrice || 0);
@@ -2333,25 +2346,50 @@ function applyTrade(market, token, side, amountValue, traderAddress, traderRloBa
 }
 
 function buildCandles(token, points = 32) {
-  const history = (token.tradeHistory.length ? token.tradeHistory : [{
+  const rawHistory = token.tradeHistory.length ? token.tradeHistory : [{
     side: "BUY",
     amount: 0,
     price: token.price,
     timestamp: new Date().toISOString()
-  }]).map(item => ({
-    // A trade candle must follow the real fill price paid by the wallet.
-    // `price` is the post-trade pool spot price and can look unchanged after
-    // small fills, while `executionPrice` is the confirmed trade price.
-    price: Number(
-      String(item.side || "").toUpperCase() === "LIST"
-        ? (item.price || token.price || 0.0001)
-        : (item.executionPrice || item.price || token.price || 0.0001)
-    ),
-    volumeRlo: Number(item.amountRlo || 0),
-    volumeToken: Number(item.amountToken || 0),
-    side: sanitizeString(item.side || "BUY", 8).toUpperCase(),
-    timestamp: item.timestamp || new Date().toISOString()
-  }));
+  }];
+  const initialPrice = Number(token.initialPrice || rawHistory[0]?.price || token.price || 0.0001);
+  const initialTokenReserve = Math.max(
+    Number(token.supply || 0) - Number(token.creatorAllocation || 0),
+    Number(token.pool?.virtualTokenReserve || token.pool?.tokenReserve || 1),
+    1
+  );
+  const feeMultiplier = (10_000 - Number(token.pool?.feeBps || DEFAULT_FEE_BPS)) / 10_000;
+  let virtualTokenReserve = initialTokenReserve;
+  let virtualRloReserve = initialTokenReserve * initialPrice;
+
+  const history = rawHistory.map(item => {
+    const side = sanitizeString(item.side || "BUY", 8).toUpperCase();
+    const amountRlo = Number(item.amountRlo || 0);
+    const amountToken = Number(item.amountToken || 0);
+
+    // Rebuild every historical pool state with the same reserve changes used
+    // by the on-chain AMM. This makes candle movement proportional to the real
+    // trade size instead of the near-constant fee-adjusted execution price.
+    if (side === "BUY") {
+      virtualRloReserve += amountRlo * feeMultiplier;
+      virtualTokenReserve = Math.max(0.000000000001, virtualTokenReserve - amountToken);
+    } else if (side === "SELL") {
+      virtualRloReserve = Math.max(0.000000000001, virtualRloReserve - amountRlo);
+      virtualTokenReserve += amountToken;
+    }
+
+    const spotPrice = virtualTokenReserve > 0
+      ? virtualRloReserve / virtualTokenReserve
+      : Number(item.price || initialPrice);
+
+    return {
+      price: Number((side === "LIST" ? initialPrice : spotPrice).toFixed(12)),
+      volumeRlo: amountRlo,
+      volumeToken: amountToken,
+      side,
+      timestamp: item.timestamp || new Date().toISOString()
+    };
+  });
 
   const chunkSize = Math.max(1, Math.ceil(history.length / points));
   const buckets = [];
@@ -2396,10 +2434,10 @@ function buildCandles(token, points = 32) {
 
   return chartCandles.map((candle, index) => {
     const previousClose = index > 0 ? chartCandles[index - 1].close : candle.open;
-    const open = Number((candle.samples > 1 ? candle.open : previousClose).toFixed(6));
-    const close = Number(candle.close.toFixed(6));
-    const high = Number(Math.max(candle.high, open, close).toFixed(6));
-    const low = Number(Math.min(candle.low, open, close).toFixed(6));
+    const open = Number((candle.samples > 1 ? candle.open : previousClose).toFixed(12));
+    const close = Number(candle.close.toFixed(12));
+    const high = Number(Math.max(candle.high, open, close).toFixed(12));
+    const low = Number(Math.min(candle.low, open, close).toFixed(12));
 
     return {
       index,

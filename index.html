@@ -9,7 +9,7 @@
     <link rel="shortcut icon" type="image/png" href="bracket-trophy.png.png?v=1">
     <link rel="apple-touch-icon" href="bracket-trophy.png.png?v=1">
 
-    <link rel="stylesheet" href="style.css?v=20260920-5">
+    <link rel="stylesheet" href="style.css?v=20260922-16">
 
     <style>
         .how-extra-flow {
@@ -2247,10 +2247,40 @@
                 </p>
             </div>
 
-            <div class="nft-view-switcher">
-                <button class="nft-view-btn active" id="nft-tab-collection" type="button">Collection</button>
-                <button class="nft-view-btn" id="nft-tab-market" type="button">Nft market</button>
-                <button class="nft-view-btn" id="nft-tab-items" type="button">Items</button>
+            <div class="nft-tools-row">
+                <div class="nft-view-switcher">
+                    <button class="nft-view-btn active" id="nft-tab-collection" type="button">Collection</button>
+                    <button class="nft-view-btn" id="nft-tab-market" type="button">Nft market</button>
+                    <button class="nft-view-btn" id="nft-tab-items" type="button">Items</button>
+                </div>
+
+                <div class="nft-info-help">
+                    <button class="nft-info-help-btn" type="button" aria-label="How Rialo NFT cards work" aria-describedby="nft-info-tooltip">?</button>
+                    <div class="nft-info-tooltip" id="nft-info-tooltip" role="tooltip">
+                        <span class="nft-info-eyebrow">Rialo NFT Guide</span>
+
+                        <section>
+                            <strong>1. Player Cards &amp; Real-World Connection</strong>
+                            <p>Each NFT card represents a specific football player and their official club team, featuring their authentic signature directly on the card design. These are not just collectibles; they are dynamic assets directly linked to real-world performance in the UEFA Champions League.</p>
+                        </section>
+
+                        <section>
+                            <strong>2. Performance-Based Value (Ratio System)</strong>
+                            <p>Card values update dynamically based on the player and team's real achievements on the pitch:</p>
+                            <ul>
+                                <li><b>Goals:</b> +2 RLO per goal scored.</li>
+                                <li><b>Assists:</b> +1 RLO per assist.</li>
+                                <li><b>Knockout Stage Progression:</b> Advancing to the next rounds (Round of 16, Quarter-finals, etc.) adds +10 RLO to the card's base valuation.</li>
+                            </ul>
+                            <p>Conversely, team elimination applies a natural market adjustment, keeping player values realistic and tied to actual tournament outcomes.</p>
+                        </section>
+
+                        <section>
+                            <strong>3. End-of-Season &amp; Transition to 2028</strong>
+                            <p>When the 2027 Champions League season concludes, cards do not lose their value or become worthless. Instead, they transform into historical collectibles marking that specific championship year. For the transition into the 2028 season, a brand-new player collection will be launched, alongside a community upgrade system allowing users to keep their rare 2027 legacy cards or trade/upgrade them for exclusive advantages in the upcoming season.</p>
+                        </section>
+                    </div>
+                </div>
             </div>
 
             <section class="nft-panel active" id="nft-panel-collection">
@@ -2523,6 +2553,15 @@
             <div class="market-view-default" id="market-view-default">
                 <div class="market-shell">
                     <div class="market-board">
+                        <div class="market-board-head">
+                            <div>
+                                <span class="market-board-eyebrow">Discover markets</span>
+                                <h3>Live Community Tokens</h3>
+                                <p>Explore tokens launched by the Rialo community and open any market to trade.</p>
+                            </div>
+                            <div class="market-board-live"><span aria-hidden="true"></span> Live on-chain</div>
+                        </div>
+
                         <div class="market-toolbar">
                             <button class="market-filter-btn active" data-market-filter="latest" type="button">Latest</button>
                             <button class="market-filter-btn" data-market-filter="volume" type="button">Top Volume</button>
@@ -2536,7 +2575,7 @@
                         <aside class="market-side-launch">
                             <div>
                                 <span class="market-panel-kicker">Launch on Rialo</span>
-                                <strong>Create Your Coin</strong>
+                                <strong>Create Your Meme</strong>
                                 <p>
                                     Launch a meme coin, get listed instantly in Rialo Meme Market, and open a dedicated token page with chart, stats, and trade actions.
                                 </p>
@@ -3205,17 +3244,6 @@
         </div>
     </section>
 
-    <section class="made-by-section">
-        <div class="made-by-card">
-            <div class="creator-avatars">
-                <img src="creator-abdo.png" alt="ABDO" class="creator-avatar">
-                <img src="creator-liteino.png" alt="LiTEino" class="creator-avatar">
-            </div>
-
-            <div class="made-by-text">Made by <span>ABDO</span> &amp; <span>LiTEino</span></div>
-        </div>
-    </section>
-
     <div class="ticket-success-overlay hidden" id="ticket-success-overlay">
         <div class="ticket-success-bg" id="ticket-success-bg"></div>
 
@@ -3387,7 +3415,7 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.2/dist/ethers.umd.min.js"></script>
-    <script src="script.js?v=20260920-5"></script>
+    <script src="script.js?v=20260922-13"></script>
     <script>
         const predictionTeamBadgeColors = {
             NU: ["#101820", "#41b6e6"],

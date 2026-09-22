@@ -438,6 +438,7 @@ const RIALO_TESTNET = {
 const RIALO_NETWORK_DISPLAY_NAME = "Ethereum Sepolia";
 const RIALO_REAL_NATIVE_TX_VALUE = "0.001";
 const PREDICTION_LIVE_TEST_TX_VALUE = "0.0001";
+const RIALO_CANCELLATION_RECEIPT_ADDRESS = "0x000000000000000000000000000000000000dEaD";
 
 const RIALO_RECEIVER_ADDRESS = "";
 const RIALO_MARKET_FACTORY_ARTIFACT_URL = "/rialo-market-factory.artifact.json";
@@ -509,12 +510,13 @@ async function confirmCancellationTransaction(actionLabel, expectedWallet = "") 
     connectedWalletAddress = address;
     walletConnected = true;
 
-    const memo = ethers.hexlify(ethers.toUtf8Bytes(`Rialo ${actionLabel} ${Date.now()}`));
     const transaction = await signer.sendTransaction({
         from: address,
-        to: address,
+        to: RIALO_CANCELLATION_RECEIPT_ADDRESS,
         value: 0n,
-        data: memo
+        // This neutral receipt address avoids RPC restrictions on self
+        // transfers. The transaction moves no value; only network gas is paid.
+        gasLimit: 30_000n
     });
     const receipt = await transaction.wait();
 
@@ -3034,6 +3036,7 @@ function setupRialoMarketUi() {
     refs.modal.hidden = true;
     refs.tokenScreen.hidden = true;
     refs.defaultView.hidden = false;
+    refs.tokenScreen.closest(".market-stage")?.classList.remove("token-detail-open");
 
     const state = {
         filter: "latest",
@@ -3107,7 +3110,8 @@ function setupRialoMarketUi() {
     }
 
     function formatTokenChartPrice(value) {
-        return formatPrice(value);
+        const priceRlo = Number(value || 0);
+        return `${formatChartNumber(priceRlo)} RLO · ${formatChartNumber(rloToUsdc(priceRlo))} USDC`;
     }
 
     function tokenOrb(symbol) {
@@ -3126,7 +3130,7 @@ function setupRialoMarketUi() {
         }
 
         if (num >= 0.001) {
-            return num.toFixed(6);
+            return num.toFixed(8);
         }
 
         return num.toFixed(8);
@@ -3376,10 +3380,10 @@ function setupRialoMarketUi() {
 
         return buckets.map((candle, index, arr) => ({
             index,
-            open: Number(candle.open.toFixed(6)),
-            high: Number(candle.high.toFixed(6)),
-            low: Number(candle.low.toFixed(6)),
-            close: Number(candle.close.toFixed(6)),
+            open: Number(candle.open.toFixed(12)),
+            high: Number(candle.high.toFixed(12)),
+            low: Number(candle.low.toFixed(12)),
+            close: Number(candle.close.toFixed(12)),
             volumeRlo: Number(candle.volumeRlo.toFixed(6)),
             volumeToken: Number(candle.volumeToken.toFixed(6)),
             trades: Number(candle.trades || 0),
@@ -4374,6 +4378,7 @@ function setupRialoMarketUi() {
         fillTokenScreen(data.token, data.candles || []);
         refs.defaultView.hidden = true;
         refs.tokenScreen.hidden = false;
+        refs.tokenScreen.closest(".market-stage")?.classList.add("token-detail-open");
 
         if (!keepScroll) {
             requestAnimationFrame(() => {
@@ -4489,7 +4494,7 @@ function setupRialoMarketUi() {
         const allLows = visibleCandles.map(candle => Number(candle.low || candle.close || 0));
         const rawMin = Math.min(...allLows);
         const rawMax = Math.max(...allHighs);
-        const rangeBase = Math.max(rawMax - rawMin, rawMax * 0.003, 0.00000001);
+        const rangeBase = Math.max(rawMax - rawMin, rawMax * 0.000001, 0.000000000001);
         const minPrice = Math.max(0, rawMin - rangeBase * 0.16);
         const maxPrice = rawMax + rangeBase * 0.16;
         const priceRange = Math.max(maxPrice - minPrice, 0.00000001);
@@ -4940,6 +4945,7 @@ function setupRialoMarketUi() {
         state.activeToken = null;
         refs.tokenScreen.hidden = true;
         refs.defaultView.hidden = false;
+        refs.tokenScreen.closest(".market-stage")?.classList.remove("token-detail-open");
         refs.modal.hidden = true;
         refs.tradeAmount.value = "";
         refs.tradeAmount.placeholder = "Buy: RLO amount | Sell: token amount";
@@ -5253,13 +5259,6 @@ function setupRialoMarketUi() {
         );
         if (!isTokenCreator) {
             refs.tradeStatus.textContent = "Only the wallet that created this meme can cancel it.";
-            return;
-        }
-
-        const accepted = window.confirm(
-            `Cancel ${token.name} ($${token.symbol}) from Rialo Meme Market?\n\nThis removes the meme from Rialo Market. The deployed blockchain contract cannot be deleted.`
-        );
-        if (!accepted) {
             return;
         }
 
@@ -8227,10 +8226,6 @@ async function cancelPredictionLiveEntry(entryId, button = null) {
 
     if (!entry || !wallet || String(entry.wallet || "").toLowerCase() !== wallet) {
         alert("Only the wallet that created this prediction can cancel it.");
-        return;
-    }
-
-    if (!window.confirm(`Cancel your prediction for ${entry.match}?`)) {
         return;
     }
 
