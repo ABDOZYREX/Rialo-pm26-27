@@ -352,6 +352,7 @@ const groupOrders = {};
 const completedGroups = new Set();
 const madePicks = new Set();
 const groupMoveEffects = {};
+let clubRankingMoveCleanupTimer = null;
 
 let selectedEntryAmount = 0.000001;
 let bracketGenerated = false;
@@ -1552,6 +1553,22 @@ function buildAiAssistantMetaText(response) {
         return "AI rate limit reached. Using local assistant.";
     }
 
+    if (reason.includes("403") || reason.includes("denied") || reason.includes("allowlist") || reason.includes("policy")) {
+        return "Onlatch blocked this request. Check the endpoint allowlist and secret policy.";
+    }
+
+    if (reason.includes("401") || reason.includes("unauthorized") || reason.includes("latch token")) {
+        return "The Latch token is missing or invalid. Using local assistant.";
+    }
+
+    if (reason.includes("404") || reason.includes("not found")) {
+        return "The Gemini endpoint path is incorrect. Using local assistant.";
+    }
+
+    if (reason.includes("timeout") || reason.includes("fetch failed") || reason.includes("network")) {
+        return "Gemini or Onlatch did not respond. Using local assistant.";
+    }
+
     return "The AI service is unavailable right now. Using local assistant.";
 }
 
@@ -1575,6 +1592,8 @@ function closeAiAssistant() {
 function getAiActivePageLabel() {
     if (document.body.classList.contains("market-mode")) return "market";
     if (document.body.classList.contains("nft-mode")) return "nft";
+    if (document.body.classList.contains("prediction-live-mode")) return "prediction-live";
+    if (document.body.classList.contains("swap-mode")) return "swap";
     const groupsView = document.getElementById("groups-view");
     const bracketView = document.getElementById("bracket-view");
     if (bracketView?.classList.contains("active")) return "bracket";
@@ -5038,8 +5057,6 @@ function setupRialoMarketUi() {
         const listedAddresses = new Set(state.tokens
             .map(token => String(token.tokenAddress || "").toLowerCase())
             .filter(Boolean));
-        const latestBlock = await provider.getBlockNumber();
-        const fromBlock = Math.max(0, latestBlock - 5000);
 
         for (const tokenAddress of createdTokens.slice(-5).reverse()) {
             if (listedAddresses.has(String(tokenAddress).toLowerCase())) {
@@ -5061,10 +5078,28 @@ function setupRialoMarketUi() {
             }
 
             const filter = factory.filters.TokenCreated(walletAddress, tokenAddress);
-            const events = await factory.queryFilter(filter, fromBlock, latestBlock);
-            const creationEvent = events[events.length - 1];
+            let creationEvent = null;
+
+            // Public Sepolia RPC nodes can expose the updated contract state a
+            // moment before eth_getLogs catches up. Retry here so the user does
+            // not have to click Launch Token again or risk a duplicate launch.
+            for (let attempt = 0; attempt < 10 && !creationEvent; attempt += 1) {
+                const latestBlock = await provider.getBlockNumber();
+                const fromBlock = Math.max(0, latestBlock - 5000);
+                const events = await factory.queryFilter(filter, fromBlock, latestBlock);
+                creationEvent = events[events.length - 1] || null;
+
+                if (!creationEvent && attempt < 9) {
+                    refs.status.textContent = "Token detected on-chain. Waiting for its confirmation receipt...";
+                    await new Promise(resolve => setTimeout(resolve, 1200));
+                }
+            }
+
             if (!creationEvent) {
-                throw new Error("A matching token already exists on-chain, but its creation receipt is still loading. Wait a few seconds and click Launch Token again; no second transaction will be sent.");
+                // This is an older unlisted token outside the recent log window,
+                // not a transaction that is still loading. Ignore it and allow
+                // the current form to launch normally.
+                continue;
             }
 
             const block = await provider.getBlock(creationEvent.blockNumber);
@@ -5072,9 +5107,13 @@ function setupRialoMarketUi() {
                 continue;
             }
 
-            const receipt = await provider.getTransactionReceipt(creationEvent.transactionHash);
+            const receipt = await provider.waitForTransaction(
+                creationEvent.transactionHash,
+                1,
+                30_000
+            ) || await provider.getTransactionReceipt(creationEvent.transactionHash);
             if (!receipt || Number(receipt.status) !== 1) {
-                throw new Error("The existing token transaction is still loading. Wait a few seconds and retry; no second transaction will be sent.");
+                throw new Error("The token transaction is still confirming on Sepolia. Keep this window open; the same token will be recovered without sending a second transaction.");
             }
 
             return {
@@ -5123,6 +5162,11 @@ function setupRialoMarketUi() {
 
     async function createToken(event) {
         event.preventDefault();
+        const submitButton = refs.form.querySelector('button[type="submit"]');
+
+        if (submitButton?.disabled) {
+            return;
+        }
 
         const payload = {
             name: refs.name.value.trim(),
@@ -5141,6 +5185,10 @@ function setupRialoMarketUi() {
         }
 
         refs.status.textContent = "Connecting wallet...";
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.textContent = "Creating...";
+        }
 
         try {
             const walletAddress = await ensureMarketWalletSession();
@@ -5201,6 +5249,11 @@ function setupRialoMarketUi() {
             await finishCreatedToken(data, parsedEvent.tokenAddress);
         } catch (error) {
             refs.status.textContent = error.message;
+        } finally {
+            if (submitButton && document.body.contains(submitButton)) {
+                submitButton.disabled = false;
+                submitButton.textContent = "Launch Token";
+            }
         }
     }
 
@@ -6787,7 +6840,9 @@ function createClubBadge(team, className = "club-ranking-logo") {
                 src="${logoUrl || fallbackLogo}"
                 data-fallback-src="${fallbackLogo}"
                 alt=""
-                loading="lazy"
+                loading="eager"
+                decoding="async"
+                onload="this.nextElementSibling.style.display='none';"
                 onerror="if (this.dataset.fallbackUsed !== '1') { this.dataset.fallbackUsed = '1'; this.src = this.dataset.fallbackSrc; } else { this.style.display='none'; this.nextElementSibling.style.display='grid'; }"
             >
             <span>${getClubInitials(name)}</span>
@@ -6804,7 +6859,7 @@ function createGroupTeamMarkup(index, team) {
     const moveEffect = groupMoveEffects[`club-${name}`] || "";
 
     return `
-        <div class="club-ranking-team ${qualifiedClass} ${moveEffect}">
+        <div class="club-ranking-team ${qualifiedClass} ${moveEffect}" data-club-key="${encodeURIComponent(name)}">
             <div class="club-ranking-number">${index + 1}</div>
             ${createClubBadge(team)}
             <div class="club-ranking-copy">
@@ -6868,8 +6923,12 @@ function moveTeamInGroup(index, action) {
     const movedKey = `club-${movedName}`;
     const swappedKey = `club-${swappedName}`;
 
-    delete groupMoveEffects[movedKey];
-    delete groupMoveEffects[swappedKey];
+    if (clubRankingMoveCleanupTimer) {
+        clearTimeout(clubRankingMoveCleanupTimer);
+        clubRankingMoveCleanupTimer = null;
+    }
+
+    Object.keys(groupMoveEffects).forEach(key => delete groupMoveEffects[key]);
 
     if (action === "up") {
         groupMoveEffects[movedKey] = "move-up-effect";
@@ -6882,10 +6941,13 @@ function moveTeamInGroup(index, action) {
     [clubRankingOrder[index], clubRankingOrder[targetIndex]] = [clubRankingOrder[targetIndex], clubRankingOrder[index]];
     renderGroups();
 
-    setTimeout(() => {
-        delete groupMoveEffects[movedKey];
-        delete groupMoveEffects[swappedKey];
-        renderGroups();
+    // Clear only the temporary classes. Re-rendering the entire grid here used
+    // to reload every remote crest a second time and caused blank/flickering logos.
+    clubRankingMoveCleanupTimer = setTimeout(() => {
+        Object.keys(groupMoveEffects).forEach(key => delete groupMoveEffects[key]);
+        document.querySelectorAll(".club-ranking-team.move-up-effect, .club-ranking-team.move-down-effect")
+            .forEach(teamRow => teamRow.classList.remove("move-up-effect", "move-down-effect"));
+        clubRankingMoveCleanupTimer = null;
     }, 520);
 }
 

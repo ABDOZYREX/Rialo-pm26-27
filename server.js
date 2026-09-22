@@ -30,11 +30,13 @@ const TRADE_EXECUTED_TOPIC = "0x9ce8a552d9a28a585b4d3bd87da383f1f7ee25a97365977f
 const GET_POOL_SELECTOR = "bbe4f6db";
 const LOCAL_AI_CONFIG = loadLocalAiConfig();
 const GROQ_API_KEY = process.env.GROQ_API_KEY || "";
+const GEMINI_API_KEY = String(process.env.GEMINI_API_KEY || "").trim();
 const CONFIGURED_AI_PROVIDER = String(process.env.AI_PROVIDER || "").trim().toLowerCase();
 const LATCH_TOKEN = String(process.env.LATCH_TOKEN || "").trim();
 const CONFIGURED_AI_API_URL = String(process.env.AI_API_URL || "").trim();
 const USE_LATCH_PROXY = Boolean(LATCH_TOKEN && CONFIGURED_AI_API_URL);
 const USE_GROQ = !USE_LATCH_PROXY && CONFIGURED_AI_PROVIDER !== "gemini" && Boolean(GROQ_API_KEY);
+const GEMINI_MODEL = String(process.env.GEMINI_MODEL || "gemini-2.5-flash").trim();
 const GROQ_MODEL_ALIASES = Object.freeze({
   "llama-3.3-70b-versatile": "openai/gpt-oss-120b",
   "llama-3.1-8b-instant": "openai/gpt-oss-20b"
@@ -47,13 +49,19 @@ const AI_API_KEY = USE_LATCH_PROXY
   ? LATCH_TOKEN
   : USE_GROQ
     ? GROQ_API_KEY
-    : process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "";
+    : CONFIGURED_AI_PROVIDER === "gemini"
+      ? GEMINI_API_KEY
+      : process.env.OPENAI_API_KEY || LOCAL_AI_CONFIG.apiKey || "";
 const AI_MODEL = USE_GROQ
   ? ACTIVE_GROQ_MODEL
-  : process.env.OPENAI_MODEL || LOCAL_AI_CONFIG.model || "gpt-4.1-mini";
+  : CONFIGURED_AI_PROVIDER === "gemini"
+    ? GEMINI_MODEL
+    : process.env.OPENAI_MODEL || LOCAL_AI_CONFIG.model || "gpt-4.1-mini";
 const AI_API_URL = CONFIGURED_AI_API_URL || (USE_GROQ
   ? process.env.GROQ_API_URL || "https://api.groq.com/openai/v1/chat/completions"
-  : process.env.OPENAI_API_URL || LOCAL_AI_CONFIG.apiUrl || "https://api.openai.com/v1/responses");
+  : CONFIGURED_AI_PROVIDER === "gemini"
+    ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(GEMINI_MODEL)}:generateContent`
+    : process.env.OPENAI_API_URL || LOCAL_AI_CONFIG.apiUrl || "https://api.openai.com/v1/responses");
 const AI_PROVIDER = CONFIGURED_AI_PROVIDER || (USE_GROQ
   ? "groq"
   : /generativelanguage\.googleapis\.com/i.test(AI_API_URL)
@@ -1252,6 +1260,8 @@ function summarizeAiContext(context = {}) {
   const pageMap = {
     market: "Rialo Market",
     nft: "NFT Collection",
+    "prediction-live": "Prediction Live",
+    swap: "Swap",
     groups: "Group Ranking",
     bracket: "Bracket",
     home: "Home"
@@ -1342,6 +1352,77 @@ function buildLocalAiReply(message, contextSummary) {
   );
 }
 
+function buildReliableLocalAiReply(message, contextSummary) {
+  const text = String(message || "").trim();
+  const lower = text.toLowerCase();
+  const arabic = containsArabicText(text);
+  const reply = (...lines) => lines.join("\n\n");
+
+  if (/wallet|metamask|connect|محفظ|واليت|ربط/i.test(lower)) {
+    const walletLabel = contextSummary.walletStatus === "connected" ? "متصلة" : "غير متصلة";
+    return reply(
+      arabic ? `المحفظة حالياً ${walletLabel}. استعمل زر Connect Wallet واختَر MetaMask على شبكة Ethereum Sepolia.` : `Your wallet is currently ${contextSummary.walletStatus}. Use Connect Wallet and choose MetaMask on Ethereum Sepolia.`,
+      arabic ? "الشراء والبيع وإنشاء التوكن وإلغاء العمليات على البلوكشين تحتاج تأكيداً داخل المحفظة." : "Buying, selling, token creation, and on-chain cancellation require confirmation inside the wallet."
+    );
+  }
+
+  if (/slippage|انزلاق|سليبج/i.test(lower)) {
+    return reply(
+      arabic ? "الـSlippage هو أقصى فرق في السعر تقبله بين لحظة الضغط ولحظة تنفيذ الصفقة. إذا تحرك السعر أكثر من النسبة المحددة، تفشل المعاملة لحمايتك." : "Slippage is the largest price difference you accept between submitting and executing a trade. If price moves beyond it, the transaction fails to protect you.",
+      arabic ? "نسبة صغيرة تعطي حماية أكبر لكنها قد تسبب فشل صفقات أكثر عند الحركة السريعة." : "A smaller percentage gives tighter protection but can cause more failed trades during fast moves."
+    );
+  }
+
+  if (/nft|collection|items|mint|list|listing|بطاق|لاعب|لاعبين/i.test(lower)) {
+    return reply(
+      arabic ? "في NFT Collection: تبويب Collection يعرض البطاقات المتاحة، وItems يعرض البطاقات التي تملكها. الـMint والـList والشراء الحقيقي كلها تحتاج تأكيد MetaMask." : "In NFT Collection, Collection shows available cards and Items shows what you own. Minting, listing, and buying all require MetaMask confirmation.",
+      arabic ? "قيمة بطاقات اللاعبين مرتبطة بنظام الأداء الرياضي المعروض في المشروع: الأهداف والتمريرات والتقدم في البطولة يمكن أن يغيّر التقييم." : "Player-card value follows the sports performance rules shown in the project: goals, assists, and tournament progression can update valuation."
+    );
+  }
+
+  if (/meme|token|create|launch|market|توكن|ميم|سوق|شراء|بيع|شارت/i.test(lower)) {
+    const token = `${contextSummary.activeTokenName || (arabic ? "غير محدد" : "not specified")} ${contextSummary.activeTokenSymbol || ""}`.trim();
+    return reply(
+      arabic ? `في Meme Market يمكنك إنشاء توكن، شراؤه، بيعه، ومتابعة السعر والشارت. التوكن المفتوح الآن: ${token}.` : `In Meme Market you can create, buy, sell, and follow a token's price chart. Active token: ${token}.`,
+      arabic ? "حجم حركة الشارت يعتمد على كمية الصفقة وتأثيرها في احتياطي السيولة، وليس على عدد الصفقات فقط." : "Chart movement depends on trade size and its impact on liquidity reserves, not only on the number of trades."
+    );
+  }
+
+  if (/prediction live|odds|odd|bet|cancel|مباشر|رهان|الغاء|إلغاء|اودز|أودز/i.test(lower)) {
+    return reply(
+      arabic ? "في Prediction Live تختار نتيجة المباراة والـodd، تكتب كمية RLO ثم تؤكد المعاملة من المحفظة. الـodd يحدد العائد المحتمل قبل الرسوم." : "In Prediction Live, choose the outcome and odd, enter the RLO amount, then confirm in your wallet. The odd determines the potential return before fees.",
+      arabic ? "إلغاء توقع مسجل على البلوكشين يحتاج أيضاً توقيعاً من نفس المحفظة؛ إذا فشل التقدير فغالباً العقد لا يسمح بالإلغاء في حالته الحالية." : "Cancelling an on-chain prediction also needs a signature from the same wallet; an estimate failure usually means the contract does not allow cancellation in its current state."
+    );
+  }
+
+  if (/group|bracket|prediction|world cup|champion|مجموعة|مجموعات|براكت|توقع|بطل/i.test(lower)) {
+    return reply(
+      arabic ? `أكملت ${contextSummary.completedGroups}/12 من المجموعات، ولديك ${contextSummary.madePicks} اختيارات حالياً.` : `You completed ${contextSummary.completedGroups}/12 groups and currently have ${contextSummary.madePicks} picks.`,
+      arabic ? "رتّب الفرق أولاً، أكّد ترتيب المجموعات، أنشئ الـBracket، اختر المتأهلين والبطل، ثم أرسل التوقع بعد ربط المحفظة." : "Rank and confirm the groups, generate the bracket, choose each qualifier and champion, then submit after connecting the wallet."
+    );
+  }
+
+  if (/swap|usdc|usdt|مبادلة|تحويل/i.test(lower)) {
+    return arabic
+      ? "في Swap تختار العملة التي تدفعها والتي تستلمها، تدخل الكمية، تراجع السعر والـslippage ثم تؤكد المعاملة في MetaMask. تأكد أنك على Ethereum Sepolia."
+      : "In Swap, choose the pay and receive assets, enter the amount, review the rate and slippage, then confirm in MetaMask on Ethereum Sepolia.";
+  }
+
+  const variants = arabic
+    ? [
+        `خدمة الذكاء المباشر غير متاحة مؤقتاً، لكن المساعد المحلي يعمل. أنت الآن في ${contextSummary.page}. اسألني بشكل محدد عن المحفظة، Meme Market، NFT، Prediction Live، التوقعات أو Swap.`,
+        `لم أستطع الوصول إلى Gemini الآن، لذلك أجيب محلياً. حدّد العملية التي تريدها داخل ${contextSummary.page} وسأشرح خطواتها.`,
+        "الاتصال بخدمة AI متوقف حالياً. يمكنني مع ذلك مساعدتك في وظائف Rialo: التداول، إنشاء Meme، NFT، الرهانات أو المحفظة."
+      ]
+    : [
+        `Live AI is temporarily unavailable, but the local assistant is working. You are on ${contextSummary.page}; ask specifically about wallet, Meme Market, NFT, Prediction Live, predictions, or Swap.`,
+        `I could not reach Gemini right now, so this is a local reply. Tell me which action you want to complete on ${contextSummary.page}.`,
+        "The AI connection is currently offline. I can still help with Rialo trading, meme creation, NFTs, predictions, or wallet actions."
+      ];
+  const variantIndex = Array.from(text).reduce((sum, char) => sum + char.codePointAt(0), 0) % variants.length;
+  return variants[variantIndex];
+}
+
 async function requestAiChat(message, contextSummary) {
   if (!AI_API_KEY) {
     return null;
@@ -1399,12 +1480,18 @@ async function requestAiChat(message, contextSummary) {
           ? { "x-goog-api-key": AI_API_KEY }
           : { Authorization: `Bearer ${AI_API_KEY}` })
     },
-    body: JSON.stringify(requestBody)
+    body: JSON.stringify(requestBody),
+    signal: AbortSignal.timeout(30000)
   });
 
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data?.error?.message || "AI provider request failed");
+    const providerMessage = data?.error?.message
+      || (typeof data?.error === "string" ? data.error : "")
+      || data?.message
+      || data?.reason
+      || "AI provider request failed";
+    throw new Error(`AI provider ${response.status}: ${providerMessage}`);
   }
 
   const text =
@@ -2710,6 +2797,19 @@ const server = http.createServer(async (req, res) => {
         rpcUrl: RIALO_RPC_URL,
         chainId: RIALO_CHAIN_ID,
         network: "Ethereum Sepolia"
+      },
+      ai: {
+        provider: AI_PROVIDER,
+        configured: Boolean(AI_API_KEY && AI_API_URL),
+        viaLatch: USE_LATCH_PROXY,
+        endpoint: (() => {
+          try {
+            const endpoint = new URL(AI_API_URL);
+            return `${endpoint.hostname}${endpoint.pathname}`;
+          } catch (_) {
+            return "invalid";
+          }
+        })()
       }
     });
     return;
@@ -2742,7 +2842,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (!answer) {
-        answer = buildLocalAiReply(question, contextSummary);
+        answer = buildReliableLocalAiReply(question, contextSummary);
       }
 
       sendJson(res, 200, {
@@ -2784,7 +2884,7 @@ const server = http.createServer(async (req, res) => {
       }
 
       if (!reply) {
-        reply = buildLocalAiReply(message, contextSummary);
+        reply = buildReliableLocalAiReply(message, contextSummary);
       }
 
       sendJson(res, 200, {

@@ -773,7 +773,7 @@ header {
 
 .club-ranking-logo span,
 .bracket-club-logo span {
-    display: none;
+    display: grid;
     place-items: center;
     width: 100%;
     height: 100%;
@@ -782,6 +782,15 @@ header {
     color: rgba(245, 240, 230, 0.88);
     font-size: 11px;
     text-shadow: 0 2px 6px rgba(0, 0, 0, 0.50);
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+}
+
+.club-ranking-logo img,
+.bracket-club-logo img {
+    position: relative;
+    z-index: 1;
 }
 
 .club-ranking-logo {
@@ -873,15 +882,15 @@ header {
 }
 
 @keyframes clubMoveUpPulse {
-    0% { transform: translateY(0); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18); }
-    42% { transform: translateY(-8px); border-color: rgba(166, 236, 213, 0.78); box-shadow: 0 0 22px rgba(127, 236, 202, 0.30); }
-    100% { transform: translateY(0); }
+    0% { filter: brightness(1); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18); }
+    42% { filter: brightness(1.16); border-color: rgba(166, 236, 213, 0.78); box-shadow: 0 0 22px rgba(127, 236, 202, 0.30); }
+    100% { filter: brightness(1); }
 }
 
 @keyframes clubMoveDownPulse {
-    0% { transform: translateY(0); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18); }
-    42% { transform: translateY(8px); border-color: rgba(255, 132, 150, 0.72); box-shadow: 0 0 22px rgba(255, 105, 128, 0.22); }
-    100% { transform: translateY(0); }
+    0% { filter: brightness(1); box-shadow: 0 8px 18px rgba(0, 0, 0, 0.18); }
+    42% { filter: brightness(0.92); border-color: rgba(255, 132, 150, 0.72); box-shadow: 0 0 22px rgba(255, 105, 128, 0.22); }
+    100% { filter: brightness(1); }
 }
 
 .groups-header {
@@ -8785,6 +8794,106 @@ body:has(#bracket-view.active) .bracket-winner-options .bracket-club-logo img {
     flex: 0 0 18px !important;
 }
 
+/* Stable, compact Create Meme dialog. Keep the square editor centred instead
+   of leaving an accidental empty column beside it on desktop. */
+body.market-create-open #market-view .market-create-modal {
+    justify-content: center !important;
+    padding: 16px !important;
+}
+
+body.market-create-open #market-view .market-create-sheet {
+    width: min(640px, calc(100vw - 32px)) !important;
+    max-height: calc(100vh - 32px) !important;
+    padding: 18px !important;
+    border-radius: 22px !important;
+    background: rgba(255, 255, 255, 0.98) !important;
+    border: 1px solid rgba(77, 163, 255, 0.28) !important;
+    box-shadow: 0 28px 80px rgba(15, 23, 42, 0.30) !important;
+    overscroll-behavior: contain;
+}
+
+#market-view .market-create-head strong {
+    color: #111827 !important;
+}
+
+#market-view .market-create-head span,
+#market-view .market-create-status {
+    color: #526174 !important;
+}
+
+#market-view .market-create-image-preview {
+    width: 260px !important;
+    height: 260px !important;
+    min-width: 260px !important;
+    min-height: 260px !important;
+    max-width: 100% !important;
+    max-height: none !important;
+    justify-self: center !important;
+    align-self: center !important;
+    padding: 8px !important;
+}
+
+#market-view .market-image-editor-controls {
+    grid-column: 1 / -1 !important;
+    width: min(100%, 420px) !important;
+    justify-self: center !important;
+    padding: 10px 12px !important;
+    border: 1px solid rgba(77, 163, 255, 0.22) !important;
+    border-radius: 14px !important;
+    background: rgba(239, 246, 255, 0.88) !important;
+}
+
+#market-view .market-image-editor-controls[hidden] {
+    display: none !important;
+}
+
+#market-view .market-image-editor-help {
+    margin-bottom: 8px;
+    color: #526174;
+    font-size: 11px;
+    font-weight: 750;
+}
+
+#market-view .market-image-zoom-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+}
+
+#market-view .market-image-zoom-row input[type="range"] {
+    min-width: 0;
+    flex: 1 1 auto;
+}
+
+#market-view .market-create-actions {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0), #ffffff 34%) !important;
+}
+
+#market-view .market-submit-create:disabled {
+    cursor: wait !important;
+    opacity: 0.72 !important;
+    filter: saturate(0.72) !important;
+}
+
+@media (max-width: 680px) {
+    #market-view .market-create-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    #market-view .market-create-image-preview {
+        width: min(250px, 100%) !important;
+        height: auto !important;
+        min-width: 0 !important;
+        min-height: 0 !important;
+        aspect-ratio: 1 / 1 !important;
+    }
+
+    #market-view .market-image-zoom-row {
+        flex-wrap: wrap;
+    }
+}
+
 /* =========================================================
    MEME MARKET — FINAL MODERN LISTING SURFACE
 ========================================================= */
@@ -12697,8 +12806,9 @@ body.market-create-open #market-view .market-create-modal {
     min-height: 0 !important;
     max-height: 260px !important;
     aspect-ratio: 1 / 1 !important;
-    justify-self: start !important;
-    align-self: start !important;
+    justify-self: center !important;
+    align-self: center !important;
+    margin-inline: auto !important;
     padding: 10px !important;
 }
 
