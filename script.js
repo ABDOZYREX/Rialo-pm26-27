@@ -4490,14 +4490,17 @@ function setupRialoMarketUi() {
     }
 
     function buildChart(candles) {
-        const visibleCandles = getDisplayCandles(candles);
+        const visibleCandles = getDisplayCandles(candles).filter(candle => {
+            const side = String(candle?.side || "").toUpperCase();
+            return Number(candle?.trades || 0) > 0 || side === "BUY" || side === "SELL";
+        });
 
         if (!visibleCandles.length) {
             refs.chartVisual.innerHTML = `
                 <div class="market-chart-empty">
                     <span>LIVE ON-CHAIN CHART</span>
                     <strong>Waiting for the first confirmed trade</strong>
-                    <small>Candles and volume will appear from real transactions only.</small>
+                    <small>The first candle will appear after a confirmed buy or sell.</small>
                 </div>
             `;
             return;
@@ -4505,7 +4508,7 @@ function setupRialoMarketUi() {
 
         const zoom = Number(state.chartZoom || 1);
         const width = Math.max(1040, Math.round(1040 * zoom));
-        const height = 440;
+        const height = 420;
         const padding = { top: 32, right: 104, bottom: 38, left: 18 };
         const volumeHeight = 62;
         const sectionGap = 14;
@@ -4528,7 +4531,7 @@ function setupRialoMarketUi() {
         const maxPrice = Math.max(rawMax, rangeCenter + balancedRange / 2);
         const priceRange = Math.max(maxPrice - minPrice, 0.00000001);
         const preferredSlot = Math.max(10, 13 * zoom);
-        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, 96));
+        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, 72));
         const startX = Math.max(padding.left, width - padding.right - usedWidth);
         const slotWidth = usedWidth / Math.max(visibleCandles.length, 1);
         const candleWidth = Math.max(4, Math.min(10, slotWidth * 0.58));
@@ -4557,12 +4560,12 @@ function setupRialoMarketUi() {
         }).join("");
 
         const showDateOnXAxis = chartSpansMultipleDays(visibleCandles);
-        const timeLabelCount = Math.min(5, visibleCandles.length);
-        const timeLabelIndices = [...new Set(Array.from({ length: timeLabelCount }, (_, index) => (
-            timeLabelCount === 1
-                ? visibleCandles.length - 1
-                : Math.round((index / (timeLabelCount - 1)) * (visibleCandles.length - 1))
-        )))];
+        const timeLabelCount = visibleCandles.length <= 5 ? 1 : Math.min(5, visibleCandles.length);
+        const timeLabelIndices = timeLabelCount === 1
+            ? [visibleCandles.length - 1]
+            : [...new Set(Array.from({ length: timeLabelCount }, (_, index) => (
+                Math.round((index / (timeLabelCount - 1)) * (visibleCandles.length - 1))
+            )))];
         const timeLabels = timeLabelIndices.map(index => {
             const candle = visibleCandles[index];
             const x = startX + slotWidth * index + slotWidth / 2;
@@ -4591,7 +4594,7 @@ function setupRialoMarketUi() {
             const yHigh = yForPrice(candle.high);
             const yLow = yForPrice(candle.low);
             const bodyY = Math.min(yOpen, yClose);
-            const bodyHeight = Math.max(Math.abs(yClose - yOpen), 1.2);
+            const bodyHeight = Math.max(Math.abs(yClose - yOpen), 3.2);
             const bodyX = x - candleWidth / 2;
             const directionClass = candle.direction === "down" ? "down" : "up";
             const lastClass = index === visibleCandles.length - 1 ? " is-last" : "";

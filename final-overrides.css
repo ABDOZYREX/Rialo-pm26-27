@@ -664,7 +664,8 @@ body.market-mode #market-view #market-chart-label {
 }
 
 body.market-mode #market-view .market-chart-visual {
-    height:460px!important;
+    height:430px!important;
+    min-height:430px!important;
     border:1px solid #1d2939!important;
     border-radius:14px!important;
     background:#060a11!important;
