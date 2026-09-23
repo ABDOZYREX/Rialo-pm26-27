@@ -2501,8 +2501,8 @@ function setupRialoSwapUi() {
         slippageBps: 50,
         direction: "stable-to-rlo",
         activeStable: "USDC",
-        walletUsdc: 1000,
-        walletUsdt: 1000,
+        walletUsdc: 0,
+        walletUsdt: 0,
         walletRlo: 0,
         walletRloLoaded: false,
         expectedOutput: 0
@@ -2541,17 +2541,17 @@ function setupRialoSwapUi() {
     }
 
     function getBalanceStorageKey(address = connectedWalletAddress || "guest") {
-        return `rialo-demo-swap-balances-${RIALO_TESTNET.chainId}-${String(address).toLowerCase()}`;
+        return `rialo-demo-swap-balances-v2-${RIALO_TESTNET.chainId}-${String(address).toLowerCase()}`;
     }
 
     function loadDemoBalances() {
         try {
             const saved = JSON.parse(localStorage.getItem(getBalanceStorageKey()) || "{}");
-            state.walletUsdc = Number.isFinite(Number(saved.usdc)) ? Number(saved.usdc) : 1000;
-            state.walletUsdt = Number.isFinite(Number(saved.usdt)) ? Number(saved.usdt) : 1000;
+            state.walletUsdc = Number.isFinite(Number(saved.usdc)) ? Number(saved.usdc) : 0;
+            state.walletUsdt = Number.isFinite(Number(saved.usdt)) ? Number(saved.usdt) : 0;
         } catch (error) {
-            state.walletUsdc = 1000;
-            state.walletUsdt = 1000;
+            state.walletUsdc = 0;
+            state.walletUsdt = 0;
         }
     }
 
@@ -3182,10 +3182,12 @@ function setupRialoMarketUi() {
 
         const locale = typeof navigator !== "undefined" && navigator.language ? navigator.language : undefined;
         const includeDate = Boolean(options.includeDate);
+        const includeSeconds = Boolean(options.includeSeconds);
 
         const time = new Intl.DateTimeFormat(locale, {
             hour: "2-digit",
             minute: "2-digit",
+            ...(includeSeconds ? { second: "2-digit" } : {}),
             hour12: false
         }).format(date).replace(/\s/g, "");
 
@@ -4503,10 +4505,10 @@ function setupRialoMarketUi() {
 
         const zoom = Number(state.chartZoom || 1);
         const width = Math.max(1040, Math.round(1040 * zoom));
-        const height = 500;
-        const padding = { top: 34, right: 104, bottom: 42, left: 18 };
-        const volumeHeight = 82;
-        const sectionGap = 20;
+        const height = 440;
+        const padding = { top: 32, right: 104, bottom: 38, left: 18 };
+        const volumeHeight = 62;
+        const sectionGap = 14;
         const chartWidth = width - padding.left - padding.right;
         const priceBottom = height - padding.bottom - volumeHeight - sectionGap;
         const chartHeight = priceBottom - padding.top;
@@ -4515,15 +4517,21 @@ function setupRialoMarketUi() {
         const allLows = visibleCandles.map(candle => Number(candle.low || candle.close || 0));
         const rawMin = Math.min(...allLows);
         const rawMax = Math.max(...allHighs);
-        const rangeBase = Math.max(rawMax - rawMin, rawMax * 0.000001, 0.000000000001);
-        const minPrice = Math.max(0, rawMin - rangeBase * 0.16);
-        const maxPrice = rawMax + rangeBase * 0.16;
+        const rawRange = Math.max(0, rawMax - rawMin);
+        const priceCenter = Math.max((rawMax + rawMin) / 2, rawMax, 0.00000001);
+        // Very small on-chain moves used to fill almost the entire chart height.
+        // Keep a stable minimum viewport so low-liquidity markets remain readable.
+        const minimumVisibleRange = Math.max(priceCenter * 0.00025, 0.0000000001);
+        const balancedRange = Math.max(rawRange * 1.8, minimumVisibleRange);
+        const rangeCenter = (rawMax + rawMin) / 2;
+        const minPrice = Math.max(0, rangeCenter - balancedRange / 2);
+        const maxPrice = Math.max(rawMax, rangeCenter + balancedRange / 2);
         const priceRange = Math.max(maxPrice - minPrice, 0.00000001);
-        const preferredSlot = Math.max(12, 17 * zoom);
-        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, chartWidth * 0.2));
+        const preferredSlot = Math.max(10, 13 * zoom);
+        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, 96));
         const startX = Math.max(padding.left, width - padding.right - usedWidth);
         const slotWidth = usedWidth / Math.max(visibleCandles.length, 1);
-        const candleWidth = Math.max(4, Math.min(12, slotWidth * 0.62));
+        const candleWidth = Math.max(4, Math.min(10, slotWidth * 0.58));
         const maxVolume = Math.max(...visibleCandles.map(candle => Number(candle.volumeRlo || 0)), 0.00000001);
 
         const yForPrice = price => {
@@ -4542,17 +4550,29 @@ function setupRialoMarketUi() {
             `;
         }).join("");
 
-        const showDateOnXAxis = chartSpansMultipleDays(visibleCandles);
         const verticalGrid = Array.from({ length: 7 }, (_, index) => {
             const ratio = index / 6;
             const x = padding.left + ratio * chartWidth;
-            const candleIndex = Math.max(0, Math.min(visibleCandles.length - 1, Math.round(ratio * (visibleCandles.length - 1))));
-            const candle = visibleCandles[candleIndex];
-            const label = candle ? formatChartTimeLabel(candle.timestamp, { includeDate: showDateOnXAxis }) : "";
-            return `
-                <line class="market-chart-grid-line vertical" x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}"></line>
-                ${label ? `<text class="market-chart-time-text" x="${x}" y="${height - 12}" text-anchor="middle">${escapeHTML(label)}</text>` : ""}
-            `;
+            return `<line class="market-chart-grid-line vertical" x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}"></line>`;
+        }).join("");
+
+        const showDateOnXAxis = chartSpansMultipleDays(visibleCandles);
+        const timeLabelCount = Math.min(5, visibleCandles.length);
+        const timeLabelIndices = [...new Set(Array.from({ length: timeLabelCount }, (_, index) => (
+            timeLabelCount === 1
+                ? visibleCandles.length - 1
+                : Math.round((index / (timeLabelCount - 1)) * (visibleCandles.length - 1))
+        )))];
+        const timeLabels = timeLabelIndices.map(index => {
+            const candle = visibleCandles[index];
+            const x = startX + slotWidth * index + slotWidth / 2;
+            const label = formatChartTimeLabel(candle?.timestamp, {
+                includeDate: showDateOnXAxis,
+                includeSeconds: visibleCandles.length <= 5 && !showDateOnXAxis
+            });
+            return label
+                ? `<text class="market-chart-time-text" x="${x}" y="${height - 10}" text-anchor="middle">${escapeHTML(label)}</text>`
+                : "";
         }).join("");
 
         const volumeSvg = visibleCandles.map((candle, index) => {
@@ -4606,6 +4626,7 @@ function setupRialoMarketUi() {
                     <line class="market-chart-axis-border" x1="${width - padding.right}" y1="${padding.top}" x2="${width - padding.right}" y2="${height - padding.bottom}"></line>
                     ${horizontalGrid}
                     ${verticalGrid}
+                    ${timeLabels}
                     <line class="market-volume-divider" x1="${padding.left}" y1="${volumeTop - 8}" x2="${width - padding.right}" y2="${volumeTop - 8}"></line>
                     <text class="market-volume-label" x="${padding.left + 4}" y="${volumeTop + 10}">VOLUME · RLO</text>
                     ${volumeSvg}
