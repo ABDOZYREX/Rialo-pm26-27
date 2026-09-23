@@ -3476,8 +3476,10 @@ function setupRialoMarketUi() {
         const sourceWidth = image.naturalWidth || image.width;
         const sourceHeight = image.naturalHeight || image.height;
         if (!sourceWidth || !sourceHeight) return null;
-        const coverScale = Math.max(800 / sourceWidth, 800 / sourceHeight);
-        const scale = coverScale * state.createImageZoom;
+        // Start in "contain" mode so the complete uploaded image is visible.
+        // The user can still zoom in and drag when they want a tighter square crop.
+        const containScale = Math.min(800 / sourceWidth, 800 / sourceHeight);
+        const scale = containScale * state.createImageZoom;
         const drawnWidth = sourceWidth * scale;
         const drawnHeight = sourceHeight * scale;
         const maxX = Math.max(0, (drawnWidth - 800) / 2);
@@ -5035,7 +5037,14 @@ function setupRialoMarketUi() {
     function openCreateModal() {
         refs.modal.hidden = false;
         document.body.classList.add("market-create-open");
-        refs.name.focus();
+        refs.modal.scrollTop = 0;
+        const createSheet = refs.modal.querySelector(".market-create-sheet");
+        if (createSheet) createSheet.scrollTop = 0;
+        refs.name.focus({ preventScroll: true });
+        requestAnimationFrame(() => {
+            refs.modal.scrollTop = 0;
+            if (createSheet) createSheet.scrollTop = 0;
+        });
         if (refs.price) refs.price.value = refs.price.value || "0.01";
         updateCreatePriceUsdcHint();
         refs.status.textContent = "Create Token will deploy a real ERC-20 on-chain, then list it inside Rialo Market with RLO liquidity.";
@@ -6939,7 +6948,48 @@ function moveTeamInGroup(index, action) {
     }
 
     [clubRankingOrder[index], clubRankingOrder[targetIndex]] = [clubRankingOrder[targetIndex], clubRankingOrder[index]];
-    renderGroups();
+
+    // Move the existing rows instead of rebuilding the complete grid. Rebuilding
+    // replaced every <img> node and forced remote crests (notably positions 12
+    // and 16) to load again, which caused the visible blink.
+    const rows = Array.from(document.querySelectorAll("#groups-grid .club-ranking-team"));
+    const movedRow = rows.find(row => row.dataset.clubKey === encodeURIComponent(movedName));
+    const swappedRow = rows.find(row => row.dataset.clubKey === encodeURIComponent(swappedName));
+
+    if (movedRow && swappedRow) {
+        const movedMarker = document.createComment("moved-club-row");
+        const swappedMarker = document.createComment("swapped-club-row");
+        movedRow.replaceWith(movedMarker);
+        swappedRow.replaceWith(swappedMarker);
+        movedMarker.replaceWith(swappedRow);
+        swappedMarker.replaceWith(movedRow);
+
+        clubRankingOrder.forEach((team, nextIndex) => {
+            const row = Array.from(document.querySelectorAll("#groups-grid .club-ranking-team"))
+                .find(item => item.dataset.clubKey === encodeURIComponent(team[0]));
+            if (!row) return;
+
+            row.querySelector(".club-ranking-number").textContent = String(nextIndex + 1);
+            row.classList.toggle("qualified", nextIndex < CLUB_BRACKET_QUALIFIER_COUNT);
+            row.classList.remove("move-up-effect", "move-down-effect");
+            const upButton = row.querySelector('[data-action="up"]');
+            const downButton = row.querySelector('[data-action="down"]');
+            if (upButton) {
+                upButton.dataset.index = String(nextIndex);
+                upButton.disabled = clubRankingConfirmed || nextIndex === 0;
+            }
+            if (downButton) {
+                downButton.dataset.index = String(nextIndex);
+                downButton.disabled = clubRankingConfirmed || nextIndex === clubRankingOrder.length - 1;
+            }
+        });
+
+        movedRow.classList.add(groupMoveEffects[movedKey]);
+        swappedRow.classList.add(groupMoveEffects[swappedKey]);
+    } else {
+        // Defensive fallback for an unexpected stale DOM.
+        renderGroups();
+    }
 
     // Clear only the temporary classes. Re-rendering the entire grid here used
     // to reload every remote crest a second time and caused blank/flickering logos.

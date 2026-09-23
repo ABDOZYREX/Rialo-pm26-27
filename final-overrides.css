@@ -1554,6 +1554,32 @@ body.market-mode #market-view .market-image-zoom-row button {
 }
 body.market-mode #market-view .market-image-zoom-row .market-image-reset-btn { min-width:62px!important; }
 
+/* Keep the entire Create Meme form visible and always reopen at its top. */
+body.market-create-open #market-view .market-create-modal {
+    inset:0!important;
+    width:100vw!important;
+    height:100dvh!important;
+    min-height:100dvh!important;
+    align-items:flex-start!important;
+    justify-content:center!important;
+    overflow-y:auto!important;
+    overscroll-behavior:contain!important;
+    padding:12px!important;
+}
+
+body.market-create-open #market-view .market-create-sheet {
+    width:min(760px,100%)!important;
+    max-height:calc(100dvh - 24px)!important;
+    margin:0 auto!important;
+    overflow-y:auto!important;
+    scroll-padding-top:20px!important;
+}
+
+/* The generated square may contain letterboxing so the whole source stays visible. */
+body.market-mode #market-view .market-create-image-preview img {
+    object-fit:contain!important;
+}
+
 /* Preserve the exact aspect ratio supplied by the user. The frame follows the
    image instead of forcing every upload into a square. */
 body.market-mode #market-view .market-token-media,
