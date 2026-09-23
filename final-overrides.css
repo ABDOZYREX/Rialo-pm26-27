@@ -1567,6 +1567,20 @@ body.market-create-open #market-view .market-create-modal {
     padding:12px!important;
 }
 
+/* The sticky navbar owns a high stacking context. Raise the complete market
+   layer while this dialog is open so the modal cannot sit underneath it. */
+body.market-create-open #market-view,
+body.market-create-open #market-view .market-stage {
+    position:relative!important;
+    z-index:2147483646!important;
+}
+
+body.market-create-open .site-navbar,
+body.market-create-open header.site-navbar {
+    visibility:hidden!important;
+    pointer-events:none!important;
+}
+
 body.market-create-open #market-view .market-create-sheet {
     width:min(760px,100%)!important;
     max-height:calc(100dvh - 24px)!important;

@@ -5040,7 +5040,6 @@ function setupRialoMarketUi() {
         refs.modal.scrollTop = 0;
         const createSheet = refs.modal.querySelector(".market-create-sheet");
         if (createSheet) createSheet.scrollTop = 0;
-        refs.name.focus({ preventScroll: true });
         requestAnimationFrame(() => {
             refs.modal.scrollTop = 0;
             if (createSheet) createSheet.scrollTop = 0;
