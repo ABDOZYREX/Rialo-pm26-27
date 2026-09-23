@@ -1431,6 +1431,7 @@ async function requestAiChat(message, contextSummary) {
   const prompt = [
     "You are Rialo Helper, a concise in-product assistant inside a Web3 sports + meme market app.",
     "Be practical, brief, and helpful.",
+    "Keep the answer under 180 words unless the user explicitly asks for detail.",
     "Use the current UI context when it matters.",
     "If the user asks a general question unrelated to the app, answer it normally and clearly instead of forcing the topic back to Rialo.",
     `Current page: ${contextSummary.page}`,
@@ -1451,7 +1452,7 @@ async function requestAiChat(message, contextSummary) {
   const requestBody = usesGeminiGenerateContent
     ? {
         contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 700 }
+        generationConfig: { maxOutputTokens: 360 }
       }
     : usesChatCompletions
     ? {
@@ -1470,7 +1471,7 @@ async function requestAiChat(message, contextSummary) {
         input: prompt
       };
 
-  const response = await fetch(AI_API_URL, {
+  const requestOptions = () => ({
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -1481,16 +1482,41 @@ async function requestAiChat(message, contextSummary) {
           : { Authorization: `Bearer ${AI_API_KEY}` })
     },
     body: JSON.stringify(requestBody),
-    signal: AbortSignal.timeout(30000)
+    signal: AbortSignal.timeout(29000)
   });
 
-  const data = await response.json().catch(() => ({}));
-  if (!response.ok) {
+  const maxAttempts = USE_LATCH_PROXY ? 2 : 1;
+  let response = null;
+  let data = {};
+
+  for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
+    try {
+      response = await fetch(AI_API_URL, requestOptions());
+      data = await response.json().catch(() => ({}));
+    } catch (error) {
+      const retryableNetworkError = /timeout|aborted|fetch failed|network/i.test(String(error?.message || error));
+      if (attempt + 1 < maxAttempts && retryableNetworkError) {
+        continue;
+      }
+      throw error;
+    }
+
+    if (response.ok) {
+      break;
+    }
+
     const providerMessage = data?.error?.message
       || (typeof data?.error === "string" ? data.error : "")
       || data?.message
       || data?.reason
       || "AI provider request failed";
+    const retryableProviderError = /timeout|rex-error|temporar|overload|unavailable/i.test(providerMessage)
+      || [408, 425, 429, 500, 502, 503, 504].includes(response.status);
+
+    if (attempt + 1 < maxAttempts && retryableProviderError) {
+      continue;
+    }
+
     throw new Error(`AI provider ${response.status}: ${providerMessage}`);
   }
 
