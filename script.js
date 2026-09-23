@@ -1576,6 +1576,7 @@ function openAiAssistant() {
     const refs = getAiAssistantRefs();
     if (!refs.panel || !refs.fab) return;
     closeCommunityChat();
+    document.body.classList.add("ai-assistant-open");
     refs.panel.classList.remove("hidden");
     refs.fab.setAttribute("aria-expanded", "true");
     setAiAssistantMeta("Ask about trading, NFTs, wallet steps, predictions, or how this product works.");
@@ -1587,6 +1588,7 @@ function closeAiAssistant() {
     if (!refs.panel || !refs.fab) return;
     refs.panel.classList.add("hidden");
     refs.fab.setAttribute("aria-expanded", "false");
+    document.body.classList.remove("ai-assistant-open");
 }
 
 function getAiActivePageLabel() {
