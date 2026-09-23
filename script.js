@@ -4531,7 +4531,7 @@ function setupRialoMarketUi() {
         const maxPrice = Math.max(rawMax, rangeCenter + balancedRange / 2);
         const priceRange = Math.max(maxPrice - minPrice, 0.00000001);
         const preferredSlot = Math.max(10, 13 * zoom);
-        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, 72));
+        const usedWidth = Math.min(chartWidth, Math.max(visibleCandles.length * preferredSlot, 40));
         const startX = Math.max(padding.left, width - padding.right - usedWidth);
         const slotWidth = usedWidth / Math.max(visibleCandles.length, 1);
         const candleWidth = Math.max(4, Math.min(10, slotWidth * 0.58));
@@ -4611,8 +4611,6 @@ function setupRialoMarketUi() {
         const lastCandle = visibleCandles[visibleCandles.length - 1];
         const currentPrice = Number(lastCandle.close || 0);
         const currentY = yForPrice(currentPrice);
-        const confirmedTrades = visibleCandles.reduce((sum, candle) => sum + Number(candle.trades || 0), 0);
-
         refs.chartVisual.innerHTML = `
             <div class="market-candle-chart-shell">
                 <div class="market-chart-ohlc" id="market-chart-ohlc">
@@ -4622,7 +4620,6 @@ function setupRialoMarketUi() {
                     <span>C <b>${escapeHTML(formatChartNumber(lastCandle.close))}</b></span>
                     <span>VOL <b>${escapeHTML(formatCompact(lastCandle.volumeRlo || 0, 6))} RLO</b></span>
                 </div>
-                <div class="market-chart-source">ON-CHAIN · ${confirmedTrades} CONFIRMED ${confirmedTrades === 1 ? "TRADE" : "TRADES"}</div>
                 <svg class="market-candle-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="none" role="img" aria-label="Candlestick chart">
                     <rect class="market-chart-bg" x="0" y="0" width="${width}" height="${height}"></rect>
                     <rect class="market-chart-axis-panel" x="${width - padding.right}" y="0" width="${padding.right}" height="${height}"></rect>
