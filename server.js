@@ -1358,6 +1358,14 @@ function buildReliableLocalAiReply(message, contextSummary) {
   const arabic = containsArabicText(text);
   const reply = (...lines) => lines.join("\n\n");
 
+  if (/how do i (join|use|play) prediction live|how does prediction live work/i.test(lower)) {
+    return "Open Prediction Live, choose a match outcome and its odd, enter your RLO amount, then confirm the transaction in MetaMask on Ethereum Sepolia. If your prediction is correct, the reward is sent to your wallet after the result is settled.";
+  }
+
+  if (/how do i (mint|buy).*(nft)|how can i (mint|buy).*(nft)/i.test(lower)) {
+    return "Connect MetaMask on Ethereum Sepolia and open NFT Collection. Choose a player card and select Mint to create one, or open NFT Market and select Buy NFT for a listed card. Review the price and confirm the transaction in your wallet.";
+  }
+
   if (/wallet|metamask|connect|محفظ|واليت|ربط/i.test(lower)) {
     const walletLabel = contextSummary.walletStatus === "connected" ? "متصلة" : "غير متصلة";
     return reply(
